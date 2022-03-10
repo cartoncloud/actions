@@ -1,0 +1,19 @@
+name: 'Branch Dispatch'
+description: 'Trigger GitHub Actions workflows with workflow_dispatch events that match the given branch pattern'
+inputs:
+  token:
+    description: 'Personal access token with auth for the intended repository'
+    required: true
+  workflow:
+    description: 'Name or ID of workflow to run'
+    required: true
+  query:
+    description: 'Text to filter branches by'
+    required: false
+  inputs:
+    description: 'Inputs to pass to the workflow, must be a JSON string'
+    required: false
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
