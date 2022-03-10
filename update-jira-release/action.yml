@@ -1,0 +1,35 @@
+name: 'Update JIRA Release'
+description: 'Updates an existing JIRA (self-hosted) release'
+inputs:
+  username:
+    description: 'JIRA username to use to call the API'
+    required: true
+  password:
+    description: 'JIRA password to use to call the API'
+    required: true
+  serverAddress:
+    description: 'JIRA server address i.e. support.cartoncloud.com'
+    required: true
+  projectId:
+    description: 'The id of the JIRA project the release exists in'
+    required: true
+  releaseId:
+    description: 'JIRA release id to update'
+    required: true
+  name:
+    description: 'Optional new name for the release'
+    required: false
+  description:
+    description: 'Optional new description for the release'
+    required: false
+  isReleased:
+    description: 'Whether to mark the release as unreleased or released'
+    required: true
+  timezone:
+    description: 'Timezone for the release date'
+    required: false
+    default: 'Australia/Brisbane'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
