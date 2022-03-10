@@ -1,0 +1,210 @@
+name: 'Deployment Status'
+description: 'Updates environment project and/or sends Slack notification'
+inputs:
+  organization:
+    description: 'Organization slug that the environments project resides in'
+    required: true
+  projectNumber:
+    description: 'Numerical id of the environments project'
+    required: false
+  slackChannel:
+    description: 'Slack channel id, channel name, or user id to post message'
+    required: false
+
+  appName:
+    description: 'Name of the app and matching project field'
+    required: true
+  revision:
+    description: 'Version of the app that is being deployed'
+    required: true
+  revisionUrl:
+    description: 'Url to the version of the app that is being deployed'
+    required: true
+  releaseNotes:
+    description: 'Optional release notes to post with the started status'
+    required: false
+  reason:
+    description: 'Optional reason for the deployment'
+    required: false
+  environment:
+    description: 'Name of the environment that is being deployed to'
+    required: true
+  environmentUrl:
+    description: 'Url of the environment that is being deployed to'
+    required: true
+  status:
+    description: 'One of started, success, failed'
+    required: true
+
+  projectsToken:
+    description: 'Personal access token with org:write permisions'
+    required: false
+  slackBotToken:
+    description: 'Slack token of custom app for sending messages'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update environment issue (started)
+      uses: cartoncloud/update-project-issue-action@v1
+      if: inputs.status == 'started' && inputs.projectNumber != '' && inputs.projectsToken != ''
+      with:
+        token: ${{ inputs.projectsToken }}
+        organization: ${{ inputs.organization }}
+        projectNumber: ${{ inputs.projectNumber }}
+        issue: ${{ inputs.environment }}
+        field: ${{ inputs.appName }}
+        value: ":hourglass_flowing_sand: Deploying…"
+
+    - name: Update environment issue (success)
+      uses: cartoncloud/update-project-issue-action@v1
+      if: inputs.status == 'success' && inputs.projectNumber != '' && inputs.projectsToken != ''
+      with:
+        token: ${{ inputs.projectsToken }}
+        organization: ${{ inputs.organization }}
+        projectNumber: ${{ inputs.projectNumber }}
+        issue: ${{ inputs.environment }}
+        field: ${{ inputs.appName }}
+        value: ${{ inputs.revision }}
+
+    - name: Update environment issue (failed)
+      uses: cartoncloud/update-project-issue-action@v1
+      if: inputs.status == 'failed' && inputs.projectNumber != '' && inputs.projectsToken != ''
+      with:
+        token: ${{ inputs.projectsToken }}
+        organization: ${{ inputs.organization }}
+        projectNumber: ${{ inputs.projectNumber }}
+        issue: ${{ inputs.environment }}
+        field: ${{ inputs.appName }}
+        value: ":rotating_light: Deploy Failed"
+
+    - name: Slack notification (started)
+      uses: slackapi/slack-github-action@v1.17.0
+      if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        payload: |
+          {
+            "text": "Deployment Started :hourglass_flowing_sand:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":hourglass_flowing_sand: Deploying ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>…"
+                }
+              }
+            ]
+          }
+
+    - name: Slack notification (started with reason)
+      uses: slackapi/slack-github-action@v1.17.0
+      if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        payload: |
+          {
+            "text": "Deployment Started :hourglass_flowing_sand:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "${{ inputs.reason }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":hourglass_flowing_sand: Deploying ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>…"
+                }
+              }
+            ]
+          }
+
+    - name: Convert release notes to Slack markdown
+      id: slack-release-notes
+      if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.releaseNotes != ''
+      uses: LoveToKnow/slackify-markdown-action@v1
+      with:
+        text: ${{ inputs.releaseNotes }}
+
+    - name: Slack notification (release notes)
+      uses: slackapi/slack-github-action@v1.17.0
+      if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.releaseNotes != ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        payload: |
+          {
+            "text": ":clipboard: *Release Notes* / ${{ inputs.appName }} ${{ inputs.revision }}",
+            "blocks": [
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": ":clipboard: *Release Notes* / ${{ inputs.appName }} ${{ inputs.revision }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ${{ toJson(steps.slack-release-notes.outputs.text) }}
+                }
+              }
+            ]
+          }
+
+    - name: Slack notification (success)
+      uses: slackapi/slack-github-action@v1.17.0
+      if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        payload: |
+          {
+            "text": "Deployment Complete :rocket:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":rocket: ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> deployed to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
+                }
+              }
+            ]
+          }
+
+    - name: Slack notification (failed)
+      uses: slackapi/slack-github-action@v1.17.0
+      if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        payload: |
+          {
+            "text": "Deployment Failed :rotating_light:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":rotating_light: Failed to deploy ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
+                }
+              }
+            ]
+          }
