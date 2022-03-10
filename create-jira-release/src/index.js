@@ -1,0 +1,51 @@
+const core = require('@actions/core');
+const fetch = require('node-fetch');
+const { DateTime } = require("luxon");
+
+async function run() {
+  try {
+    const username = core.getInput('username', { required: true });
+    const password = core.getInput('password', { required: true });
+    const serverAddress = core.getInput('serverAddress', { required: true });
+    const projectId = core.getInput('projectId', { required: true });
+    const releaseName = core.getInput('name', { required: true });
+    const releaseDescription = core.getInput('description');
+    const isReleased = core.getBooleanInput('isReleased', { required: true });
+    const timezone = core.getInput('timezone');
+
+    const dateNow = DateTime.utc().setZone(timezone).toFormat('yyyy-MM-dd');
+    const body = {
+      projectId: projectId,
+      name: releaseName,
+      description: releaseDescription ?? undefined,
+      archived: false,
+      released: isReleased,
+      releaseDate: isReleased ? dateNow : undefined,
+    };
+
+    core.info(`Creating release:\n${JSON.stringify(body, null, 2)}`);
+
+    const base64Credentials = btoa(`${username}:${password}`);
+    const response = await fetch(`https://${serverAddress}/rest/api/latest/version`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${base64Credentials}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (response.ok) {
+      const jsonResponse = await response.json();
+      core.info(`Created release ${jsonResponse.id}`);
+      core.setOutput('releaseId', jsonResponse.id);
+    } else {
+      core.error(response.statusText);
+      core.setFailed(response.text());
+    }
+  } catch (error) {
+    core.setFailed(error.message);
+  }
+}
+
+run();
