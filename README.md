@@ -5,7 +5,6 @@ Re-usable GitHub Actions
 ## Composite Actions
 
 - deployment-status
-- update-project-issue
 
 
 ## Javascript Actions
@@ -14,3 +13,4 @@ Re-usable GitHub Actions
 - create-jira-release
 - find-issues-by-field
 - update-jira-release
+- update-project-issue
