@@ -4,6 +4,7 @@ on: pull_request
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
 
     strategy:
@@ -42,6 +43,7 @@ jobs:
           retention-days: 1
 
   debug:
+    name: Debug
     runs-on: ubuntu-latest
     needs: build
 
