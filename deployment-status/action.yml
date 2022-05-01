@@ -80,7 +80,7 @@ runs:
         value: ":rotating_light: Deploy Failed"
 
     - name: Slack notification (started)
-      uses: slackapi/slack-github-action@v1.17.0
+      uses: slackapi/slack-github-action@v1.18.0
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
@@ -101,7 +101,7 @@ runs:
           }
 
     - name: Slack notification (started with reason)
-      uses: slackapi/slack-github-action@v1.17.0
+      uses: slackapi/slack-github-action@v1.18.0
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
@@ -138,7 +138,7 @@ runs:
         text: ${{ inputs.releaseNotes }}
 
     - name: Slack notification (release notes)
-      uses: slackapi/slack-github-action@v1.17.0
+      uses: slackapi/slack-github-action@v1.18.0
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.releaseNotes != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
@@ -168,7 +168,7 @@ runs:
           }
 
     - name: Slack notification (success)
-      uses: slackapi/slack-github-action@v1.17.0
+      uses: slackapi/slack-github-action@v1.18.0
       if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
@@ -189,7 +189,7 @@ runs:
           }
 
     - name: Slack notification (failed)
-      uses: slackapi/slack-github-action@v1.17.0
+      uses: slackapi/slack-github-action@v1.18.0
       if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
