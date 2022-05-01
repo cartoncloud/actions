@@ -1,0 +1,55 @@
+name: Build
+
+on: pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - branch-dispatch
+          - create-jira-release
+          - find-issues-by-field
+          - slack-jira-release-notes
+          - update-jira-release
+          - update-project-issue
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@cartoncloud'
+          cache: 'npm'
+
+      - name: Install depdendencies
+        working-directory: ${{ matrix.package }}
+        run: npm ci
+
+      - name: Compile to single JS file
+        working-directory: ${{ matrix.package }}
+        run: npm run build
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: compiled-packages
+          path: ${{ matrix.package }}
+          retention-days: 1
+
+  debug:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: compiled-packages
+
+      - name: Display structure of downloaded files
+        run: ls -R
