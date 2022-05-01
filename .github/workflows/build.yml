@@ -1,4 +1,4 @@
-name: Build
+name: Build Actions
 
 on: pull_request
 
@@ -53,9 +53,17 @@ jobs:
     needs: build
 
     steps:
+      - uses: actions/checkout@v3
+
+      - name: Remove existing compiled actions
+        run: find . -type d -name dist -prune -exec rm -rf {} \;
+
       - uses: actions/download-artifact@v3
         with:
           name: compiled-packages
 
       - name: Display structure of downloaded files
         run: ls -R
+
+      - name: Changed files
+        run: git diff --name-only
