@@ -36,10 +36,15 @@ jobs:
         working-directory: ${{ matrix.package }}
         run: npm run build
 
+      - name: Prepare upload
+        run: |
+          mkdir -p upload/${{ matrix.package }}/dist
+          cp -a /${{ matrix.package }}/dist/. /upload/${{ matrix.package }}/dist/
+
       - uses: actions/upload-artifact@v3
         with:
           name: compiled-packages
-          path: ${{ matrix.package }}
+          path: upload
           retention-days: 1
 
   debug:
