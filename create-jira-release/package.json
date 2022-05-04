@@ -2,9 +2,10 @@
   "name": "create-jira-release-action",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
+  "type": "module",
   "scripts": {
-    "build": "ncc build src/index.js -o dist --source-map --license licenses.txt"
+    "build": "tsc && ncc build -o dist --source-map --license licenses.txt"
   },
   "keywords": [
     "GitHub",
@@ -19,6 +20,7 @@
     "node-fetch": "^3.2.4"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.33.4"
+    "@vercel/ncc": "^0.33.4",
+    "typescript": "^4.6.4"
   }
 }

@@ -18,8 +18,11 @@ Re-usable GitHub Actions
 ### Javascript Actions
 
 - branch-dispatch
-- create-jira-release
 - find-issues-by-field
 - slack-jira-release-notes
 - update-jira-release
 - update-project-issue
+
+### Typescript Actions
+
+- create-jira-release
