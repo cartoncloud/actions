@@ -20,9 +20,9 @@ Re-usable GitHub Actions
 - branch-dispatch
 - find-issues-by-field
 - slack-jira-release-notes
-- update-jira-release
 - update-project-issue
 
 ### Typescript Actions
 
 - create-jira-release
+- update-jira-release

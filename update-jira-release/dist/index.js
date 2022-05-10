@@ -1,7 +1,102 @@
-require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
+/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 241:
+/***/ 822:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const node_fetch_1 = __importDefault(__nccwpck_require__(467));
+const core = __importStar(__nccwpck_require__(186));
+const luxon_1 = __nccwpck_require__(811);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const username = core.getInput('username', { required: true });
+            const password = core.getInput('password', { required: true });
+            const serverAddress = core.getInput('serverAddress', { required: true });
+            const projectId = core.getInput('projectId', { required: true });
+            const releaseId = core.getInput('releaseId', { required: true });
+            const releaseName = core.getInput('name');
+            const releaseDescription = core.getInput('description');
+            const isReleased = core.getBooleanInput('isReleased', { required: true });
+            const timezone = core.getInput('timezone');
+            const today = luxon_1.DateTime.utc().setZone(timezone).toFormat('yyyy-MM-dd');
+            const body = {
+                projectId: projectId,
+                id: releaseId,
+                name: releaseName ? releaseName : undefined,
+                description: releaseDescription ? releaseDescription : undefined,
+                archived: false,
+                released: isReleased,
+                releaseDate: isReleased ? today : undefined,
+            };
+            core.info(`Updating release:\n${JSON.stringify(body, null, 2)}`);
+            const base64Credentials = btoa(`${username}:${password}`);
+            const response = yield (0, node_fetch_1.default)(`https://${serverAddress}/rest/api/latest/version/${releaseId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Basic ${base64Credentials}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
+            if (response.ok) {
+                const jsonResponse = yield response.json();
+                core.info(`Updated release ${jsonResponse.id}`);
+            }
+            else {
+                core.error(response.statusText);
+                core.setFailed(yield response.text());
+            }
+        }
+        catch (error) {
+            core.setFailed(error.message);
+        }
+    });
+}
+run();
+
+
+/***/ }),
+
+/***/ 351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -135,7 +230,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
-const command_1 = __nccwpck_require__(241);
+const command_1 = __nccwpck_require__(351);
 const file_command_1 = __nccwpck_require__(717);
 const utils_1 = __nccwpck_require__(278);
 const os = __importStar(__nccwpck_require__(37));
@@ -13413,65 +13508,12 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
-(() => {
-const core = __nccwpck_require__(186);
-const fetch = __nccwpck_require__(467);
-const { DateTime } = __nccwpck_require__(811);
-
-async function run() {
-  try {
-    const username = core.getInput('username', { required: true });
-    const password = core.getInput('password', { required: true });
-    const serverAddress = core.getInput('serverAddress', { required: true });
-    const projectId = core.getInput('projectId', { required: true });
-    const releaseId = core.getInput('releaseId', { required: true });
-    const releaseName = core.getInput('name');
-    const releaseDescription = core.getInput('description');
-    const isReleased = core.getBooleanInput('isReleased', { required: true });
-    const timezone = core.getInput('timezone');
-
-    const today = DateTime.utc().setZone(timezone).toFormat('yyyy-MM-dd');
-    const body = {
-      projectId: projectId,
-      id: releaseId,
-      name: releaseName ? releaseName : undefined,
-      description: releaseDescription ? releaseDescription : undefined,
-      archived: false,
-      released: isReleased,
-      releaseDate: isReleased ? today : undefined,
-    };
-
-    core.info(`Updating release:\n${JSON.stringify(body, null, 2)}`);
-
-    const base64Credentials = btoa(`${username}:${password}`);
-    const response = await fetch(`https://${serverAddress}/rest/api/latest/version/${releaseId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Basic ${base64Credentials}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (response.ok) {
-      const jsonResponse = await response.json();
-      core.info(`Updated release ${jsonResponse.id}`);
-    } else {
-      core.error(response.statusText);
-      core.setFailed(response.text());
-    }
-  } catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run();
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(822);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
-//# sourceMappingURL=index.js.map

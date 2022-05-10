@@ -1,6 +1,6 @@
-const core = require('@actions/core');
-const fetch = require('node-fetch');
-const { DateTime } = require("luxon");
+import fetch from 'node-fetch';
+import * as core from '@actions/core';
+import { DateTime } from 'luxon';
 
 async function run() {
   try {
@@ -42,9 +42,9 @@ async function run() {
       core.info(`Updated release ${jsonResponse.id}`);
     } else {
       core.error(response.statusText);
-      core.setFailed(response.text());
+      core.setFailed(await response.text());
     }
-  } catch (error) {
+  } catch (error: any) {
     core.setFailed(error.message);
   }
 }
