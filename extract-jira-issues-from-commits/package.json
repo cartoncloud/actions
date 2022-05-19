@@ -1,0 +1,27 @@
+{
+  "name": "extract-jira-issues-from-commits-action",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc && ncc build"
+  },
+  "keywords": [
+    "GitHub",
+    "Actions",
+    "JavaScript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.8.2",
+    "@actions/exec": "^1.1.1",
+    "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.36",
+    "@types/node-fetch": "^2.6.1",
+    "@vercel/ncc": "^0.33.4",
+    "typescript": "^4.6.4"
+  }
+}

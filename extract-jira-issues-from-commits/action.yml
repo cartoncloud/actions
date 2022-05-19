@@ -1,0 +1,30 @@
+name: 'Extract JIRA Issues from Commits'
+description: 'Extracts JIRA issues from commit messages'
+inputs:
+  jiraServer:
+    description: 'JIRA server address i.e. support.cartoncloud.com'
+    required: true
+  jiraUsername:
+    description: 'JIRA username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'JIRA password to use to call the API'
+    required: true
+  jiraProjectKeys:
+    description: 'Comma separated list of JIRA project keys. i.e. CC'
+    required: true
+
+  refFrom:
+    description: 'Tag or commit ref to compare commits from'
+    required: true
+  refTo:
+    description: 'Tag or commit ref to compare commits to'
+    required: true
+
+outputs:
+  issues:
+    description: 'JSON list of issues with key, summary, type, typeEmoji, reporter.name, reporter.email, assignee.name, assignee.email and url'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

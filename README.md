@@ -14,7 +14,6 @@ Re-usable GitHub Actions
 
 - deployment-status
 
-
 ### Javascript Actions
 
 - branch-dispatch
@@ -26,3 +25,4 @@ Re-usable GitHub Actions
 
 - create-jira-release
 - update-jira-release
+- extract-jira-issues-from-commits
