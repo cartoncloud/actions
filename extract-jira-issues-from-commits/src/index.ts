@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import { SummaryTableRow } from "@actions/core/lib/summary";
 
 type IssueTypeObject = {
   sort: number,
@@ -93,6 +94,29 @@ async function run() {
         return issueTypeOrder;
       }
     });
+
+    const summary = await core.summary.addHeading('JIRA Issues');
+    if (issues.length > 0) {
+      summary.addRaw(`${issues.length} JIRA Issues found.`);
+
+      const table: SummaryTableRow[] = [
+        [{ data: 'Type', header: true }, { data: 'Key', header: true }, { data: 'Summary', header: true }],
+      ];
+
+      for (let issue of issues) {
+        const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : '';
+        table.push([
+          `${typePrefix}${issue.fields.issuetype.name}`,
+          `[${issue.key}](${issue.htmlUrl})`,
+          issue.fields.summary,
+        ]);
+      }
+
+      summary.addTable(table);
+    } else {
+      summary.addRaw('No JIRA Issues found.');
+    }
+    summary.write();
 
     core.setOutput('issues', issues);
   } catch (error: any) {
