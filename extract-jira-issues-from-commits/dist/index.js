@@ -48,12 +48,12 @@ const exec = __importStar(__nccwpck_require__(514));
 const issueTypes = {
     'epic': { sort: 1, emoji: ':sparkles:' },
     'story': { sort: 2, emoji: ':book:' },
-    'customer story': { sort: 3, emoji: ':book:' },
+    'customer story': { sort: 3, emoji: ':notebook:' },
     'sub task': { sort: 4, emoji: ':nut_and_bolt:' },
-    'bug': { sort: 5, emoji: ':bug:' },
-    'qa fix': { sort: 6, emoji: ':adhesive_bandage:' },
-    'dev task': { sort: 7, emoji: ':hammer_and_wrench:' },
-    'technical': { sort: 8, emoji: ':hammer_and_wrench:' },
+    'qa fix': { sort: 5, emoji: ':adhesive_bandage:' },
+    'bug': { sort: 6, emoji: ':bug:' },
+    'technical': { sort: 7, emoji: ':hammer_and_wrench:' },
+    'dev task': { sort: 8, emoji: ':microscope:' },
 };
 const getIssueTypeObject = (issueType) => {
     var _a;
@@ -119,9 +119,8 @@ function run() {
                     return issueTypeOrder;
                 }
             });
-            const summary = yield core.summary.addHeading('JIRA Issues');
+            const summary = yield core.summary.addHeading('JIRA Issues', 2);
             if (issues.length > 0) {
-                summary.addRaw(`${issues.length} JIRA Issues found.`);
                 const table = [
                     [{ data: 'Type', header: true }, { data: 'Key', header: true }, { data: 'Summary', header: true }],
                 ];
@@ -129,14 +128,14 @@ function run() {
                     const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : '';
                     table.push([
                         `${typePrefix}${issue.fields.issuetype.name}`,
-                        `[${issue.key}](${issue.htmlUrl})`,
+                        `<a href="${issue.htmlUrl}">${issue.key}</a>`,
                         issue.fields.summary,
                     ]);
                 }
                 summary.addTable(table);
             }
             else {
-                summary.addRaw('No JIRA Issues found.');
+                summary.addRaw('No JIRA Issues found', true);
             }
             summary.write();
             core.setOutput('issues', issues);
