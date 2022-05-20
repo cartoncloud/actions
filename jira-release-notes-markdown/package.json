@@ -1,5 +1,5 @@
 {
-  "name": "markdown-jira-release-notes-action",
+  "name": "jira-release-notes-markdown-action",
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",

@@ -1,0 +1,20 @@
+name: 'Slack JIRA Release Notes'
+description: 'Generate Slack release notes from a list of JIRA issues'
+inputs:
+  title:
+    description: 'Title for the release notes, i.e. React v1.2.3'
+    required: false
+  jiraIssues:
+    description: 'JSON array of JIRA issues'
+    required: true
+  slackToken:
+    description: 'Slack Bot Token to use to find Slack users by email'
+    required: true
+
+outputs:
+  releaseNotes:
+    description: 'Slack formatted JSON release notes'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

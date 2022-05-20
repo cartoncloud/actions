@@ -25,4 +25,6 @@ Re-usable GitHub Actions
 
 - create-jira-release
 - update-jira-release
-- extract-jira-issues-from-commits
+- jira-issues-from-commits
+- jira-release-notes-markdown
+- jira-release-notes-slack

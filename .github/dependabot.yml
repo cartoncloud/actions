@@ -42,11 +42,16 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "npm"
-    directory: "/extract-jira-issues-from-commits"
+    directory: "/jira-issues-from-commits"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "npm"
-    directory: "/markdown-jira-release-notes"
+    directory: "/jira-release-notes-markdown"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/jira-release-notes-slack"
     schedule:
       interval: "daily"

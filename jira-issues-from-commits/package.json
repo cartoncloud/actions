@@ -1,5 +1,5 @@
 {
-  "name": "extract-jira-issues-from-commits-action",
+  "name": "jira-issues-from-commits-action",
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",
