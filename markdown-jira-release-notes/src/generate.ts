@@ -1,6 +1,6 @@
 import { EOL } from "os";
 
-export async function generate({ issuesJson }: { issuesJson: string }) {
+export function generate({ issuesJson }: { issuesJson: string }) {
   const issues = JSON.parse(issuesJson);
 
   let markdown = '';

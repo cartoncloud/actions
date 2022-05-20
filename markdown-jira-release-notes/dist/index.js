@@ -2,45 +2,34 @@
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 92:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.generate = void 0;
 const os_1 = __nccwpck_require__(37);
 function generate({ issuesJson }) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const issues = JSON.parse(issuesJson);
-        let markdown = '';
-        const addLine = (text) => markdown += text ? `${text}${os_1.EOL}` : os_1.EOL;
-        addLine('## Release Notes');
-        let lastType = null;
-        for (let issue of issues) {
-            const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : '';
-            const issueType = `${typePrefix}${issue.fields.issuetype.name}`;
-            if (lastType !== issueType) {
-                lastType = issueType;
-                addLine();
-                addLine(`### ${issueType}`);
-            }
-            addLine(`- [${issue.key}](${issue.htmlUrl}) ${issue.fields.summary}`);
-        }
-        if (issues.length === 0) {
+    const issues = JSON.parse(issuesJson);
+    let markdown = '';
+    const addLine = (text) => markdown += text ? `${text}${os_1.EOL}` : os_1.EOL;
+    addLine('## Release Notes');
+    let lastType = null;
+    for (let issue of issues) {
+        const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : '';
+        const issueType = `${typePrefix}${issue.fields.issuetype.name}`;
+        if (lastType !== issueType) {
+            lastType = issueType;
             addLine();
-            addLine('_No JIRA changes found_');
+            addLine(`### ${issueType}`);
         }
-        return markdown;
-    });
+        addLine(`- [${issue.key}](${issue.htmlUrl}) ${issue.fields.summary}`);
+    }
+    if (issues.length === 0) {
+        addLine();
+        addLine('_No JIRA changes found_');
+    }
+    return markdown;
 }
 exports.generate = generate;
 
