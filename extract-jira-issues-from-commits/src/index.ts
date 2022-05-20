@@ -72,9 +72,19 @@ async function run() {
 
       if (response.ok) {
         const json = await response.json();
-        json.htmlUrl = `https://${jiraServer}/browse/${issueKey}`;
-        json.fields.issuetype.markdownEmoji = getIssueTypeObject(json.fields.issuetype.name)?.emoji;
-        issues.push(json);
+        issues.push({
+          key: json.key,
+          htmlUrl: `https://${jiraServer}/browse/${issueKey}`,
+          fields: {
+            issuetype: {
+              ...json.fields.issuetype,
+              markdownEmoji: getIssueTypeObject(json.fields.issuetype.name)?.emoji,
+            },
+            summary: json.fields.summary,
+            assignee: json.fields.assignee,
+            reporter: json.fields.reporter,
+          },
+        });
       } else {
         core.warning(`Failed to lookup ${issueKey}.`);
       }

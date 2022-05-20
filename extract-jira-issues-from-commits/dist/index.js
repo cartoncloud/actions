@@ -94,9 +94,16 @@ function run() {
                 });
                 if (response.ok) {
                     const json = yield response.json();
-                    json.htmlUrl = `https://${jiraServer}/browse/${issueKey}`;
-                    json.fields.issuetype.markdownEmoji = (_a = getIssueTypeObject(json.fields.issuetype.name)) === null || _a === void 0 ? void 0 : _a.emoji;
-                    issues.push(json);
+                    issues.push({
+                        key: json.key,
+                        htmlUrl: `https://${jiraServer}/browse/${issueKey}`,
+                        fields: {
+                            issuetype: Object.assign(Object.assign({}, json.fields.issuetype), { markdownEmoji: (_a = getIssueTypeObject(json.fields.issuetype.name)) === null || _a === void 0 ? void 0 : _a.emoji }),
+                            summary: json.fields.summary,
+                            assignee: json.fields.assignee,
+                            reporter: json.fields.reporter,
+                        },
+                    });
                 }
                 else {
                     core.warning(`Failed to lookup ${issueKey}.`);
