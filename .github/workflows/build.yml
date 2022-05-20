@@ -17,6 +17,8 @@ jobs:
           - slack-jira-release-notes
           - update-jira-release
           - update-project-issue
+          - extract-jira-issues-from-commit
+          - markdown-jira-release-notes
 
     steps:
       - uses: actions/checkout@v3

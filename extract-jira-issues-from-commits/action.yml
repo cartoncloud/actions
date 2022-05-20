@@ -23,7 +23,7 @@ inputs:
 
 outputs:
   issues:
-    description: 'JSON list of issues with key, summary, type, typeEmoji, reporter.name, reporter.email, assignee.name, assignee.email and url'
+    description: 'JSON list of issues'
 
 runs:
   using: 'node16'

@@ -5,7 +5,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-  
+
   - package-ecosystem: "github-actions"
     directory: "/deployment-status"
     schedule:
@@ -15,7 +15,7 @@ updates:
     directory: "/branch-dispatch"
     schedule:
       interval: "daily"
-  
+
   - package-ecosystem: "npm"
     directory: "/create-jira-release"
     schedule:
@@ -38,5 +38,15 @@ updates:
 
   - package-ecosystem: "npm"
     directory: "/update-project-issue"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/extract-jira-issues-from-commits"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/markdown-jira-release-notes"
     schedule:
       interval: "daily"

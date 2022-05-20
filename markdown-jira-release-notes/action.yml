@@ -1,0 +1,14 @@
+name: 'Markdown JIRA Release Notes'
+description: 'Generate markdown release notes from a list of JIRA issues'
+inputs:
+  jiraIssues:
+    description: 'JSON array of JIRA issues'
+    required: true
+
+outputs:
+  releaseNotes:
+    description: 'Markdown formatted release notes'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
