@@ -21,7 +21,7 @@ async function getSlackUserId({ email, token }: { email: string, token: string }
 
 export async function generate(
   { title, issuesJson, slackToken }: {
-    title: string,
+    title?: string | null,
     issuesJson: string,
     slackToken: string,
   },
@@ -47,12 +47,14 @@ export async function generate(
   }
 
   core.info(`Generating release notes...`);
+  const titleSuffix = title ? ` / ${title}` : '';
+  const messageTitle = `:clipboard: *Release Notes*${titleSuffix}`;
   const slackMessage: any = {
-    text: `:clipboard: *${title}*`,
+    text: messageTitle,
     blocks: [
       {
-        type: 'header',
-        text: { type: 'plain_text', text: title, emoji: true },
+        type: 'context',
+        elements: [{ type: 'mrkdwn', text: messageTitle }],
       },
     ],
   };
@@ -62,18 +64,22 @@ export async function generate(
     const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : '';
     const issueType = `${typePrefix}${issue.fields.issuetype.name}`;
 
-    if (lastType !== issueType) {
+    const isFirstIssueForType = lastType !== issueType;
+    if (isFirstIssueForType) {
       lastType = issueType;
 
       slackMessage.blocks.push(
         {
-          type: 'section',
+          type: 'header',
           text: {
-            type: 'mrkdwn',
-            text: `${issueType}`,
+            type: 'plain_text',
+            text: issueType,
+            emoji: true,
           }
         }
       );
+    } else {
+      slackMessage.blocks.push({ type: 'divider' });
     }
 
     slackMessage.blocks.push(
@@ -101,7 +107,6 @@ export async function generate(
           }
         ]
       },
-      { type: 'divider' },
     );
   }
 

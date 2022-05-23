@@ -8,11 +8,36 @@ describe('generate', () => {
       slackToken: '',
     });
     expect(result).toEqual({
-      text: ':clipboard: *My App v1.2.3*',
+      text: ':clipboard: *Release Notes* / My App v1.2.3',
       blocks: [
         {
-          type: 'header',
-          text: { type: 'plain_text', text: 'My App v1.2.3', emoji: true },
+          type: 'context',
+          elements: [
+            { type: 'mrkdwn', text: ':clipboard: *Release Notes* / My App v1.2.3' },
+          ],
+        },
+        {
+          type: 'section',
+          text: { type: 'mrkdwn', text: '_No JIRA changes found_' },
+        },
+      ],
+    });
+  });
+
+  it('supports missing title', async () => {
+    const result = await generate({
+      title: undefined,
+      issuesJson: '[]',
+      slackToken: '',
+    });
+    expect(result).toEqual({
+      text: ':clipboard: *Release Notes*',
+      blocks: [
+        {
+          type: 'context',
+          elements: [
+            { type: 'mrkdwn', text: ':clipboard: *Release Notes*' },
+          ],
         },
         {
           type: 'section',
@@ -31,21 +56,20 @@ describe('generate', () => {
     });
 
     expect(result).toEqual({
-      text: ":clipboard: *My App v1.2.3*",
+      text: ":clipboard: *Release Notes* / My App v1.2.3",
       blocks: [
+        {
+          type: 'context',
+          elements: [
+            { type: 'mrkdwn', text: ':clipboard: *Release Notes* / My App v1.2.3' },
+          ],
+        },
         {
           type: "header",
           text: {
             type: "plain_text",
-            text: "My App v1.2.3",
-            emoji: true
-          }
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: ":book: Story"
+            text: ":book: Story",
+            emoji: true,
           }
         },
         {
@@ -73,13 +97,11 @@ describe('generate', () => {
           ]
         },
         {
-          type: "divider"
-        },
-        {
-          type: "section",
+          type: "header",
           text: {
-            type: "mrkdwn",
-            text: ":bug: Bug"
+            type: "plain_text",
+            text: ":bug: Bug",
+            emoji: true,
           }
         },
         {
@@ -134,13 +156,11 @@ describe('generate', () => {
           ]
         },
         {
-          type: "divider"
-        },
-        {
-          type: "section",
+          type: "header",
           text: {
-            type: "mrkdwn",
-            text: ":hammer_and_wrench: Technical"
+            type: "plain_text",
+            text: ":hammer_and_wrench: Technical",
+            emoji: true,
           }
         },
         {
@@ -193,9 +213,6 @@ describe('generate', () => {
               text: "*Jack Sparrow*"
             }
           ]
-        },
-        {
-          type: "divider"
         }
       ]
     });

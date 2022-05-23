@@ -83,12 +83,14 @@ function generate({ title, issuesJson, slackToken }) {
             }
         }
         core.info(`Generating release notes...`);
+        const titleSuffix = title ? ` / ${title}` : '';
+        const messageTitle = `:clipboard: *Release Notes*${titleSuffix}`;
         const slackMessage = {
-            text: `:clipboard: *${title}*`,
+            text: messageTitle,
             blocks: [
                 {
-                    type: 'header',
-                    text: { type: 'plain_text', text: title, emoji: true },
+                    type: 'context',
+                    elements: [{ type: 'mrkdwn', text: messageTitle }],
                 },
             ],
         };
@@ -96,15 +98,20 @@ function generate({ title, issuesJson, slackToken }) {
         for (const issue of issues) {
             const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : '';
             const issueType = `${typePrefix}${issue.fields.issuetype.name}`;
-            if (lastType !== issueType) {
+            const isFirstIssueForType = lastType !== issueType;
+            if (isFirstIssueForType) {
                 lastType = issueType;
                 slackMessage.blocks.push({
-                    type: 'section',
+                    type: 'header',
                     text: {
-                        type: 'mrkdwn',
-                        text: `${issueType}`,
+                        type: 'plain_text',
+                        text: issueType,
+                        emoji: true,
                     }
                 });
+            }
+            else {
+                slackMessage.blocks.push({ type: 'divider' });
             }
             slackMessage.blocks.push({
                 type: 'section',
@@ -128,7 +135,7 @@ function generate({ title, issuesJson, slackToken }) {
                         text: emailsToUser[issue.fields.assignee.emailAddress],
                     }
                 ]
-            }, { type: 'divider' });
+            });
         }
         if (issues.length === 0) {
             core.warning('No JIRA changes found');
@@ -190,10 +197,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const generate_1 = __nccwpck_require__(92);
 const core = __importStar(__nccwpck_require__(186));
 function run() {
-    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const title = (_a = core.getInput('title', { required: false })) !== null && _a !== void 0 ? _a : 'Release Notes';
+            const title = core.getInput('title', { required: false });
             const issues = core.getInput('jiraIssues', { required: true });
             const slackToken = core.getInput('slackToken', { required: true });
             const slackJson = yield (0, generate_1.generate)({ title: title, issuesJson: issues, slackToken: slackToken });
