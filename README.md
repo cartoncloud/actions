@@ -18,7 +18,6 @@ Re-usable GitHub Actions
 
 - branch-dispatch
 - find-issues-by-field
-- slack-jira-release-notes
 - update-project-issue
 
 ### Typescript Actions

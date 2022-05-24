@@ -27,11 +27,6 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "npm"
-    directory: "/slack-jira-release-notes"
-    schedule:
-      interval: "daily"
-
-  - package-ecosystem: "npm"
     directory: "/update-jira-release"
     schedule:
       interval: "daily"
