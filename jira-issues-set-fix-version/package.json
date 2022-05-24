@@ -16,7 +16,7 @@
   "dependencies": {
     "@actions/core": "^1.8.2",
     "@actions/exec": "^1.1.1",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^3.2.4"
   },
   "devDependencies": {
     "@babel/core": "^7.18.0",
