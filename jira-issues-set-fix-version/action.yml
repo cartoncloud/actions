@@ -1,0 +1,22 @@
+name: 'JIRA Issues Set Fix Version'
+description: 'Sets the fix version for a list of JIRA issues'
+inputs:
+  jiraServer:
+    description: 'JIRA server address i.e. support.cartoncloud.com'
+    required: true
+  jiraUsername:
+    description: 'JIRA username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'JIRA password to use to call the API'
+    required: true
+  jiraIssues:
+    description: 'JSON array of JIRA issues'
+    required: true
+  jiraReleaseId:
+    description: 'JIRA release id to add issues to'
+    required: true
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

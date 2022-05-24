@@ -18,6 +18,7 @@ jobs:
           - update-jira-release
           - update-project-issue
           - jira-issues-from-commit
+          - jira-issues-set-fix-version
           - jira-release-notes-markdown
           - jira-release-notes-slack
 
