@@ -11,3 +11,8 @@ JSON array of JIRA issues
 
 ### slackToken (required)
 Slack Bot Token to use to find Slack users by email
+
+## Outputs
+
+### releaseNotes
+Slack formatted JSON release notes

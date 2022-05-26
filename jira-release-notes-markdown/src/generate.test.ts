@@ -3,6 +3,16 @@ import { EOL } from "os";
 
 describe('generate', () => {
   it('displays message when no issues given', async () => {
+    const result = generate({ title: 'My App v1.2.3', issuesJson: '[]' });
+
+    let expected = '';
+    expected += '## My App v1.2.3' + EOL + EOL;
+    expected += '_No JIRA changes found_' + EOL;
+
+    expect(result).toEqual(expected);
+  });
+
+  it('supports missing title', async () => {
     const result = generate({ issuesJson: '[]' });
 
     let expected = '';

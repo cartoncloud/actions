@@ -9,11 +9,11 @@
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.generate = void 0;
 const os_1 = __nccwpck_require__(37);
-function generate({ issuesJson }) {
+function generate({ title, issuesJson }) {
     const issues = JSON.parse(issuesJson);
     let markdown = '';
     const addLine = (text) => markdown += text ? `${text}${os_1.EOL}` : os_1.EOL;
-    addLine('## Release Notes');
+    addLine(`## ${title !== null && title !== void 0 ? title : 'Release Notes'}`);
     let lastType = null;
     for (let issue of issues) {
         const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : '';
@@ -79,8 +79,9 @@ const core = __importStar(__nccwpck_require__(186));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            const title = core.getInput('title', { required: false });
             const issues = core.getInput('jiraIssues', { required: true });
-            const markdown = (0, generate_1.generate)({ issuesJson: issues });
+            const markdown = (0, generate_1.generate)({ title: title, issuesJson: issues });
             core.setOutput('releaseNotes', markdown);
         }
         catch (error) {

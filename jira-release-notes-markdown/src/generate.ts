@@ -1,13 +1,13 @@
 import { EOL } from "os";
 
-export function generate({ issuesJson }: { issuesJson: string }) {
+export function generate({ title, issuesJson }: { title?: string | null, issuesJson: string }) {
   const issues = JSON.parse(issuesJson);
 
   let markdown = '';
 
   const addLine = (text?: string) => markdown += text ? `${text}${EOL}` : EOL;
 
-  addLine('## Release Notes');
+  addLine(`## ${title ?? 'Release Notes'}`);
 
   let lastType = null;
   for (let issue of issues) {
