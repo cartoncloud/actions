@@ -21,6 +21,7 @@ jobs:
           - jira-release-notes-markdown
           - jira-release-notes-slack
           - delete-draft-github-releases
+          - find-github-release-by-name
 
     steps:
       - uses: actions/checkout@v3

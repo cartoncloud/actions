@@ -25,6 +25,7 @@ Re-usable GitHub Actions
 - create-jira-release
 - update-jira-release
 - delete-draft-github-releases
+- find-github-release-by-name
 - jira-issues-from-commits
 - jira-issues-set-fix-version
 - jira-release-notes-markdown
