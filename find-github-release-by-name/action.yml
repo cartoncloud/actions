@@ -1,0 +1,18 @@
+name: 'Find GitHub Release by Name'
+description: 'Finds a recent GitHub release with the given name'
+inputs:
+  name:
+    description: 'The name of the release'
+    required: true
+  token:
+    description: 'GitHub token'
+    default: ${{ github.token }}
+    required: false
+
+outputs:
+  release:
+    description: The matching release
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

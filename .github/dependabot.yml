@@ -60,3 +60,8 @@ updates:
     directory: "/delete-draft-github-releases"
     schedule:
       interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/find-github-release-by-name"
+    schedule:
+      interval: "daily"
