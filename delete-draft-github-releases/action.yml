@@ -1,0 +1,14 @@
+name: 'Delete Draft GitHub Releases'
+description: 'Generate markdown release notes from a list of JIRA issues'
+inputs:
+  name:
+    description: 'If provided, only delete drafts that have the given name'
+    required: false
+  token:
+    description: 'GitHub token'
+    default: ${{ github.token }}
+    required: false
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

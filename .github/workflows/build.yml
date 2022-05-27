@@ -20,6 +20,7 @@ jobs:
           - jira-issues-set-fix-version
           - jira-release-notes-markdown
           - jira-release-notes-slack
+          - delete-draft-github-releases
 
     steps:
       - uses: actions/checkout@v3
