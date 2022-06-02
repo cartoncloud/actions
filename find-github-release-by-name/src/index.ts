@@ -1,10 +1,12 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import * as fs from "fs";
 
 async function run() {
   try {
     const name = core.getInput('name', { required: false });
     const token = core.getInput('token', { required: true });
+    const releaseAsset = core.getInput('releaseAsset', { required: false });
 
     const octokit = github.getOctokit(token);
 
@@ -27,6 +29,26 @@ async function run() {
     for (const release of listReleasesResponse.data) {
       if (release.name === name) {
         core.setOutput('release', release);
+
+        if (release.assets.length > 0 && releaseAsset) {
+          const asset = release.assets.find((it) => it.name === releaseAsset);
+          if (asset) {
+            const file = fs.createWriteStream(asset.name);
+            const buffer = await octokit.rest.repos.getReleaseAsset({
+              headers: {
+                Accept: 'application/octet-stream',
+              },
+              asset_id: asset.id,
+              repo: repo,
+              owner: owner,
+            });
+            file.write(buffer);
+            file.end();
+          } else {
+            core.warning(`Unable to find asset with name ${releaseAsset}`)
+          }
+        }
+
         return;
       }
     }

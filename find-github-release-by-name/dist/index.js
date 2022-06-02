@@ -41,11 +41,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
+const fs = __importStar(__nccwpck_require__(7147));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const name = core.getInput('name', { required: false });
             const token = core.getInput('token', { required: true });
+            const releaseAsset = core.getInput('releaseAsset', { required: false });
             const octokit = github.getOctokit(token);
             // Get owner and repo from context of payload that triggered the action
             const { owner, repo } = github.context.repo;
@@ -63,6 +65,25 @@ function run() {
             for (const release of listReleasesResponse.data) {
                 if (release.name === name) {
                     core.setOutput('release', release);
+                    if (release.assets.length > 0 && releaseAsset) {
+                        const asset = release.assets.find((it) => it.name === releaseAsset);
+                        if (asset) {
+                            const file = fs.createWriteStream(asset.name);
+                            const buffer = yield octokit.rest.repos.getReleaseAsset({
+                                headers: {
+                                    Accept: 'application/octet-stream',
+                                },
+                                asset_id: asset.id,
+                                repo: repo,
+                                owner: owner,
+                            });
+                            file.write(buffer);
+                            file.end();
+                        }
+                        else {
+                            core.warning(`Unable to find asset with name ${releaseAsset}`);
+                        }
+                    }
                     return;
                 }
             }
