@@ -4,9 +4,6 @@ inputs:
   name:
     description: 'The name of the release'
     required: true
-  releaseAsset:
-    description: 'Optional release asset to download'
-    required: false
   token:
     description: 'GitHub token'
     default: ${{ github.token }}

@@ -7,7 +7,10 @@ export function generate({ title, issuesJson }: { title?: string | null, issuesJ
 
   const addLine = (text?: string) => markdown += text ? `${text}${EOL}` : EOL;
 
-  addLine(`## ${title ?? 'Release Notes'}`);
+  if (title) {
+    addLine(`## ${title}`);
+    addLine();
+  }
 
   let lastType = null;
   for (let issue of issues) {
@@ -15,8 +18,10 @@ export function generate({ title, issuesJson }: { title?: string | null, issuesJ
     const issueType = `${typePrefix}${issue.fields.issuetype.name}`;
 
     if (lastType !== issueType) {
+      if (lastType) {
+        addLine();
+      }
       lastType = issueType;
-      addLine();
       addLine(`### ${issueType}`);
     }
 
@@ -24,7 +29,6 @@ export function generate({ title, issuesJson }: { title?: string | null, issuesJ
   }
 
   if (issues.length === 0) {
-    addLine();
     addLine('_No JIRA changes found_');
   }
 

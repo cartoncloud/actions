@@ -16,7 +16,6 @@ describe('generate', () => {
     const result = generate({ issuesJson: '[]' });
 
     let expected = '';
-    expected += '## Release Notes' + EOL + EOL;
     expected += '_No JIRA changes found_' + EOL;
 
     expect(result).toEqual(expected);
@@ -27,7 +26,6 @@ describe('generate', () => {
     const result = generate({ issuesJson: json });
 
     let expected = '';
-    expected += '## Release Notes' + EOL + EOL;
     expected += '### :book: Story' + EOL;
     expected += '- [CC-21358](https://support.example.com/browse/CC-21358) React / Convert date pickers to use format configured in Org Settings' + EOL + EOL;
     expected += '### :bug: Bug' + EOL;

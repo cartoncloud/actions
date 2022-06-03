@@ -6,9 +6,6 @@ Finds a recent GitHub release with the given name
 ### name (required)
 The name of the release
 
-### releaseAsset (optional)
-Optional release asset to download
-
 ## Outputs
 
 ### release
