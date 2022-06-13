@@ -38,7 +38,7 @@ async function run() {
     });
 
     if (response.ok) {
-      const jsonResponse = await response.json();
+      const jsonResponse: any = await response.json();
       core.info(`Updated release ${jsonResponse.id}`);
     } else {
       core.error(response.statusText);

@@ -47,7 +47,7 @@ runs:
   using: "composite"
   steps:
     - name: Update environment issue (started)
-      uses: cartoncloud/actions/update-project-issue@main
+      uses: cartoncloud/actions/github-update-project-issue@v2
       if: inputs.status == 'started' && inputs.projectNumber != '' && inputs.projectsToken != ''
       with:
         token: ${{ inputs.projectsToken }}
@@ -58,7 +58,7 @@ runs:
         value: ":hourglass_flowing_sand: Deploying…"
 
     - name: Update environment issue (success)
-      uses: cartoncloud/actions/update-project-issue@main
+      uses: cartoncloud/actions/github-update-project-issue@v2
       if: inputs.status == 'success' && inputs.projectNumber != '' && inputs.projectsToken != ''
       with:
         token: ${{ inputs.projectsToken }}
@@ -69,7 +69,7 @@ runs:
         value: ${{ inputs.revision }}
 
     - name: Update environment issue (failed)
-      uses: cartoncloud/actions/update-project-issue@main
+      uses: cartoncloud/actions/github-update-project-issue@v2
       if: inputs.status == 'failed' && inputs.projectNumber != '' && inputs.projectsToken != ''
       with:
         token: ${{ inputs.projectsToken }}

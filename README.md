@@ -16,17 +16,17 @@ Re-usable GitHub Actions
 
 ### Javascript Actions
 
-- branch-dispatch
-- find-issues-by-field
-- update-project-issue
+- github-branch-dispatch
+- github-find-issues-by-field
+- github-update-project-issue
 
 ### Typescript Actions
 
-- update-jira-release
-- delete-draft-github-releases
-- find-github-release-by-name
+- github-delete-draft-releases
+- github-release-find-by-name
 - jira-create-project-version
 - jira-issues-from-commits
 - jira-issues-set-fix-version
 - jira-release-notes-markdown
 - jira-release-notes-slack
+- jira-update-project-version

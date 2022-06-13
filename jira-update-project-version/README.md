@@ -1,5 +1,5 @@
-# Update JIRA Release
-Action to update an existing JIRA (self-hosted) release
+# Update JIRA Project Version
+Action to update an existing JIRA  release
 
 ## Inputs
 
@@ -10,7 +10,7 @@ JIRA username to use to call the API
 JIRA password to use to call the API
 
 ### serverAddress (required)
-JIRA server address i.e. support.cartoncloud.com
+JIRA server address i.e. acme.atlassian.net
 
 ### projectId (required)
 The id of the JIRA project the release exists in

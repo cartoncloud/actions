@@ -1,5 +1,5 @@
-name: 'Update JIRA Release'
-description: 'Updates an existing JIRA (self-hosted) release'
+name: 'Update JIRA Project Version'
+description: 'Updates an existing JIRA release'
 inputs:
   username:
     description: 'JIRA username to use to call the API'
@@ -8,7 +8,7 @@ inputs:
     description: 'JIRA password to use to call the API'
     required: true
   serverAddress:
-    description: 'JIRA server address i.e. support.cartoncloud.com'
+    description: 'JIRA server address i.e. acme.atlassian.net'
     required: true
   projectId:
     description: 'The id of the JIRA project the release exists in'
