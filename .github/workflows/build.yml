@@ -14,6 +14,7 @@ jobs:
           - github-branch-dispatch
           - github-delete-draft-releases
           - github-find-issues-by-field
+          - github-global-autolink
           - github-release-find-by-name
           - github-update-project-issue
           - jira-create-project-version

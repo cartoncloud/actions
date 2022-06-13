@@ -23,6 +23,7 @@ Re-usable GitHub Actions
 ### Typescript Actions
 
 - github-delete-draft-releases
+- github-global-autolink
 - github-release-find-by-name
 - jira-create-project-version
 - jira-issues-from-commits

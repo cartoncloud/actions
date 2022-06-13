@@ -1,0 +1,17 @@
+name: 'Org-level Autolink References'
+description: 'Add autolink references to all organisation repositories'
+inputs:
+  prefix:
+    description: 'This prefix appended by a number will generate a link any time it is found in an issue, pull request, or commit.'
+    required: true
+  targetUrl:
+    description: 'The URL must contain <num> for the reference number.'
+    required: true
+  token:
+    description: 'GitHub token'
+    default: ${{ github.token }}
+    required: false
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
