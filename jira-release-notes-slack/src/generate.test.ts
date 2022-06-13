@@ -6,6 +6,7 @@ describe('generate', () => {
       title: 'My App v1.2.3',
       issuesJson: '[]',
       slackToken: '',
+      repoUrl: '',
     });
     expect(result).toEqual({
       text: ':clipboard: *Release Notes* / My App v1.2.3',
@@ -29,6 +30,7 @@ describe('generate', () => {
       title: undefined,
       issuesJson: '[]',
       slackToken: '',
+      repoUrl: '',
     });
     expect(result).toEqual({
       text: ':clipboard: *Release Notes*',
@@ -53,6 +55,7 @@ describe('generate', () => {
       title: 'My App v1.2.3',
       issuesJson: json,
       slackToken: '',
+      repoUrl: '',
     });
 
     expect(result).toEqual({
@@ -65,11 +68,10 @@ describe('generate', () => {
           ],
         },
         {
-          type: "header",
+          type: "section",
           text: {
-            type: "plain_text",
-            text: ":book: Story",
-            emoji: true,
+            type: "mrkdwn",
+            text: "*:book: Story*",
           }
         },
         {
@@ -97,11 +99,13 @@ describe('generate', () => {
           ]
         },
         {
-          type: "header",
+          type: "divider"
+        },
+        {
+          type: "section",
           text: {
-            type: "plain_text",
-            text: ":bug: Bug",
-            emoji: true,
+            type: "mrkdwn",
+            text: "*:bug: Bug*",
           }
         },
         {
@@ -156,11 +160,13 @@ describe('generate', () => {
           ]
         },
         {
-          type: "header",
+          type: "divider"
+        },
+        {
+          type: "section",
           text: {
-            type: "plain_text",
-            text: ":hammer_and_wrench: Technical",
-            emoji: true,
+            type: "mrkdwn",
+            text: "*:hammer_and_wrench: Technical*",
           }
         },
         {
@@ -213,8 +219,61 @@ describe('generate', () => {
               text: "*Jack Sparrow*"
             }
           ]
-        }
+        },
+        {
+          type: "divider"
+        },
       ]
+    });
+  });
+
+  it('support commits', async () => {
+    const otherCommitsJson = '[{"shortHash": "a88f1f03", "message": "Integrated new editor UI into existing structure"}, {"shortHash": "c60c58ce", "message": "Fix lint"}]';
+    const result = await generate({
+      title: 'My App v1.2.3',
+      issuesJson: '[]',
+      otherCommitsJson: otherCommitsJson,
+      slackToken: '',
+      repoUrl: 'https://github.com/myorg/myrepo',
+    });
+
+    expect(result).toEqual({
+      text: ':clipboard: *Release Notes* / My App v1.2.3',
+      blocks: [
+        {
+          type: 'context',
+          elements: [
+            { type: 'mrkdwn', text: ':clipboard: *Release Notes* / My App v1.2.3' },
+          ],
+        },
+        {
+          type: 'section',
+          text: { type: 'mrkdwn', text: '_No JIRA changes found_' },
+        },
+        {
+          type: 'section',
+          text: { type: 'mrkdwn', text: '*Other Commits*' },
+        },
+
+        {
+          elements: [
+            {
+              type: 'mrkdwn',
+              text: '<https://github.com/myorg/myrepo/commit/a88f1f03|a88f1f03>\tIntegrated new editor UI into existing structure'
+            },
+          ],
+          type: 'context',
+        },
+        {
+          elements: [
+            {
+              type: 'mrkdwn',
+              text: '<https://github.com/myorg/myrepo/commit/c60c58ce|c60c58ce>\tFix lint'
+            },
+          ],
+          type: 'context',
+        },
+      ],
     });
   });
 });

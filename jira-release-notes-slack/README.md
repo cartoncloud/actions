@@ -9,6 +9,9 @@ Title for the release notes, i.e. React v1.2.3
 ### jiraIssues (required)
 JSON array of JIRA issues
 
+### otherCommits (optional)
+JSON list of commits without a JIRA reference (shortHash and message)
+
 ### slackToken (required)
 Slack Bot Token to use to find Slack users by email
 

@@ -11,7 +11,7 @@ async function getSlackUserId({ email, token }: { email: string, token: string }
   });
 
   if (response.ok) {
-    const json = await response.json();
+    const json: any = await response.json();
     if (json.user) {
       return json.user.id;
     }
@@ -20,13 +20,16 @@ async function getSlackUserId({ email, token }: { email: string, token: string }
 }
 
 export async function generate(
-  { title, issuesJson, slackToken }: {
+  { title, issuesJson, otherCommitsJson, slackToken, repoUrl }: {
     title?: string | null,
     issuesJson: string,
+    otherCommitsJson?: string | null,
     slackToken: string,
+    repoUrl: string,
   },
 ) {
   const issues = JSON.parse(issuesJson);
+  const otherCommits: { shortHash: string, message: string }[] = otherCommitsJson ? JSON.parse(otherCommitsJson) : [];
 
   const emailsToUser: { [email: string]: string } = {};
 
@@ -68,18 +71,13 @@ export async function generate(
     if (isFirstIssueForType) {
       lastType = issueType;
 
-      slackMessage.blocks.push(
-        {
-          type: 'header',
-          text: {
-            type: 'plain_text',
-            text: issueType,
-            emoji: true,
-          }
+      slackMessage.blocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*${issueType}*`
         }
-      );
-    } else {
-      slackMessage.blocks.push({ type: 'divider' });
+      });
     }
 
     slackMessage.blocks.push(
@@ -107,6 +105,7 @@ export async function generate(
           }
         ]
       },
+      { type: 'divider' },
     );
   }
 
@@ -119,6 +118,28 @@ export async function generate(
         text: '_No JIRA changes found_'
       }
     });
+  }
+
+  if (otherCommits.length > 0) {
+    slackMessage.blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: '*Other Commits*'
+      }
+    });
+
+    for (let it of otherCommits) {
+      slackMessage.blocks.push({
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: `<${repoUrl}/commit/${it.shortHash}|${it.shortHash}>\t${it.message}`
+          }
+        ]
+      });
+    }
   }
 
   core.info(`Release notes generated.`);

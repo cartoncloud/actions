@@ -7,6 +7,9 @@ inputs:
   jiraIssues:
     description: 'JSON array of JIRA issues'
     required: true
+  otherCommits:
+    description: 'JSON list of commits without a JIRA reference (shortHash and message)'
+    required: false
 
 outputs:
   releaseNotes:

@@ -37,4 +37,18 @@ describe('generate', () => {
 
     expect(result).toEqual(expected);
   });
+
+  it('support commits', async () => {
+    const otherCommitsJson = '[{"shortHash": "a88f1f03", "message": "Integrated new editor UI into existing structure"}, {"shortHash": "c60c58ce", "message": "Fix lint"}]';
+    const result = generate({ title: 'My App v1.2.3', issuesJson: '[]', otherCommitsJson: otherCommitsJson });
+
+    let expected = '';
+    expected += '## My App v1.2.3' + EOL + EOL;
+    expected += '_No JIRA changes found_' + EOL + EOL;
+    expected += '### Other Commits' + EOL + EOL;
+    expected += '- `a88f1f03` Integrated new editor UI into existing structure' + EOL;
+    expected += '- `c60c58ce` Fix lint' + EOL;
+
+    expect(result).toEqual(expected);
+  });
 });

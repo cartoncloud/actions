@@ -4,7 +4,7 @@ Action to extract JIRA issues from commit messages
 ## Inputs
 
 ### jiraServer (required)
-JIRA server address i.e. support.cartoncloud.com
+JIRA server address i.e. acme.atlassian.net
 
 ### jiraUsername (required)
 JIRA username to use to call the API

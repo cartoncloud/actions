@@ -1,7 +1,14 @@
 import { EOL } from "os";
 
-export function generate({ title, issuesJson }: { title?: string | null, issuesJson: string }) {
+export function generate(
+  { title, issuesJson, otherCommitsJson }: {
+    title?: string | null,
+    issuesJson: string,
+    otherCommitsJson?: string | null,
+  },
+) {
   const issues = JSON.parse(issuesJson);
+  const otherCommits: { shortHash: string, message: string }[] = otherCommitsJson ? JSON.parse(otherCommitsJson) : [];
 
   let markdown = '';
 
@@ -30,6 +37,15 @@ export function generate({ title, issuesJson }: { title?: string | null, issuesJ
 
   if (issues.length === 0) {
     addLine('_No JIRA changes found_');
+  }
+
+  if (otherCommits.length > 0) {
+    addLine();
+    addLine('### Other Commits');
+    addLine();
+    for (let commit of otherCommits) {
+      addLine(`- \`${commit.shortHash}\` ${commit.message}`)
+    }
   }
 
   return markdown;

@@ -40,20 +40,30 @@ async function run() {
       `git rev-list --topo-order ${refFrom}...${refTo} --oneline`,
       undefined,
       { silent: true },
-      );
+    );
 
     if (commitsCommand.exitCode !== 0) {
       core.setFailed(commitsCommand.stdout);
       return;
     }
 
-    const jiraIssueKeys: string[] = [];
+    const jiraKeyRegex = jiraProjectKeys.split(',').map((it) => `(${it})`).join('|');
+    const jiraIssueKeys = new Set<string>();
+    const additionalCommits: { shortHash: string, message: string }[] = [];
 
-    for (let jiraKey of jiraProjectKeys.split(',')) {
-      jiraIssueKeys.push(...new Set(commitsCommand.stdout.match(new RegExp(`${jiraKey}-\\d+`, 'gm'))));
+    for (let commitLine of commitsCommand.stdout.split('\n')) {
+      const jiraMatches = commitLine.match(new RegExp(`(${jiraKeyRegex})-\\d+`, 'gmi')) ?? [];
+      if (jiraMatches.length > 0) {
+        for (let match of jiraMatches) {
+          jiraIssueKeys.add(match);
+        }
+      } else {
+        const parts = commitLine.split(' ');
+        additionalCommits.push({ shortHash: parts[0], message: parts[1] });
+      }
     }
 
-    core.info(`Found ${jiraIssueKeys.length} JIRA issues`);
+    core.info(`Found ${jiraIssueKeys.size} JIRA issues`);
 
     core.info(`Retrieving JIRA issue details...`);
 
@@ -71,7 +81,7 @@ async function run() {
       });
 
       if (response.ok) {
-        const json = await response.json();
+        const json: any = await response.json();
         issues.push({
           key: json.key,
           htmlUrl: `https://${jiraServer}/browse/${issueKey}`,
@@ -124,9 +134,24 @@ async function run() {
     } else {
       summary.addRaw('No JIRA Issues found', true);
     }
+
+    if (additionalCommits.length > 0) {
+      summary.addHeading('Other Commits', 2);
+      const table: SummaryTableRow[] = [
+        [{ data: 'Commit', header: true }],
+        [{ data: 'Message', header: true }],
+      ];
+
+      for (let commit of additionalCommits) {
+        table.push([commit.shortHash, commit.message]);
+      }
+      summary.addTable(table);
+    }
+
     summary.write();
 
     core.setOutput('issues', issues);
+    core.setOutput('otherCommits', additionalCommits);
   } catch (error: any) {
     core.setFailed(error.message);
   }
