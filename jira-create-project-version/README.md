@@ -1,5 +1,5 @@
-# Create JIRA Release
-Action to create a new JIRA (self-hosted) release
+# Create JIRA Project Version
+Action to create a new JIRA release
 
 ## Inputs
 
@@ -10,7 +10,7 @@ JIRA username to use to call the API
 JIRA password to use to call the API
 
 ### serverAddress (required)
-JIRA server address i.e. support.cartoncloud.com
+JIRA server address i.e. acme.atlassian.net
 
 ### projectId (required)
 The id of the JIRA project to create the release in
