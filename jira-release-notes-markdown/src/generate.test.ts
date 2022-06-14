@@ -46,8 +46,8 @@ describe('generate', () => {
     expected += '## My App v1.2.3' + EOL + EOL;
     expected += '_No JIRA changes found_' + EOL + EOL;
     expected += '### Other Commits' + EOL + EOL;
-    expected += '- `a88f1f03` Integrated new editor UI into existing structure' + EOL;
-    expected += '- `c60c58ce` Fix lint' + EOL;
+    expected += '- a88f1f03 Integrated new editor UI into existing structure' + EOL;
+    expected += '- c60c58ce Fix lint' + EOL;
 
     expect(result).toEqual(expected);
   });

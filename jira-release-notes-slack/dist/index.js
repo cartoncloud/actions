@@ -12531,12 +12531,14 @@ async function run() {
   try {
     const title = core2.getInput("title", { required: false });
     const issues = core2.getInput("jiraIssues", { required: true });
+    const otherCommits = core2.getInput("otherCommits", { required: true });
     const slackToken = core2.getInput("slackToken", { required: true });
     const { owner, repo } = github.context.repo;
     const repoUrl = `https://github.com/${owner}/${repo}`;
     const slackJson = await generate({
       title,
       issuesJson: issues,
+      otherCommitsJson: otherCommits,
       slackToken,
       repoUrl
     });

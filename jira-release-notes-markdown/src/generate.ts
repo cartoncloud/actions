@@ -44,7 +44,7 @@ export function generate(
     addLine('### Other Commits');
     addLine();
     for (let commit of otherCommits) {
-      addLine(`- \`${commit.shortHash}\` ${commit.message}`)
+      addLine(`- ${commit.shortHash} ${commit.message}`)
     }
   }
 
