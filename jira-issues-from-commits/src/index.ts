@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import * as github from "@actions/github";
 import { SummaryTableRow } from "@actions/core/lib/summary";
 
 type IssueTypeObject = {
@@ -33,6 +34,9 @@ async function run() {
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
     const jiraProjectKeys = core.getInput('jiraProjectKeys', { required: true });
 
+    const { owner, repo } = github.context.repo;
+    const repoUrl = `https://github.com/${owner}/${repo}`;
+
     const refFrom = core.getInput('refFrom', { required: true });
     const refTo = core.getInput('refTo', { required: true });
 
@@ -57,9 +61,9 @@ async function run() {
         for (let match of jiraMatches) {
           jiraIssueKeys.add(match);
         }
-      } else {
-        const parts = commitLine.split(' ');
-        additionalCommits.push({ shortHash: parts[0], message: parts[1] });
+      } else if (commitLine.trim()) {
+        const [first, ...rest] = commitLine.split('-');
+        additionalCommits.push({ shortHash: first, message: rest.join(' ') });
       }
     }
 
@@ -146,7 +150,10 @@ async function run() {
       ];
 
       for (let commit of additionalCommits) {
-        table.push([`${commit.shortHash}`, `${commit.message}`]);
+        table.push([
+          `<a href="${repoUrl}/commit/${commit.shortHash}">${commit.shortHash}</a>`,
+          `${commit.message}`,
+        ]);
       }
       summary.addTable(table);
     }
