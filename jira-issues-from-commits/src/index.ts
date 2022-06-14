@@ -62,7 +62,7 @@ async function run() {
           jiraIssueKeys.add(match);
         }
       } else if (commitLine.trim()) {
-        const [first, ...rest] = commitLine.split('-');
+        const [first, ...rest] = commitLine.split(' ');
         additionalCommits.push({ shortHash: first, message: rest.join(' ') });
       }
     }
