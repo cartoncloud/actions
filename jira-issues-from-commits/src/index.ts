@@ -138,8 +138,7 @@ async function run() {
     if (additionalCommits.length > 0) {
       summary.addHeading('Other Commits', 2);
       const table: SummaryTableRow[] = [
-        [{ data: 'Commit', header: true }],
-        [{ data: 'Message', header: true }],
+        [{ data: 'Commit', header: true }, { data: 'Message', header: true }],
       ];
 
       for (let commit of additionalCommits) {
