@@ -1,8 +1,9 @@
 name: Update Autolinks
 
 on:
+  schedule:
+    - cron: 0 16 * * * # 4pm UTC (2am AEST) Daily
   workflow_dispatch:
-  pull_request:
 
 jobs:
   test:
