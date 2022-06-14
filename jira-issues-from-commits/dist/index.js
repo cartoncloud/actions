@@ -8267,6 +8267,7 @@ async function run() {
         return issueTypeOrder;
       }
     });
+    core.info(`Creating JIRA issues summary...`);
     const summary2 = await core.summary.addHeading("JIRA Issues", 2);
     if (issues.length > 0) {
       const table = [
@@ -8284,17 +8285,19 @@ async function run() {
     } else {
       summary2.addRaw("No JIRA Issues found", true);
     }
+    core.info(`Creating other commits summary...`);
     if (additionalCommits.length > 0) {
       summary2.addHeading("Other Commits", 2);
       const table = [
         [{ data: "Commit", header: true }, { data: "Message", header: true }]
       ];
       for (let commit of additionalCommits) {
-        table.push([commit.shortHash, commit.message]);
+        table.push([`${commit.shortHash}`, `${commit.message}`]);
       }
       summary2.addTable(table);
     }
     summary2.write();
+    core.info(`Complete!`);
     core.setOutput("issues", issues);
     core.setOutput("otherCommits", additionalCommits);
   } catch (error) {

@@ -115,6 +115,8 @@ async function run() {
       }
     });
 
+    core.info(`Creating JIRA issues summary...`);
+
     const summary = await core.summary.addHeading('JIRA Issues', 2);
     if (issues.length > 0) {
       const table: SummaryTableRow[] = [
@@ -135,6 +137,8 @@ async function run() {
       summary.addRaw('No JIRA Issues found', true);
     }
 
+    core.info(`Creating other commits summary...`);
+
     if (additionalCommits.length > 0) {
       summary.addHeading('Other Commits', 2);
       const table: SummaryTableRow[] = [
@@ -142,12 +146,14 @@ async function run() {
       ];
 
       for (let commit of additionalCommits) {
-        table.push([commit.shortHash, commit.message]);
+        table.push([`${commit.shortHash}`, `${commit.message}`]);
       }
       summary.addTable(table);
     }
 
     summary.write();
+
+    core.info(`Complete!`);
 
     core.setOutput('issues', issues);
     core.setOutput('otherCommits', additionalCommits);
