@@ -12508,17 +12508,13 @@ async function generate({ title, issuesJson, otherCommitsJson, slackToken, repoU
         text: "*Other Commits*"
       }
     });
-    for (let it of otherCommits) {
-      slackMessage.blocks.push({
-        type: "context",
-        elements: [
-          {
-            type: "mrkdwn",
-            text: `<${repoUrl}/commit/${it.shortHash}|${it.shortHash}>	${it.message}`
-          }
-        ]
-      });
-    }
+    slackMessage.blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: otherCommits.map((it) => `\u2022 <${repoUrl}/commit/${it.shortHash}|${it.shortHash}> ${it.message}`).join("\n")
+      }
+    });
   }
   core.info(`Release notes generated.`);
   return slackMessage;
