@@ -8287,8 +8287,7 @@ async function run() {
     if (additionalCommits.length > 0) {
       summary2.addHeading("Other Commits", 2);
       const table = [
-        [{ data: "Commit", header: true }],
-        [{ data: "Message", header: true }]
+        [{ data: "Commit", header: true }, { data: "Message", header: true }]
       ];
       for (let commit of additionalCommits) {
         table.push([commit.shortHash, commit.message]);
