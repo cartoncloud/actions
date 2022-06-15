@@ -252,13 +252,9 @@ describe('generate', () => {
         },
         {
           type: 'section',
-          text: { type: 'mrkdwn', text: '*Other Commits*' },
-        },
-        {
-          type: 'section',
           text: {
             type: 'mrkdwn',
-            text: '• <https://github.com/myorg/myrepo/commit/a88f1f03|a88f1f03> Integrated new editor UI into existing structure\n• <https://github.com/myorg/myrepo/commit/c60c58ce|c60c58ce> Fix lint',
+            text: '*Other Commits*\n• <https://github.com/myorg/myrepo/commit/a88f1f03|a88f1f03> Integrated new editor UI into existing structure\n• <https://github.com/myorg/myrepo/commit/c60c58ce|c60c58ce> Fix lint',
           },
         },
       ],

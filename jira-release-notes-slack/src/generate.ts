@@ -121,19 +121,13 @@ export async function generate(
   }
 
   if (otherCommits.length > 0) {
-    slackMessage.blocks.push({
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: '*Other Commits*'
-      }
-    });
-
+    const commitUrl = `${repoUrl}/commit`;
+    const commitBullets = otherCommits.map((it) => `• <${commitUrl}/${it.shortHash}|${it.shortHash}> ${it.message}`);
     slackMessage.blocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: otherCommits.map((it) => `• <${repoUrl}/commit/${it.shortHash}|${it.shortHash}> ${it.message}`).join('\n'),
+        text: ['*Other Commits*', ...commitBullets].join('\n'),
       },
     });
   }
