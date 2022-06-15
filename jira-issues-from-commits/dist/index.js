@@ -13458,15 +13458,18 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 var core = __toESM(require_core());
 var exec = __toESM(require_exec());
 var github = __toESM(require_github());
+var MAJOR = 3;
+var MINOR = 2;
+var PATCH = 1;
 var issueTypes = {
-  "epic": { sort: 1, emoji: ":sparkles:" },
-  "story": { sort: 2, emoji: ":book:" },
-  "customer story": { sort: 3, emoji: ":notebook:" },
-  "sub task": { sort: 4, emoji: ":nut_and_bolt:" },
-  "qa fix": { sort: 5, emoji: ":adhesive_bandage:" },
-  "bug": { sort: 6, emoji: ":bug:" },
-  "technical": { sort: 7, emoji: ":hammer_and_wrench:" },
-  "dev task": { sort: 8, emoji: ":microscope:" }
+  "epic": { sort: 1, emoji: ":sparkles:", semanticVersionBump: MINOR },
+  "story": { sort: 2, emoji: ":book:", semanticVersionBump: MINOR },
+  "customer story": { sort: 3, emoji: ":notebook:", semanticVersionBump: MINOR },
+  "sub task": { sort: 4, emoji: ":nut_and_bolt:", semanticVersionBump: PATCH },
+  "qa fix": { sort: 5, emoji: ":adhesive_bandage:", semanticVersionBump: PATCH },
+  "bug": { sort: 6, emoji: ":bug:", semanticVersionBump: PATCH },
+  "technical": { sort: 7, emoji: ":hammer_and_wrench:", semanticVersionBump: PATCH },
+  "dev task": { sort: 8, emoji: ":microscope:", semanticVersionBump: PATCH }
 };
 var getIssueTypeObject = (issueType) => {
   return issueTypes[issueType.toLowerCase().replace("-", " ")] ?? null;
@@ -13509,6 +13512,7 @@ async function run() {
       "Content-Type": "application/json"
     };
     const issues = [];
+    let recommendedVersionBump = PATCH;
     for (const issueKey of jiraIssueKeys) {
       const response = await fetch(`https://${jiraServer}/rest/api/latest/issue/${issueKey}`, {
         method: "GET",
@@ -13516,13 +13520,17 @@ async function run() {
       });
       if (response.ok) {
         const json = await response.json();
+        const issueType = getIssueTypeObject(json.fields.issuetype.name);
+        if (issueType) {
+          recommendedVersionBump = Math.max(recommendedVersionBump, issueType.semanticVersionBump);
+        }
         issues.push({
           key: json.key,
           htmlUrl: `https://${jiraServer}/browse/${issueKey}`,
           fields: {
             issuetype: {
               ...json.fields.issuetype,
-              markdownEmoji: getIssueTypeObject(json.fields.issuetype.name)?.emoji
+              markdownEmoji: issueType?.emoji
             },
             summary: json.fields.summary,
             assignee: json.fields.assignee,
@@ -13583,6 +13591,17 @@ async function run() {
     core.info(`Complete!`);
     core.setOutput("issues", issues);
     core.setOutput("otherCommits", additionalCommits);
+    switch (recommendedVersionBump) {
+      case MAJOR:
+        core.setOutput("suggestedVersionBump", "major");
+        break;
+      case MINOR:
+        core.setOutput("suggestedVersionBump", "minor");
+        break;
+      case PATCH:
+        core.setOutput("suggestedVersionBump", "patch");
+        break;
+    }
   } catch (error) {
     core.setFailed(error.message);
   }

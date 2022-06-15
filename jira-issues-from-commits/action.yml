@@ -26,6 +26,8 @@ outputs:
     description: 'JSON list of issues'
   otherCommits:
     description: 'JSON list of commits without a JIRA reference (shortHash and message)'
+  suggestedVersionBump:
+    description: 'Suggested semantic version bump (major, minor or patch) based on the type of JIRA issues found'
 
 runs:
   using: 'node16'
