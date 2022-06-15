@@ -41,7 +41,7 @@ async function run() {
     const refTo = core.getInput('refTo', { required: true });
 
     const commitsCommand = await exec.getExecOutput(
-      `git rev-list --topo-order ${refFrom}...${refTo} --oneline`,
+      `git rev-list --topo-order ${refFrom}...${refTo} --oneline --no-merges`,
       undefined,
       { silent: true },
     );

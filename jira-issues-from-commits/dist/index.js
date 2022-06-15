@@ -13483,7 +13483,7 @@ async function run() {
     const repoUrl = `https://github.com/${owner}/${repo}`;
     const refFrom = core.getInput("refFrom", { required: true });
     const refTo = core.getInput("refTo", { required: true });
-    const commitsCommand = await exec.getExecOutput(`git rev-list --topo-order ${refFrom}...${refTo} --oneline`, void 0, { silent: true });
+    const commitsCommand = await exec.getExecOutput(`git rev-list --topo-order ${refFrom}...${refTo} --oneline --no-merges`, void 0, { silent: true });
     if (commitsCommand.exitCode !== 0) {
       core.setFailed(commitsCommand.stdout);
       return;
