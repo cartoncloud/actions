@@ -1,0 +1,25 @@
+on:
+  workflow_call:
+    inputs:
+      from-branch:
+        type: string
+        required: true
+    secrets:
+      token:
+        required: true
+
+jobs:
+  merge:
+    name: ${{ github.event.inputs.from-branch }} → ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    concurrency: update-branch-${{ github.ref_name }}
+
+    steps:
+      - name: Merge changes
+        uses: devmasx/merge-branch@8b86512c768bec19827894f0a39a776809668189
+        with:
+          type: now
+          from_branch: ${{ github.event.inputs.from-branch }}
+          target_branch: ${{ github.ref_name }}
+          github_token: ${{ secrets.token }}
+          message: 'Back-merge from ${{ github.event.inputs.from-branch }}'
