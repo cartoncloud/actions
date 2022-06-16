@@ -1,5 +1,5 @@
-const core = require('@actions/core');
-const github = require('@actions/github');
+import * as core from '@actions/core';
+import * as github from "@actions/github";
 
 async function run() {
   try {
@@ -14,7 +14,7 @@ async function run() {
     const repo = github.context.repo.repo;
 
     const branches = await core.group('Find matching branches', async () => {
-      const response = await octokit.graphql(
+      const response: any = await octokit.graphql(
         `
         query getBranches($owner: String!, $repo: String!, $search: String) { 
           repository(owner: $owner, name: $repo) {
@@ -42,7 +42,7 @@ async function run() {
     });
 
     if (branches.length === 0) {
-      core.warning("No matching branches found");
+      core.warning(`No matching branches found for '${branchQuery}'`);
     } else {
       const workflowsResponse = await octokit.request('GET /repos/{owner}/{repo}/actions/workflows', {
         owner: owner,
@@ -61,21 +61,25 @@ async function run() {
 
       for (const branch of branches) {
         await core.group(`Run ${workflow.name} for branch ${branch.name}`, async () => {
-          const dispatchResp = await octokit.request(
-            `POST /repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches`,
-            {
-              ref: `${branch.prefix}${branch.name}`,
-              owner: owner,
-              repo: repo,
-              workflow: workflow.id,
-              inputs: inputs ? JSON.parse(inputs) : inputs
-            }
-          );
-          core.info(`API response status: ${dispatchResp.status}`)
+          try {
+            const dispatchResp = await octokit.request(
+              `POST /repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches`,
+              {
+                ref: `${branch.prefix}${branch.name}`,
+                owner: owner,
+                repo: repo,
+                workflow: workflow.id,
+                inputs: inputs ? JSON.parse(inputs) : inputs
+              }
+            );
+            core.info(`API response status: ${dispatchResp.status}`)
+          } catch (e) {
+            core.warning(`Unable to trigger workflow for ${branch.name}`);
+          }
         });
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     core.setFailed(error.message);
   }
 }

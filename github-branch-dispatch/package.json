@@ -2,9 +2,9 @@
   "name": "branch-dispatch-action",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "scripts": {
-    "build": "ncc build src/index.js -o dist --source-map --license licenses.txt"
+    "build": "tsc && esbuild src/index.ts --bundle --platform=node --outdir=dist"
   },
   "keywords": [
     "GitHub",
@@ -14,10 +14,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.8.2",
+    "@actions/core": "^1.9.0",
     "@actions/github": "^5.0.3"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.33.4"
+    "@types/node": "^16.11.41",
+    "esbuild": "^0.14.42",
+    "typescript": "^4.7.3"
   }
 }
