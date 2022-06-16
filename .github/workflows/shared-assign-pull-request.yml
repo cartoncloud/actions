@@ -1,0 +1,14 @@
+name: Assign Pull Request
+
+on:
+  workflow_call:
+
+permissions:
+  pull-requests: write
+
+jobs:
+  assign-author:
+    name: Assign Author
+    runs-on: ubuntu-latest
+    steps:
+      - uses: toshimaru/auto-author-assign@v1.5.0
