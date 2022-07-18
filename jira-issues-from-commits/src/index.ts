@@ -3,7 +3,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from "@actions/github";
 import { SummaryTableRow } from "@actions/core/lib/summary";
-import { promises as fs } from "fs";
+import fs from "fs-extra";
 
 const MAJOR = 3;
 const MINOR = 2;
@@ -193,7 +193,7 @@ async function run() {
       otherCommits: additionalCommits,
     };
 
-    await fs.writeFile(outputFile, JSON.stringify(output), { encoding: 'utf-8' });
+    await fs.outputJSON(outputFile, output, { encoding: 'utf-8'});
     core.info(`Complete!`);
   } catch (error: any) {
     core.setFailed(error.message);
