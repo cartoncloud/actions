@@ -170,7 +170,7 @@ var require_file_command = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.issueCommand = void 0;
-    var fs = __importStar(require("fs"));
+    var fs2 = __importStar(require("fs"));
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, message) {
@@ -178,10 +178,10 @@ var require_file_command = __commonJS({
       if (!filePath) {
         throw new Error(`Unable to find environment variable for file command ${command}`);
       }
-      if (!fs.existsSync(filePath)) {
+      if (!fs2.existsSync(filePath)) {
         throw new Error(`Missing file at path: ${filePath}`);
       }
-      fs.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+      fs2.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
         encoding: "utf8"
       });
     }
@@ -1600,9 +1600,7 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
 
 // src/generate.ts
 var import_os = require("os");
-function generate({ title, issuesJson, otherCommitsJson }) {
-  const issues = JSON.parse(issuesJson);
-  const otherCommits = otherCommitsJson ? JSON.parse(otherCommitsJson) : [];
+function generate({ title, issues, otherCommits }) {
   let markdown = "";
   const addLine = (text) => markdown += text ? `${text}${import_os.EOL}` : import_os.EOL;
   if (title) {
@@ -1638,12 +1636,14 @@ function generate({ title, issuesJson, otherCommitsJson }) {
 
 // src/index.ts
 var core = __toESM(require_core());
+var import_fs = require("fs");
 async function run() {
   try {
     const title = core.getInput("title", { required: false });
-    const issues = core.getInput("jiraIssues", { required: true });
-    const otherCommits = core.getInput("otherCommits", { required: true });
-    const markdown = generate({ title, issuesJson: issues, otherCommitsJson: otherCommits });
+    const changelogFilePath = core.getInput("changelogFile", { required: true });
+    const changelogFile = await import_fs.promises.readFile(changelogFilePath, { encoding: "utf-8" });
+    const { issues, otherCommits } = JSON.parse(changelogFile);
+    const markdown = generate({ title, issues, otherCommits });
     core.setOutput("releaseNotes", markdown);
   } catch (error) {
     core.setFailed(error.message);

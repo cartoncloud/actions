@@ -10,9 +10,10 @@ inputs:
   jiraPassword:
     description: 'JIRA password to use to call the API'
     required: true
-  jiraIssues:
-    description: 'JSON array of JIRA issues'
-    required: true
+  changelogFile:
+    description: 'JSON file path with issues and other commits'
+    required: false
+    default: 'temp/changelog.json'
   jiraReleaseId:
     description: 'JIRA release id to add issues to'
     required: true

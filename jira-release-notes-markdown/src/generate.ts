@@ -1,15 +1,12 @@
 import { EOL } from "os";
 
 export function generate(
-  { title, issuesJson, otherCommitsJson }: {
+  { title, issues, otherCommits }: {
     title?: string | null,
-    issuesJson: string,
-    otherCommitsJson?: string | null,
+    issues: any[],
+    otherCommits: { shortHash: string, message: string }[],
   },
 ) {
-  const issues = JSON.parse(issuesJson);
-  const otherCommits: { shortHash: string, message: string }[] = otherCommitsJson ? JSON.parse(otherCommitsJson) : [];
-
   let markdown = '';
 
   const addLine = (text?: string) => markdown += text ? `${text}${EOL}` : EOL;

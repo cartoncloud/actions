@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import * as core from '@actions/core';
+import { promises as fs } from "fs";
 
 async function run() {
   try {
@@ -8,8 +9,9 @@ async function run() {
     const jiraPassword = core.getInput('jiraPassword', { required: true });
     const jiraReleaseId = core.getInput('jiraReleaseId', { required: true });
 
-    const issuesJson = core.getInput('jiraIssues', { required: true });
-    const issues = JSON.parse(issuesJson);
+    const changelogFilePath = core.getInput('changelogFile', { required: true });
+    const changelogFile = await fs.readFile(changelogFilePath, { encoding: 'utf-8' });
+    const { issues } = JSON.parse(changelogFile);
 
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
 

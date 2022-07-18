@@ -1,19 +1,23 @@
 import { generate } from "./generate";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import { promises as fs } from "fs";
 
 async function run() {
   try {
     const title = core.getInput('title', { required: false });
-    const issues = core.getInput('jiraIssues', { required: true });
-    const otherCommits = core.getInput('otherCommits', { required: true });
+    const changelogFilePath = core.getInput('changelogFile', { required: true });
     const slackToken = core.getInput('slackToken', { required: true });
+
+    const changelogFile = await fs.readFile(changelogFilePath, { encoding: 'utf-8' });
+    const { issues, otherCommits } = JSON.parse(changelogFile);
+
     const { owner, repo } = github.context.repo;
     const repoUrl = `https://github.com/${owner}/${repo}`;
     const slackJson = await generate({
       title: title,
-      issuesJson: issues,
-      otherCommitsJson: otherCommits,
+      issues: issues,
+      otherCommits: otherCommits,
       slackToken: slackToken,
       repoUrl: repoUrl,
     });

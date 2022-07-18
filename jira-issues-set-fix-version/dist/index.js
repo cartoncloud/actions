@@ -4531,7 +4531,7 @@ var require_file_command = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.issueCommand = void 0;
-    var fs2 = __importStar(require("fs"));
+    var fs3 = __importStar(require("fs"));
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, message) {
@@ -4539,10 +4539,10 @@ var require_file_command = __commonJS({
       if (!filePath) {
         throw new Error(`Unable to find environment variable for file command ${command}`);
       }
-      if (!fs2.existsSync(filePath)) {
+      if (!fs3.existsSync(filePath)) {
         throw new Error(`Missing file at path: ${filePath}`);
       }
-      fs2.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+      fs3.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
         encoding: "utf8"
       });
     }
@@ -7129,14 +7129,16 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 
 // src/index.ts
 var core = __toESM(require_core());
+var import_fs = require("fs");
 async function run() {
   try {
     const jiraServer = core.getInput("jiraServer", { required: true });
     const jiraUsername = core.getInput("jiraUsername", { required: true });
     const jiraPassword = core.getInput("jiraPassword", { required: true });
     const jiraReleaseId = core.getInput("jiraReleaseId", { required: true });
-    const issuesJson = core.getInput("jiraIssues", { required: true });
-    const issues = JSON.parse(issuesJson);
+    const changelogFilePath = core.getInput("changelogFile", { required: true });
+    const changelogFile = await import_fs.promises.readFile(changelogFilePath, { encoding: "utf-8" });
+    const { issues } = JSON.parse(changelogFile);
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString("base64");
     for (const issue of issues) {
       const updateResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue/${issue.key}`, {

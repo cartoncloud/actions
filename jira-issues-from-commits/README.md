@@ -20,3 +20,6 @@ Tag or commit ref to compare commits from
 
 ### refTo (required)
 Tag or commit ref to compare commits to
+
+### outputFile (optional)
+Path to JSON output file. Defaults to `temp/changelog.json`

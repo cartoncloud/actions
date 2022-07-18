@@ -28,14 +28,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const core = __importStar(require("@actions/core"));
+const fs_1 = require("fs");
 async function run() {
     try {
         const jiraServer = core.getInput('jiraServer', { required: true });
         const jiraUsername = core.getInput('jiraUsername', { required: true });
         const jiraPassword = core.getInput('jiraPassword', { required: true });
         const jiraReleaseId = core.getInput('jiraReleaseId', { required: true });
-        const issuesJson = core.getInput('jiraIssues', { required: true });
-        const issues = JSON.parse(issuesJson);
+        const changelogFilePath = core.getInput('changelogFile', { required: true });
+        const changelogFile = await fs_1.promises.readFile(changelogFilePath, { encoding: 'utf-8' });
+        const { issues } = JSON.parse(changelogFile);
         const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
         for (const issue of issues) {
             const updateResponse = await (0, node_fetch_1.default)(`https://${jiraServer}/rest/api/latest/issue/${issue.key}`, {

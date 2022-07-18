@@ -3,6 +3,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from "@actions/github";
 import { SummaryTableRow } from "@actions/core/lib/summary";
+import { promises as fs } from "fs";
 
 const MAJOR = 3;
 const MINOR = 2;
@@ -39,6 +40,7 @@ async function run() {
     const jiraPassword = core.getInput('jiraPassword', { required: true });
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
     const jiraProjectKeys = core.getInput('jiraProjectKeys', { required: true });
+    const outputFile = core.getInput('outputFile', { required: true });
 
     const { owner, repo } = github.context.repo;
     const repoUrl = `https://github.com/${owner}/${repo}`;
@@ -173,11 +175,6 @@ async function run() {
 
     summary.write();
 
-    core.info(`Complete!`);
-
-    core.setOutput('issues', issues);
-    core.setOutput('otherCommits', additionalCommits);
-
     switch (recommendedVersionBump) {
       case MAJOR:
         core.setOutput('suggestedVersionBump', 'major');
@@ -189,6 +186,15 @@ async function run() {
         core.setOutput('suggestedVersionBump', 'patch');
         break;
     }
+
+    core.info(`Writing changelog to ${outputFile}...`);
+    const output = {
+      issues: issues,
+      otherCommits: additionalCommits,
+    };
+
+    await fs.writeFile(outputFile, JSON.stringify(output), { encoding: 'utf-8' });
+    core.info(`Complete!`);
   } catch (error: any) {
     core.setFailed(error.message);
   }

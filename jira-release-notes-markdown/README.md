@@ -6,11 +6,8 @@ Action generate markdown release notes from a list of JIRA issues
 ### title (optional)
 Title for the release notes, i.e. React v1.2.3
 
-### jiraIssues (required)
-JSON array of JIRA issues
-
-### otherCommits (optional)
-JSON list of commits without a JIRA reference (shortHash and message)
+### changelogFile (optional)
+JSON file path with issues and other commits
 
 ## Outputs
 

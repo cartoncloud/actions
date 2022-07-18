@@ -4531,7 +4531,7 @@ var require_file_command = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.issueCommand = void 0;
-    var fs2 = __importStar(require("fs"));
+    var fs3 = __importStar(require("fs"));
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, message) {
@@ -4539,10 +4539,10 @@ var require_file_command = __commonJS({
       if (!filePath) {
         throw new Error(`Unable to find environment variable for file command ${command}`);
       }
-      if (!fs2.existsSync(filePath)) {
+      if (!fs3.existsSync(filePath)) {
         throw new Error(`Missing file at path: ${filePath}`);
       }
-      fs2.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+      fs3.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
         encoding: "utf8"
       });
     }
@@ -6021,9 +6021,9 @@ var require_io_util = __commonJS({
     var _a;
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rename = exports.readlink = exports.readdir = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
-    var fs2 = __importStar(require("fs"));
+    var fs3 = __importStar(require("fs"));
     var path = __importStar(require("path"));
-    _a = fs2.promises, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
+    _a = fs3.promises, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
     exports.IS_WINDOWS = process.platform === "win32";
     function exists(fsPath) {
       return __awaiter(this, void 0, void 0, function* () {
@@ -13458,6 +13458,7 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 var core = __toESM(require_core());
 var exec = __toESM(require_exec());
 var github = __toESM(require_github());
+var import_fs = require("fs");
 var MAJOR = 3;
 var MINOR = 2;
 var PATCH = 1;
@@ -13482,6 +13483,7 @@ async function run() {
     const jiraPassword = core.getInput("jiraPassword", { required: true });
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString("base64");
     const jiraProjectKeys = core.getInput("jiraProjectKeys", { required: true });
+    const outputFile = core.getInput("outputFile", { required: true });
     const { owner, repo } = github.context.repo;
     const repoUrl = `https://github.com/${owner}/${repo}`;
     const refFrom = core.getInput("refFrom", { required: true });
@@ -13588,9 +13590,6 @@ async function run() {
       summary2.addTable(table);
     }
     summary2.write();
-    core.info(`Complete!`);
-    core.setOutput("issues", issues);
-    core.setOutput("otherCommits", additionalCommits);
     switch (recommendedVersionBump) {
       case MAJOR:
         core.setOutput("suggestedVersionBump", "major");
@@ -13602,6 +13601,13 @@ async function run() {
         core.setOutput("suggestedVersionBump", "patch");
         break;
     }
+    core.info(`Writing changelog to ${outputFile}...`);
+    const output = {
+      issues,
+      otherCommits: additionalCommits
+    };
+    await import_fs.promises.writeFile(outputFile, JSON.stringify(output), { encoding: "utf-8" });
+    core.info(`Complete!`);
   } catch (error) {
     core.setFailed(error.message);
   }

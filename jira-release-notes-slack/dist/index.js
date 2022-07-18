@@ -4531,7 +4531,7 @@ var require_file_command = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.issueCommand = void 0;
-    var fs2 = __importStar(require("fs"));
+    var fs3 = __importStar(require("fs"));
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, message) {
@@ -4539,10 +4539,10 @@ var require_file_command = __commonJS({
       if (!filePath) {
         throw new Error(`Unable to find environment variable for file command ${command}`);
       }
-      if (!fs2.existsSync(filePath)) {
+      if (!fs3.existsSync(filePath)) {
         throw new Error(`Missing file at path: ${filePath}`);
       }
-      fs2.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+      fs3.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
         encoding: "utf8"
       });
     }
@@ -12422,9 +12422,7 @@ async function getSlackUserId({ email, token }) {
   }
   return null;
 }
-async function generate({ title, issuesJson, otherCommitsJson, slackToken, repoUrl }) {
-  const issues = JSON.parse(issuesJson);
-  const otherCommits = otherCommitsJson ? JSON.parse(otherCommitsJson) : [];
+async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
   const emailsToUser = {};
   for (let issue of issues) {
     emailsToUser[issue.fields.reporter.emailAddress] = `*${issue.fields.reporter.displayName}*`;
@@ -12518,18 +12516,20 @@ async function generate({ title, issuesJson, otherCommitsJson, slackToken, repoU
 // src/index.ts
 var core2 = __toESM(require_core());
 var github = __toESM(require_github());
+var import_fs = require("fs");
 async function run() {
   try {
     const title = core2.getInput("title", { required: false });
-    const issues = core2.getInput("jiraIssues", { required: true });
-    const otherCommits = core2.getInput("otherCommits", { required: true });
+    const changelogFilePath = core2.getInput("changelogFile", { required: true });
     const slackToken = core2.getInput("slackToken", { required: true });
+    const changelogFile = await import_fs.promises.readFile(changelogFilePath, { encoding: "utf-8" });
+    const { issues, otherCommits } = JSON.parse(changelogFile);
     const { owner, repo } = github.context.repo;
     const repoUrl = `https://github.com/${owner}/${repo}`;
     const slackJson = await generate({
       title,
-      issuesJson: issues,
-      otherCommitsJson: otherCommits,
+      issues,
+      otherCommits,
       slackToken,
       repoUrl
     });

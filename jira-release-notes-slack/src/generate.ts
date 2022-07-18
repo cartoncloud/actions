@@ -20,17 +20,14 @@ async function getSlackUserId({ email, token }: { email: string, token: string }
 }
 
 export async function generate(
-  { title, issuesJson, otherCommitsJson, slackToken, repoUrl }: {
+  { title, issues, otherCommits, slackToken, repoUrl }: {
     title?: string | null,
-    issuesJson: string,
-    otherCommitsJson?: string | null,
+    issues: any[],
+    otherCommits: { shortHash: string, message: string }[],
     slackToken: string,
     repoUrl: string,
   },
 ) {
-  const issues = JSON.parse(issuesJson);
-  const otherCommits: { shortHash: string, message: string }[] = otherCommitsJson ? JSON.parse(otherCommitsJson) : [];
-
   const emailsToUser: { [email: string]: string } = {};
 
   for (let issue of issues) {
