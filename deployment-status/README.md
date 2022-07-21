@@ -36,6 +36,15 @@ Url of the environment that is being deployed to
 ### status  (required)
 One of started, success, failed
 
+### jiraServer
+Jira server address i.e. acme.atlassian.net
+
+### jiraUsername
+Jira username to use to call the API
+
+### jiraPassword
+Jira password to use to call the API
+
 ### projectsToken (optional)
 Personal access token with org:write permisions
 

@@ -33,7 +33,7 @@ export function generate(
   }
 
   if (issues.length === 0) {
-    addLine('_No JIRA changes found_');
+    addLine('_No Jira changes found_');
   }
 
   if (otherCommits.length > 0) {

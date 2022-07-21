@@ -1,3 +1,4 @@
+"use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -5748,6 +5749,56 @@ var require_summary = __commonJS({
   }
 });
 
+// node_modules/@actions/core/lib/path-utils.js
+var require_path_utils = __commonJS({
+  "node_modules/@actions/core/lib/path-utils.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
+      if (k2 === void 0)
+        k2 = k;
+      Object.defineProperty(o, k2, { enumerable: true, get: function() {
+        return m2[k];
+      } });
+    } : function(o, m2, k, k2) {
+      if (k2 === void 0)
+        k2 = k;
+      o[k2] = m2[k];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    } : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k in mod)
+          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
+            __createBinding(result, mod, k);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
+    var path = __importStar(require("path"));
+    function toPosixPath(pth) {
+      return pth.replace(/[\\]/g, "/");
+    }
+    exports.toPosixPath = toPosixPath;
+    function toWin32Path(pth) {
+      return pth.replace(/[/]/g, "\\");
+    }
+    exports.toWin32Path = toWin32Path;
+    function toPlatformPath(pth) {
+      return pth.replace(/[/\\]/g, path.sep);
+    }
+    exports.toPlatformPath = toPlatformPath;
+  }
+});
+
 // node_modules/@actions/core/lib/core.js
 var require_core = __commonJS({
   "node_modules/@actions/core/lib/core.js"(exports) {
@@ -5955,6 +6006,16 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     var summary_2 = require_summary();
     Object.defineProperty(exports, "markdownSummary", { enumerable: true, get: function() {
       return summary_2.markdownSummary;
+    } });
+    var path_utils_1 = require_path_utils();
+    Object.defineProperty(exports, "toPosixPath", { enumerable: true, get: function() {
+      return path_utils_1.toPosixPath;
+    } });
+    Object.defineProperty(exports, "toWin32Path", { enumerable: true, get: function() {
+      return path_utils_1.toWin32Path;
+    } });
+    Object.defineProperty(exports, "toPlatformPath", { enumerable: true, get: function() {
+      return path_utils_1.toPlatformPath;
     } });
   }
 });
@@ -11331,6 +11392,11 @@ var isDomainOrSubdomain = (destination, original) => {
   const dest = new URL(destination).hostname;
   return orig === dest || orig.endsWith(`.${dest}`);
 };
+var isSameProtocol = (destination, original) => {
+  const orig = new URL(original).protocol;
+  const dest = new URL(destination).protocol;
+  return orig === dest;
+};
 
 // node_modules/node-fetch/src/body.js
 var pipeline = (0, import_node_util.promisify)(import_node_stream.default.pipeline);
@@ -11975,7 +12041,7 @@ var Request = class extends Body {
     if (/^(delete|get|head|options|post|put)$/i.test(method)) {
       method = method.toUpperCase();
     }
-    if ("data" in init) {
+    if (!isRequest(init) && "data" in init) {
       doBadDataWarn();
     }
     if ((init.body != null || isRequest(input) && input.body !== null) && (method === "GET" || method === "HEAD")) {
@@ -12255,7 +12321,7 @@ async function fetch(url, options_) {
               referrer: request.referrer,
               referrerPolicy: request.referrerPolicy
             };
-            if (!isDomainOrSubdomain(request.url, locationURL)) {
+            if (!isDomainOrSubdomain(request.url, locationURL) || !isSameProtocol(request.url, locationURL)) {
               for (const name of ["authorization", "www-authenticate", "cookie", "cookie2"]) {
                 requestOptions.headers.delete(name);
               }
@@ -12489,12 +12555,12 @@ async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
     }, { type: "divider" });
   }
   if (issues.length === 0) {
-    core.warning("No JIRA changes found");
+    core.warning("No Jira changes found");
     slackMessage.blocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "_No JIRA changes found_"
+        text: "_No Jira changes found_"
       }
     });
   }

@@ -1,0 +1,29 @@
+name: 'Jira Find Environments by Revision'
+description: 'Finds Jira issues with a label for the given revision'
+inputs:
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+  projectKey:
+    description: 'Jira project key i.e. ENV'
+    required: true
+  appName:
+    description: 'App/project name i.e. React'
+    required: true
+  revision:
+    description: 'Git branch or tag'
+    required: true
+
+outputs:
+  issues:
+    description: 'Matching Jira issues'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

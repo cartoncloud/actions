@@ -1,5 +1,5 @@
-# Slack JIRA Release Notes
-Action generate Slack release notes from a list of JIRA issues
+# Slack Jira Release Notes
+Action generate Slack release notes from a list of Jira issues
 
 ## Inputs
 

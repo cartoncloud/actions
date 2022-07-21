@@ -1,0 +1,25 @@
+name: 'Jira Set Environment Revision'
+description: 'Updates the labels for a Jira issue to a given revision'
+inputs:
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+  environmentJql:
+    description: 'JQL statement to find the issue to label i.e. project = ENV AND "GitHub Environment[Short text]" ~ "QA 02"'
+    required: true
+  appName:
+    description: 'App/project name i.e. React'
+    required: true
+  revision:
+    description: 'Git branch or tag'
+    required: true
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

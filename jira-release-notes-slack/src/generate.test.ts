@@ -20,7 +20,7 @@ describe('generate', () => {
         },
         {
           type: 'section',
-          text: { type: 'mrkdwn', text: '_No JIRA changes found_' },
+          text: { type: 'mrkdwn', text: '_No Jira changes found_' },
         },
       ],
     });
@@ -45,7 +45,7 @@ describe('generate', () => {
         },
         {
           type: 'section',
-          text: { type: 'mrkdwn', text: '_No JIRA changes found_' },
+          text: { type: 'mrkdwn', text: '_No Jira changes found_' },
         },
       ],
     });
@@ -302,7 +302,7 @@ describe('generate', () => {
         },
         {
           type: 'section',
-          text: { type: 'mrkdwn', text: '_No JIRA changes found_' },
+          text: { type: 'mrkdwn', text: '_No Jira changes found_' },
         },
         {
           type: 'section',

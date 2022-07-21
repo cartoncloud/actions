@@ -1,0 +1,27 @@
+name: 'Jira Issues Update Fix Version'
+description: 'Updates the fix version for a list of Jira issues'
+inputs:
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+  changelogFile:
+    description: 'JSON file path with issues and other commits'
+    required: false
+    default: 'temp/changelog.json'
+  jiraReleaseId:
+    description: 'Jira release id to add issues to'
+    required: true
+  mode:
+    description: 'One of "add" or "replace". Defaults to "add".'
+    required: false
+    default: 'add'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

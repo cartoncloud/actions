@@ -75,9 +75,9 @@ async function run() {
       }
     }
 
-    core.info(`Found ${jiraIssueKeys.size} JIRA issues`);
+    core.info(`Found ${jiraIssueKeys.size} Jira issues`);
 
-    core.info(`Retrieving JIRA issue details...`);
+    core.info(`Retrieving Jira issue details...`);
 
     const jiraApiHeaders = {
       'Authorization': `Basic ${jiraBase64Credentials}`,
@@ -134,9 +134,9 @@ async function run() {
       }
     });
 
-    core.info(`Creating JIRA issues summary...`);
+    core.info(`Creating Jira issues summary...`);
 
-    const summary = await core.summary.addHeading('JIRA Issues', 2);
+    const summary = await core.summary.addHeading('Jira Issues', 2);
     if (issues.length > 0) {
       const table: SummaryTableRow[] = [
         [{ data: 'Type', header: true }, { data: 'Key', header: true }, { data: 'Summary', header: true }],
@@ -153,7 +153,7 @@ async function run() {
 
       summary.addTable(table);
     } else {
-      summary.addRaw('No JIRA Issues found', true);
+      summary.addRaw('No Jira Issues found', true);
     }
 
     core.info(`Creating other commits summary...`);

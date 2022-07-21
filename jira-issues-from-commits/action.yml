@@ -1,17 +1,17 @@
-name: 'Extract JIRA Issues from Commits'
-description: 'Extracts JIRA issues from commit messages'
+name: 'Extract Jira Issues from Commits'
+description: 'Extracts Jira issues from commit messages'
 inputs:
   jiraServer:
-    description: 'JIRA server address i.e. acme.atlassian.net'
+    description: 'Jira server address i.e. acme.atlassian.net'
     required: true
   jiraUsername:
-    description: 'JIRA username to use to call the API'
+    description: 'Jira username to use to call the API'
     required: true
   jiraPassword:
-    description: 'JIRA password to use to call the API'
+    description: 'Jira password to use to call the API'
     required: true
   jiraProjectKeys:
-    description: 'Comma separated list of JIRA project keys. i.e. CC'
+    description: 'Comma separated list of Jira project keys. i.e. CC'
     required: true
 
   refFrom:
@@ -28,7 +28,7 @@ inputs:
 
 outputs:
   suggestedVersionBump:
-    description: 'Suggested semantic version bump (major, minor or patch) based on the type of JIRA issues found'
+    description: 'Suggested semantic version bump (major, minor or patch) based on the type of Jira issues found'
 
 runs:
   using: 'node16'

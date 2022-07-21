@@ -36,6 +36,16 @@ inputs:
     description: 'One of started, success, failed'
     required: true
 
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+
   projectsToken:
     description: 'Personal access token with org:write permisions'
     required: false
@@ -46,6 +56,39 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Update Jira issue (started)
+      uses: cartoncloud/actions/jira-environment-revision-set@v3
+      if: inputs.status == 'started'
+      with:
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+        environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ inputs.environment }}"'
+        appName: ${{ inputs.appName }}
+        revision: "Deploying…"
+
+    - name: Update Jira issue (success)
+      uses: cartoncloud/actions/jira-environment-revision-set@v3
+      if: inputs.status == 'success'
+      with:
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+        environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ inputs.environment }}"'
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+
+    - name: Update Jira issue (failed)
+      uses: cartoncloud/actions/jira-environment-revision-set@v3
+      if: inputs.status == 'failed'
+      with:
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+        environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ inputs.environment }}"'
+        appName: ${{ inputs.appName }}
+        revision: "Deploy-Failed"
+
     - name: Update environment issue (started)
       uses: cartoncloud/actions/github-update-project-issue@v2
       if: inputs.status == 'started' && inputs.projectNumber != '' && inputs.projectsToken != ''

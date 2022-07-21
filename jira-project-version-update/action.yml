@@ -1,0 +1,35 @@
+name: 'Update Jira Project Version'
+description: 'Updates an existing Jira release'
+inputs:
+  username:
+    description: 'Jira username to use to call the API'
+    required: true
+  password:
+    description: 'Jira password to use to call the API'
+    required: true
+  serverAddress:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  projectId:
+    description: 'The id of the Jira project the release exists in'
+    required: true
+  releaseId:
+    description: 'Jira release id to update'
+    required: true
+  name:
+    description: 'Optional new name for the release'
+    required: false
+  description:
+    description: 'Optional new description for the release'
+    required: false
+  isReleased:
+    description: 'Whether to mark the release as unreleased or released'
+    required: true
+  timezone:
+    description: 'Timezone for the release date'
+    required: false
+    default: 'Australia/Brisbane'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

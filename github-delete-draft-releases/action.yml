@@ -1,5 +1,5 @@
 name: 'Delete Draft GitHub Releases'
-description: 'Generate markdown release notes from a list of JIRA issues'
+description: 'Generate markdown release notes from a list of Jira issues'
 inputs:
   name:
     description: 'If provided, only delete drafts that have the given name'

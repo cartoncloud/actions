@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Create JIRA Release
+      - name: Create Jira Release
         uses: ./jira-create-project-version
         with:
           username: ${{ secrets.JIRA_USERNAME }}

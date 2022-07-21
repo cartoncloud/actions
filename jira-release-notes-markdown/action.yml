@@ -1,5 +1,5 @@
-name: 'Markdown JIRA Release Notes'
-description: 'Generate markdown release notes from a list of JIRA issues'
+name: 'Markdown Jira Release Notes'
+description: 'Generate markdown release notes from a list of Jira issues'
 inputs:
   title:
     description: 'Title for the release notes, i.e. React v1.2.3'

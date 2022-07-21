@@ -107,12 +107,12 @@ export async function generate(
   }
 
   if (issues.length === 0) {
-    core.warning('No JIRA changes found');
+    core.warning('No Jira changes found');
     slackMessage.blocks.push({
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: '_No JIRA changes found_'
+        text: '_No Jira changes found_'
       }
     });
   }

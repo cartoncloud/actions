@@ -1,5 +1,5 @@
-# Markdown JIRA Release Notes
-Action generate markdown release notes from a list of JIRA issues
+# Markdown Jira Release Notes
+Action generate markdown release notes from a list of Jira issues
 
 ## Inputs
 

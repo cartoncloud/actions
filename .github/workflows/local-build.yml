@@ -1,6 +1,8 @@
 name: Build Actions
 
-on: pull_request
+on:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,16 +15,16 @@ jobs:
         package:
           - github-branch-dispatch
           - github-delete-draft-releases
-          - github-find-issues-by-field
           - github-global-autolink
           - github-release-find-by-name
-          - github-update-project-issue
-          - jira-create-project-version
+          - jira-environment-revision-search
+          - jira-environment-revision-set
           - jira-issues-from-commits
-          - jira-issues-set-fix-version
+          - jira-issues-update-fix-version
+          - jira-project-version-create
+          - jira-project-version-update
           - jira-release-notes-markdown
           - jira-release-notes-slack
-          - jira-update-project-version
 
     steps:
       - uses: actions/checkout@v3

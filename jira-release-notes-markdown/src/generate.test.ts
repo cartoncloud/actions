@@ -7,7 +7,7 @@ describe('generate', () => {
 
     let expected = '';
     expected += '## My App v1.2.3' + EOL + EOL;
-    expected += '_No JIRA changes found_' + EOL;
+    expected += '_No Jira changes found_' + EOL;
 
     expect(result).toEqual(expected);
   });
@@ -16,7 +16,7 @@ describe('generate', () => {
     const result = generate({ issues: [], otherCommits: [] });
 
     let expected = '';
-    expected += '_No JIRA changes found_' + EOL;
+    expected += '_No Jira changes found_' + EOL;
 
     expect(result).toEqual(expected);
   });
@@ -53,7 +53,7 @@ describe('generate', () => {
 
     let expected = '';
     expected += '## My App v1.2.3' + EOL + EOL;
-    expected += '_No JIRA changes found_' + EOL + EOL;
+    expected += '_No Jira changes found_' + EOL + EOL;
     expected += '### Other Commits' + EOL + EOL;
     expected += '- a88f1f03 Integrated new editor UI into existing structure' + EOL;
     expected += '- c60c58ce Fix lint' + EOL;
