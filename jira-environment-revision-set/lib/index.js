@@ -39,14 +39,19 @@ async function run() {
         const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
         const labelPrefix = `${appName.toLowerCase().replaceAll(' ', '-')}-`;
         const labelToAdd = `${labelPrefix}${revision}`;
-        const existingResponse = await (0, node_fetch_1.default)(`https://${jiraServer}/rest/api/latest/issue/search?jql=${environmentJql}&fields=labels`, {
+        const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}&fields=labels`);
+        core.info(`GET ${existingUrl}`);
+        const existingResponse = await (0, node_fetch_1.default)(existingUrl, {
             method: 'GET',
             headers: {
                 'Authorization': `Basic ${jiraBase64Credentials}`,
+                'Content-Type': 'application/json',
             },
         });
         if (!existingResponse.ok) {
             core.warning(`Failed to get environment issue.`);
+            const body = await existingResponse.text();
+            core.warning(body);
             return;
         }
         const matchingIssues = await existingResponse.json();

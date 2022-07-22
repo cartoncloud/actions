@@ -39,10 +39,13 @@ async function run() {
         const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
         const labelToFind = `${appName.toLowerCase().replaceAll(' ', '-')}-${revision}`;
         const jql = `project = ${projectKey} AND labels = "${labelToFind}"`;
-        const issuesResponse = await (0, node_fetch_1.default)(`https://${jiraServer}/rest/api/latest/issue/search?jql=${jql}`, {
+        const url = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${jql}`);
+        core.info(`GET ${url}`);
+        const issuesResponse = await (0, node_fetch_1.default)(url, {
             method: 'GET',
             headers: {
                 'Authorization': `Basic ${jiraBase64Credentials}`,
+                'Content-Type': 'application/json',
             },
         });
         if (!issuesResponse.ok) {
