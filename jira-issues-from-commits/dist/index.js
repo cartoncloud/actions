@@ -16129,11 +16129,13 @@ async function run() {
     const jiraPassword = core.getInput("jiraPassword", { required: true });
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString("base64");
     const jiraProjectKeys = core.getInput("jiraProjectKeys", { required: true });
+    const commitExclusions = core.getInput("commitMessageExclusions", { required: false }) ?? "";
     const outputFile = core.getInput("outputFile", { required: true });
     const { owner, repo } = github.context.repo;
     const repoUrl = `https://github.com/${owner}/${repo}`;
     const refFrom = core.getInput("refFrom", { required: true });
     const refTo = core.getInput("refTo", { required: true });
+    const commitMessageExclusions = commitExclusions.split(",").filter((it) => it).map((it) => it.trim().toLowerCase());
     const commitsCommand = await exec.getExecOutput(`git rev-list --topo-order ${refFrom}...${refTo} --oneline --no-merges`, void 0, { silent: true });
     if (commitsCommand.exitCode !== 0) {
       core.setFailed(commitsCommand.stdout);
@@ -16150,7 +16152,10 @@ async function run() {
         }
       } else if (commitLine.trim()) {
         const [first, ...rest] = commitLine.split(" ");
-        additionalCommits.push({ shortHash: first, message: rest.join(" ") });
+        const message = rest.join(" ");
+        if (!message || !commitMessageExclusions.includes(message.toLowerCase().trim())) {
+          additionalCommits.push({ shortHash: first, message });
+        }
       }
     }
     core.info(`Found ${jiraIssueKeys.size} Jira issues`);

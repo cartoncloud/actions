@@ -21,6 +21,10 @@ inputs:
     description: 'Tag or commit ref to compare commits to'
     required: true
 
+  commitMessageExclusions:
+    description: 'Comma seperated commit messages to ignore in other commits'
+    required: false
+
   outputFile:
     description: 'Path to JSON output file'
     required: false

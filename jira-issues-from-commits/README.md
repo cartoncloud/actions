@@ -21,5 +21,8 @@ Tag or commit ref to compare commits from
 ### refTo (required)
 Tag or commit ref to compare commits to
 
+## commitMessageExclusions (optional)
+Comma seperated commit messages to ignore in other commits
+
 ### outputFile (optional)
 Path to JSON output file. Defaults to `temp/changelog.json`
