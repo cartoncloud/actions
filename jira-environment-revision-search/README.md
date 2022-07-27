@@ -1,4 +1,4 @@
-# Jira Set Environment Revision
+# Find Environments by Revision
 Finds Jira issues with a label for the given revision
 
 ## Inputs
