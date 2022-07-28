@@ -1,12 +1,6 @@
 name: 'Deployment Status'
 description: 'Updates environment project and/or sends Slack notification'
 inputs:
-  organization:
-    description: 'Organization slug that the environments project resides in'
-    required: true
-  projectNumber:
-    description: 'Numerical id of the environments project'
-    required: false
   slackChannel:
     description: 'Slack channel id, channel name, or user id to post message'
     required: false
@@ -20,9 +14,6 @@ inputs:
   revisionUrl:
     description: 'Url to the version of the app that is being deployed'
     required: true
-  releaseNotes:
-    description: 'Optional Slack formatted release notes to post with the started status'
-    required: false
   reason:
     description: 'Optional reason for the deployment'
     required: false
@@ -46,12 +37,17 @@ inputs:
     description: 'Jira password to use to call the API'
     required: true
 
-  projectsToken:
-    description: 'Personal access token with org:write permisions'
-    required: false
   slackBotToken:
     description: 'Slack token of custom app for sending messages'
     required: false
+  slackUpdateTimestamp:
+    description: 'The timestamp of a previous message posted to update it instead of posting a new message'
+    required: false
+
+outputs:
+  slackMessageTimestamp:
+    description: 'The timestamp on the started message that was posted into Slack when using bot token'
+    value: ${{ steps.slack-notification-started.outputs.ts && steps.slack-notification-started.outputs.ts || steps.slack-notification-started-reason.outputs.ts }}
 
 runs:
   using: "composite"
@@ -89,41 +85,9 @@ runs:
         appName: ${{ inputs.appName }}
         revision: "Deploy-Failed"
 
-    - name: Update environment issue (started)
-      uses: cartoncloud/actions/github-update-project-issue@v2
-      if: inputs.status == 'started' && inputs.projectNumber != '' && inputs.projectsToken != ''
-      with:
-        token: ${{ inputs.projectsToken }}
-        organization: ${{ inputs.organization }}
-        projectNumber: ${{ inputs.projectNumber }}
-        issue: ${{ inputs.environment }}
-        field: ${{ inputs.appName }}
-        value: ":hourglass_flowing_sand: Deploying…"
-
-    - name: Update environment issue (success)
-      uses: cartoncloud/actions/github-update-project-issue@v2
-      if: inputs.status == 'success' && inputs.projectNumber != '' && inputs.projectsToken != ''
-      with:
-        token: ${{ inputs.projectsToken }}
-        organization: ${{ inputs.organization }}
-        projectNumber: ${{ inputs.projectNumber }}
-        issue: ${{ inputs.environment }}
-        field: ${{ inputs.appName }}
-        value: ${{ inputs.revision }}
-
-    - name: Update environment issue (failed)
-      uses: cartoncloud/actions/github-update-project-issue@v2
-      if: inputs.status == 'failed' && inputs.projectNumber != '' && inputs.projectsToken != ''
-      with:
-        token: ${{ inputs.projectsToken }}
-        organization: ${{ inputs.organization }}
-        projectNumber: ${{ inputs.projectNumber }}
-        issue: ${{ inputs.environment }}
-        field: ${{ inputs.appName }}
-        value: ":rotating_light: Deploy Failed"
-
     - name: Slack notification (started)
-      uses: slackapi/slack-github-action@v1.19.0
+      id: slack-notification-started
+      uses: slackapi/slack-github-action@v1.21.0
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
@@ -144,7 +108,8 @@ runs:
           }
 
     - name: Slack notification (started with reason)
-      uses: slackapi/slack-github-action@v1.19.0
+      id: slack-notification-started-reason
+      uses: slackapi/slack-github-action@v1.21.0
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
@@ -173,22 +138,14 @@ runs:
             ]
           }
 
-    - name: Slack notification (release notes)
-      uses: slackapi/slack-github-action@v1.19.0
-      if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.releaseNotes != ''
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
-      with:
-        channel-id: ${{ inputs.slackChannel }}
-        payload: ${{ inputs.releaseNotes }}
-
     - name: Slack notification (success)
-      uses: slackapi/slack-github-action@v1.19.0
+      uses: slackapi/slack-github-action@v1.21.0
       if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
       with:
         channel-id: ${{ inputs.slackChannel }}
+        update-ts: ${{ inputs.slackUpdateTimestamp }}
         payload: |
           {
             "text": "Deployment Complete :rocket:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
@@ -204,12 +161,13 @@ runs:
           }
 
     - name: Slack notification (failed)
-      uses: slackapi/slack-github-action@v1.19.0
+      uses: slackapi/slack-github-action@v1.21.0
       if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
       with:
         channel-id: ${{ inputs.slackChannel }}
+        update-ts: ${{ inputs.slackUpdateTimestamp }}
         payload: |
           {
             "text": "Deployment Failed :rotating_light:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
