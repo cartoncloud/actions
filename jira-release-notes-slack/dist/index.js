@@ -12491,8 +12491,12 @@ async function getSlackUserId({ email, token }) {
 async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
   const emailsToUser = {};
   for (let issue of issues) {
-    emailsToUser[issue.fields.reporter.emailAddress] = `*${issue.fields.reporter.displayName}*`;
-    emailsToUser[issue.fields.assignee.emailAddress] = `*${issue.fields.assignee.displayName}*`;
+    if (issue.fields.reporter?.emailAddress) {
+      emailsToUser[issue.fields.reporter.emailAddress] = `*${issue.fields.reporter.displayName}*`;
+    }
+    if (issue.fields.assignee?.emailAddress) {
+      emailsToUser[issue.fields.assignee.emailAddress] = `*${issue.fields.assignee.displayName}*`;
+    }
   }
   core.info(`Finding reporter and assignee Slack users...`);
   for (const email of Object.keys(emailsToUser)) {
@@ -12545,11 +12549,11 @@ async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
         },
         {
           type: "mrkdwn",
-          text: emailsToUser[issue.fields.reporter.emailAddress]
+          text: issue.fields.reporter?.emailAddress ? emailsToUser[issue.fields.reporter.emailAddress] : "_No Reporter_"
         },
         {
           type: "mrkdwn",
-          text: emailsToUser[issue.fields.assignee.emailAddress]
+          text: issue.fields.assignee?.emailAddress ? emailsToUser[issue.fields.assignee.emailAddress] : "_Unassigned_"
         }
       ]
     }, { type: "divider" });

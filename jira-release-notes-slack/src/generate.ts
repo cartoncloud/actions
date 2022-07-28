@@ -32,8 +32,12 @@ export async function generate(
 
   for (let issue of issues) {
     // Add emails to array to be mapped to Slack users. Add bold display name as a fallback.
-    emailsToUser[issue.fields.reporter.emailAddress] = `*${issue.fields.reporter.displayName}*`;
-    emailsToUser[issue.fields.assignee.emailAddress] = `*${issue.fields.assignee.displayName}*`;
+    if (issue.fields.reporter?.emailAddress) {
+      emailsToUser[issue.fields.reporter.emailAddress] = `*${issue.fields.reporter.displayName}*`;
+    }
+    if (issue.fields.assignee?.emailAddress) {
+      emailsToUser[issue.fields.assignee.emailAddress] = `*${issue.fields.assignee.displayName}*`;
+    }
   }
 
   core.info(`Finding reporter and assignee Slack users...`);
@@ -94,11 +98,11 @@ export async function generate(
           },
           {
             type: 'mrkdwn',
-            text: emailsToUser[issue.fields.reporter.emailAddress],
+            text: issue.fields.reporter?.emailAddress ? emailsToUser[issue.fields.reporter.emailAddress] : '_No Reporter_',
           },
           {
             type: 'mrkdwn',
-            text: emailsToUser[issue.fields.assignee.emailAddress],
+            text: issue.fields.assignee?.emailAddress ? emailsToUser[issue.fields.assignee.emailAddress] : '_Unassigned_',
           }
         ]
       },
