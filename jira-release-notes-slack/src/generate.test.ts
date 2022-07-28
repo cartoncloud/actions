@@ -65,7 +65,7 @@ describe('generate', () => {
       "key": "CC-22589",
       "fields": {
         "assignee": { "emailAddress": "jack.sparrow@example.com", "displayName": "Jack Sparrow" },
-        "reporter": { "emailAddress": "jack.sparrow@example.com", "displayName": "Jack Sparrow" },
+        "reporter": null,
         "issuetype": { "name": "Bug", "markdownEmoji": ":bug:" },
         "summary": "React Rollbar #1142 / Unable to parse timezone offsets without colon"
       },
@@ -73,7 +73,7 @@ describe('generate', () => {
     }, {
       "key": "CC-22601",
       "fields": {
-        "assignee": { "emailAddress": "jack.sparrow@example.com", "displayName": "Jack Sparrow" },
+        "assignee": null,
         "reporter": { "emailAddress": "harry.potter@example.com", "displayName": "Harry Potter" },
         "issuetype": { "name": "Bug", "markdownEmoji": ":bug:" },
         "summary": "Custom field dates too small on consignment items"
@@ -172,7 +172,7 @@ describe('generate', () => {
             },
             {
               type: "mrkdwn",
-              text: "*Jack Sparrow*"
+              text: "_No Reporter_"
             },
             {
               type: "mrkdwn",
@@ -203,7 +203,7 @@ describe('generate', () => {
             },
             {
               type: "mrkdwn",
-              text: "*Jack Sparrow*"
+              text: "_Unassigned_"
             }
           ]
         },
