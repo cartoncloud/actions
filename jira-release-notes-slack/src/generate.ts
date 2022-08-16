@@ -68,45 +68,26 @@ export async function generate(
     const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : '';
     const issueType = `${typePrefix}${issue.fields.issuetype.name}`;
 
+    let blockPrefix = '';
+
     const isFirstIssueForType = lastType !== issueType;
     if (isFirstIssueForType) {
       lastType = issueType;
-
-      slackMessage.blocks.push({
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `*${issueType}*`
-        }
-      });
+      blockPrefix = `*${issueType}*\n\n`;
     }
 
+    const summary = issue.fields.summary;
+    const jiraKey = `<${issue.htmlUrl}|${issue.key}>`;
+    const reporter = issue.fields.reporter?.emailAddress ? emailsToUser[issue.fields.reporter.emailAddress] : '_No Reporter_';
+    const assignee = issue.fields.assignee?.emailAddress ? emailsToUser[issue.fields.assignee.emailAddress] : '_Unassigned_';
     slackMessage.blocks.push(
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: issue.fields.summary,
+          text: `${blockPrefix}• ${jiraKey} ${summary}\n\t${reporter}\t${assignee}`,
         }
       },
-      {
-        type: 'context',
-        elements: [
-          {
-            type: 'mrkdwn',
-            text: `<${issue.htmlUrl}|*${issue.key}*>`
-          },
-          {
-            type: 'mrkdwn',
-            text: issue.fields.reporter?.emailAddress ? emailsToUser[issue.fields.reporter.emailAddress] : '_No Reporter_',
-          },
-          {
-            type: 'mrkdwn',
-            text: issue.fields.assignee?.emailAddress ? emailsToUser[issue.fields.assignee.emailAddress] : '_Unassigned_',
-          }
-        ]
-      },
-      { type: 'divider' },
     );
   }
 
@@ -131,6 +112,14 @@ export async function generate(
         text: ['*Other Commits*', ...commitBullets].join('\n'),
       },
     });
+  }
+
+  if (slackMessage.blocks.length > 50) {
+    slackMessage.blocks = slackMessage.blocks.slice(0, 49);
+    slackMessage.blocks.push(      {
+      type: 'context',
+      elements: [{ type: 'mrkdwn', text: '_Release notes have been truncated as they exceed the maximum length_' }],
+    },);
   }
 
   core.info(`Release notes generated.`);

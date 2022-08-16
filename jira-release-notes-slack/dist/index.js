@@ -12523,40 +12523,26 @@ async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
   for (const issue of issues) {
     const typePrefix = issue.fields.issuetype.markdownEmoji ? `${issue.fields.issuetype.markdownEmoji} ` : "";
     const issueType = `${typePrefix}${issue.fields.issuetype.name}`;
+    let blockPrefix = "";
     const isFirstIssueForType = lastType !== issueType;
     if (isFirstIssueForType) {
       lastType = issueType;
-      slackMessage.blocks.push({
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*${issueType}*`
-        }
-      });
+      blockPrefix = `*${issueType}*
+
+`;
     }
+    const summary = issue.fields.summary;
+    const jiraKey = `<${issue.htmlUrl}|${issue.key}>`;
+    const reporter = issue.fields.reporter?.emailAddress ? emailsToUser[issue.fields.reporter.emailAddress] : "_No Reporter_";
+    const assignee = issue.fields.assignee?.emailAddress ? emailsToUser[issue.fields.assignee.emailAddress] : "_Unassigned_";
     slackMessage.blocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: issue.fields.summary
+        text: `${blockPrefix}\u2022 ${jiraKey} ${summary}
+	${reporter}	${assignee}`
       }
-    }, {
-      type: "context",
-      elements: [
-        {
-          type: "mrkdwn",
-          text: `<${issue.htmlUrl}|*${issue.key}*>`
-        },
-        {
-          type: "mrkdwn",
-          text: issue.fields.reporter?.emailAddress ? emailsToUser[issue.fields.reporter.emailAddress] : "_No Reporter_"
-        },
-        {
-          type: "mrkdwn",
-          text: issue.fields.assignee?.emailAddress ? emailsToUser[issue.fields.assignee.emailAddress] : "_Unassigned_"
-        }
-      ]
-    }, { type: "divider" });
+    });
   }
   if (issues.length === 0) {
     core.warning("No Jira changes found");
@@ -12577,6 +12563,13 @@ async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
         type: "mrkdwn",
         text: ["*Other Commits*", ...commitBullets].join("\n")
       }
+    });
+  }
+  if (slackMessage.blocks.length > 50) {
+    slackMessage.blocks = slackMessage.blocks.slice(0, 49);
+    slackMessage.blocks.push({
+      type: "context",
+      elements: [{ type: "mrkdwn", text: "_Release notes have been truncated as they exceed the maximum length_" }]
     });
   }
   core.info(`Release notes generated.`);

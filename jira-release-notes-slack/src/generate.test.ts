@@ -107,171 +107,53 @@ describe('generate', () => {
     });
 
     expect(result).toEqual({
-      text: ":clipboard: *Release Notes* / My App v1.2.3",
-      blocks: [
+      "text": ":clipboard: *Release Notes* / My App v1.2.3",
+      "blocks": [
         {
-          type: 'context',
-          elements: [
-            { type: 'mrkdwn', text: ':clipboard: *Release Notes* / My App v1.2.3' },
+          "elements": [
+            {
+              "text": ":clipboard: *Release Notes* / My App v1.2.3",
+              "type": "mrkdwn"
+            }
           ],
+          "type": "context"
         },
         {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "*:book: Story*",
-          }
+          "text": {
+            "text": "*:book: Story*\n\n• <https://support.example.com/browse/CC-21358|CC-21358> React / Convert date pickers to use format configured in Org Settings\n\t*Amy Pond*\t*Jack Sparrow*",
+            "type": "mrkdwn"
+          },
+          "type": "section"
         },
         {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "React / Convert date pickers to use format configured in Org Settings"
-          }
+          "text": {
+            "text": "*:bug: Bug*\n\n• <https://support.example.com/browse/CC-22589|CC-22589> React Rollbar #1142 / Unable to parse timezone offsets without colon\n\t_No Reporter_\t*Jack Sparrow*",
+            "type": "mrkdwn"
+          },
+          "type": "section"
         },
         {
-          type: "context",
-          elements: [
-            {
-              type: "mrkdwn",
-              text: "<https://support.example.com/browse/CC-21358|*CC-21358*>"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Amy Pond*"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Jack Sparrow*"
-            }
-          ]
+          "text": {
+            "text": "• <https://support.example.com/browse/CC-22601|CC-22601> Custom field dates too small on consignment items\n\t*Harry Potter*\t_Unassigned_",
+            "type": "mrkdwn"
+          },
+          "type": "section"
         },
         {
-          type: "divider"
+          "text": {
+            "text": "*:hammer_and_wrench: Technical*\n\n• <https://support.example.com/browse/CC-10279|CC-10279> React / Add customFieldMappingsEditor confirmation message to translations\n\t*Luke Skywalker*\t*Jack Sparrow*",
+            "type": "mrkdwn"
+          },
+          "type": "section"
         },
         {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "*:bug: Bug*",
-          }
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "React Rollbar #1142 / Unable to parse timezone offsets without colon"
-          }
-        },
-        {
-          type: "context",
-          elements: [
-            {
-              type: "mrkdwn",
-              text: "<https://support.example.com/browse/CC-22589|*CC-22589*>"
-            },
-            {
-              type: "mrkdwn",
-              text: "_No Reporter_"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Jack Sparrow*"
-            }
-          ]
-        },
-        {
-          type: "divider"
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "Custom field dates too small on consignment items"
-          }
-        },
-        {
-          type: "context",
-          elements: [
-            {
-              type: "mrkdwn",
-              text: "<https://support.example.com/browse/CC-22601|*CC-22601*>"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Harry Potter*"
-            },
-            {
-              type: "mrkdwn",
-              text: "_Unassigned_"
-            }
-          ]
-        },
-        {
-          type: "divider"
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "*:hammer_and_wrench: Technical*",
-          }
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "React / Add customFieldMappingsEditor confirmation message to translations"
-          }
-        },
-        {
-          type: "context",
-          elements: [
-            {
-              type: "mrkdwn",
-              text: "<https://support.example.com/browse/CC-10279|*CC-10279*>"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Luke Skywalker*"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Jack Sparrow*"
-            }
-          ]
-        },
-        {
-          type: "divider"
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: "React / Update theming to use official CartonCloud blue"
-          }
-        },
-        {
-          type: "context",
-          elements: [
-            {
-              type: "mrkdwn",
-              text: "<https://support.example.com/browse/CC-19540|*CC-19540*>"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Jack Sparrow*"
-            },
-            {
-              type: "mrkdwn",
-              text: "*Jack Sparrow*"
-            }
-          ]
-        },
-        {
-          type: "divider"
-        },
-      ]
+          "text": {
+            "text": "• <https://support.example.com/browse/CC-19540|CC-19540> React / Update theming to use official CartonCloud blue\n\t*Jack Sparrow*\t*Jack Sparrow*",
+            "type": "mrkdwn"
+          },
+          "type": "section"
+        }
+      ],
     });
   });
 
