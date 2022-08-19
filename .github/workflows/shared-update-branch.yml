@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Merge changes
-        uses: devmasx/merge-branch@8b86512c768bec19827894f0a39a776809668189
+        uses: devmasx/merge-branch@854d3ac71ed1e9deb668e0074781b81fdd6e771f
         with:
           type: now
           from_branch: ${{ inputs.from-branch }}
