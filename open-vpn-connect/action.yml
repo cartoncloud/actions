@@ -1,6 +1,5 @@
-name: open-vpn-connect-action
-description: 
-  Setup vpn using a self-contained .ovpn file
+name: 'OpenVPN Connect'
+description: 'Setup VPN using a self-contained .ovpn file'
 inputs:
   config:
     description: Complete self-contained .ovpn file
@@ -32,4 +31,5 @@ runs:
 
     - name: VPN Connect
       shell: bash
-      run: { echo "${{ inputs.vpn-user }}" ; echo "${{ inputs.vpn-pass }}" ; } | openvpn3 session-start --config .github/vpn.ovpn
+      run: |
+        { echo "${{ inputs.vpn-user }}" ; echo "${{ inputs.vpn-pass }}" ; } | openvpn3 session-start --config .github/vpn.ovpn
