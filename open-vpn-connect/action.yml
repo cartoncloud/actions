@@ -1,0 +1,35 @@
+name: open-vpn-connect-action
+description: 
+  Setup vpn using a self-contained .ovpn file
+inputs:
+  config:
+    description: Complete self-contained .ovpn file
+    required: true
+  vpn-user:
+    description: Username for the VPN
+    required: false
+  vpn-pass:
+    description: Password for the VPN
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Write VPN Files
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.ovpn-config }}" > .github/vpn.ovpn
+
+    - name: Install OpenVPN 3
+      shell: bash
+      run: |
+        sudo apt install apt-transport-https
+        sudo wget https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub
+        sudo apt-key add openvpn-repo-pkg-key.pub
+        DISTRO=`lsb_release -c -s`; sudo wget -O /etc/apt/sources.list.d/openvpn3.list https://swupdate.openvpn.net/community/openvpn3/repos/openvpn3-$DISTRO.list
+        sudo apt update
+        sudo apt install openvpn3
+
+    - name: VPN Connect
+      shell: bash
+      run: { echo "${{ inputs.vpn-user }}" ; echo "${{ inputs.vpn-pass }}" ; } | openvpn3 session-start --config .github/vpn.ovpn
