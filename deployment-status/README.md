@@ -4,7 +4,7 @@ Action to update an environments board and/or Slack with deployment status
 ## Inputs
 
 ### slackChannel (optional)
-Slack channel id, channel name, or user id to post message
+Slack channel id, channel name, or user id to post message. Prefer channel id to enable message updates on channel.
 
 ### appName (required)
 Name of the app and matching project field
