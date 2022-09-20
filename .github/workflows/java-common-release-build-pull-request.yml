@@ -1,0 +1,175 @@
+name: Release Pull Request
+concurrency:
+  group: release-pr-${{ github.event.pull_request.head.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    branches: [main]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+
+env:
+  jiraServer: cartoncloud.atlassian.net
+  jiraProjectId: 10002
+
+jobs:
+  determine-version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.increment-version.outputs.new_tag }}
+      pomVersion: ${{ steps.pom-version.outputs.pom-version }}
+      sha: ${{ steps.sha.outputs.short-sha }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Get JIRA issues from commits
+        id: jira-issues-from-commits
+        uses: cartoncloud/actions/jira-issues-from-commits@v3
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          jiraProjectKeys: CC
+          refFrom: ${{ github.event.pull_request.base.sha }}
+          refTo: ${{ github.event.pull_request.head.sha }}
+
+      - name: Get incremented version
+        uses: anothrNick/github-tag-action@1.36.0
+        id: increment-version
+        env:
+          WITH_V: true
+          DRY_RUN: ${{ ! (github.event.action == 'closed' && github.event.pull_request.merged == true) }}
+          RELEASE_BRANCHES: .*
+          DEFAULT_BUMP: ${{ steps.jira-issues-from-commits.outputs.suggestedVersionBump }}
+          VERBOSE: false
+          INITIAL_VERSION: 2.3.0
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get pom version
+        id: pom-version
+        run: echo "::set-output name=pom-version::$(echo ${{ steps.increment-version.outputs.new_tag }} | sed 's/v//')"
+
+      - name: Get short SHA
+        id: sha
+        run: echo "::set-output name=short-sha::$(git rev-parse --short HEAD)"
+
+  create-draft-release:
+    name: Create Draft Release
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    needs: determine-version
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Get JIRA issues from commits
+        id: jira-issues-from-commits
+        uses: cartoncloud/actions/jira-issues-from-commits@v3
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          jiraProjectKeys: CC
+          refFrom: ${{ github.event.pull_request.base.sha }}
+          refTo: ${{ github.event.pull_request.head.sha }}
+
+      - name: Generate Markdown release notes
+        id: release-notes-markdown
+        uses: cartoncloud/actions/jira-release-notes-markdown@v3
+        with:
+          title: 'Release ${{ needs.determine-version.outputs.version }}-${{ needs.determine-version.outputs.sha }} (#${{ github.event.pull_request.number }})'
+
+      - name: Update pull request description (main release)
+        run: |
+          gh pr edit $PR --body "$BODY
+          ---
+          [Steps to release](https://help.cartoncloud.com/x/zoYbIw)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          BODY: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
+
+  build:
+    name: Build
+    if: github.event.action == 'closed' && github.event.pull_request.merged == true
+    uses: ./.github/workflows/java-common-build.yml
+    needs: determine-version
+    with:
+      pomVersion: ${{ needs.determine-version.outputs.pomVersion }}
+    secrets:
+      awsKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
+      awsSecretKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
+
+  create-releases:
+    name: Create Releases
+    runs-on: ubuntu-latest
+    needs: [ determine-version, build ]
+    if: |
+      always() && 
+      !cancelled() && 
+      needs.build.result == 'success' &&
+      github.event.action == 'closed' && 
+      github.event.pull_request.merged == true
+
+    outputs:
+      releaseUrl: ${{ steps.create-release.outputs.html_url }}
+      jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Get JIRA issues from commits
+        id: jira-issues-from-commits
+        uses: cartoncloud/actions/jira-issues-from-commits@v3
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          jiraProjectKeys: CC
+          refFrom: ${{ github.event.pull_request.base.sha }}
+          refTo: ${{ github.event.pull_request.head.sha }}
+
+      - name: Generate Markdown release notes
+        id: release-notes-markdown
+        uses: cartoncloud/actions/jira-release-notes-markdown@v3
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        id: create-release
+        with:
+          name: ${{ needs.determine-version.outputs.version }}
+          body: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
+          tag: ${{ needs.determine-version.outputs.version }}
+
+      - name: Create JIRA Release
+        id: create-jira-release
+        uses: cartoncloud/actions/jira-project-version-create@v3
+        with:
+          username: ${{ secrets.JIRA_USERNAME }}
+          password: ${{ secrets.JIRA_PASSWORD }}
+          serverAddress: ${{ env.jiraServer }}
+          projectId: ${{ env.jiraProjectId }}
+          name: ${{ github.event.repository.name }} ${{ needs.determine-version.outputs.version }}
+          description: CartonCloud ${{ github.event.repository.name }} ${{ needs.determine-version.outputs.version }}
+          isReleased: false
+
+      - name: Update JIRA fix versions
+        uses: cartoncloud/actions/jira-issues-update-fix-version@v3
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
