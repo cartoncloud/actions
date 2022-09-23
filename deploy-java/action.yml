@@ -1,0 +1,157 @@
+name: 'Deploy Java'
+description: 'Deploy Java service to AWS'
+inputs:
+  slackChannel:
+    description: 'Slack channel to post in'
+    required: false
+  appName:
+    description: 'Name of the app and matching project field'
+    required: true
+  revision:
+    description: 'Version of the app that is being deployed'
+    required: true
+  revisionUrl:
+    description: 'Url to the version of the app that is being deployed'
+    required: true
+  releaseNotes:
+    description: 'Optional release notes to add to the started Slack message'
+    required: false
+  reason:
+    description: 'Optional reason for deployment to add to the started Slack message'
+    required: false
+  environment:
+    description: 'Name of the environment that is being deployed to'
+    required: true
+  environmentUrl:
+    description: 'Url of the environment that is being deployed to'
+    required: true
+  existingImageTag:
+    description: Tag of existing docker image
+    required: true
+  environmentTag:
+    description: 'Docker environment tag to apply to docker image'
+    required: true
+  versionTag:
+    description: 'Version tag to apply to docker image'
+    required: false
+  awsRegion:
+    description: 'AWS region to deploy to'
+    required: true
+  slackBotToken:
+    description: 'Slack token of custom app for sending messages'
+    required: false
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+
+runs:
+  using: "composite"
+
+  steps:
+
+    - uses: actions/checkout@v3
+
+    - name: Slack notification (release notes)
+      uses: slackapi/slack-github-action@v1.21.0
+      if: inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.releaseNotes != ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        payload: ${{ inputs.releaseNotes }}
+
+    - name: Deployment status (started)
+      uses: cartoncloud/actions/deployment-status@v3
+      id: deploy-status-started
+      with:
+        status: started
+        slackChannel: ${{ inputs.slackChannel }}
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+        revisionUrl: ${{ inputs.revisionUrl }}
+        reason: ${{ inputs.reason }}
+        environment: ${{ inputs.environment }}
+        environmentUrl: ${{ inputs.environmentUrl }}
+        slackBotToken: ${{ inputs.slackBotToken }}
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@master
+      with:
+        role-to-assume: arn:aws:iam::026388519853:role/GithubToAwsOpenIdConnect
+        aws-region: ${{ inputs.awsRegion }}
+
+    - name: Docker login
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Check if environment tag already exists
+      id: deploy-check
+      shell: bash
+      run: |
+        image_meta=$( aws ecr describe-images --region us-west-2 --repository-name ${{ inputs.appName }} --image-ids imageTag=${{ inputs.existingImageTag }} )
+        echo "::set-output name=existing::$(echo ${image_meta} | jq -c '.imageDetails[0] | select(.imageTags[] | contains("${{ inputs.environmentTag }}"))')"
+
+    - name: Tag image with environment tag
+      if: ${{ steps.deploy-check.outputs.existing == '' }}
+      shell: bash
+      run: |
+        manifest=$(aws ecr batch-get-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-ids imageTag=${{ inputs.existingImageTag }} --output json | jq --raw-output --join-output '.images[0].imageManifest')
+        aws ecr put-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-tag ${{ inputs.environmentTag }} --image-manifest "$manifest"
+
+    - name: Tag image with version tag
+      id: version-tag
+      if: ${{ inputs.versionTag != '' }}
+      shell: bash
+      run: |
+        manifest=$(aws ecr batch-get-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-ids imageTag=${{ inputs.existingImageTag }} --output json | jq --raw-output --join-output '.images[0].imageManifest')
+        aws ecr put-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-tag ${{ inputs.versionTag }} --image-manifest "$manifest"
+        echo "::set-output name=restart::true"
+
+    - name: Deploy to a region
+      if: ${{ steps.deploy-check.outputs.existing == '' }} || ${{ steps.version-tag.outputs.restart == 'true' }}
+      shell: bash
+      run: aws ecs update-service --cluster services-${{ inputs.environmentTag }} --service ${{ inputs.appName }} --force-new-deployment
+
+    - name: Deployment status (success)
+      uses: cartoncloud/actions/deployment-status@v3
+      with:
+        status: success
+        slackChannel: ${{ inputs.slackChannel }}
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+        revisionUrl: ${{ inputs.revisionUrl }}
+        reason: ${{ inputs.reason }}
+        environment: ${{ inputs.environment }}
+        environmentUrl: ${{ inputs.environmentUrl }}
+        slackBotToken: ${{ inputs.slackBotToken }}
+        slackUpdateTimestamp: ${{ steps.deploy-status-started.outputs.slackMessageTimestamp }}
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+
+    - name: Deployment status (failed)
+      uses: cartoncloud/actions/deployment-status@v3
+      if: ${{ failure() }}
+      with:
+        status: failed
+        slackChannel: ${{ inputs.slackChannel }}
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+        revisionUrl: ${{ inputs.revisionUrl }}
+        reason: ${{ inputs.reason }}
+        environment: ${{ inputs.environment }}
+        environmentUrl: ${{ inputs.environmentUrl }}
+        slackBotToken: ${{ inputs.slackBotToken }}
+        slackUpdateTimestamp: ${{ steps.deploy-status-started.outputs.slackMessageTimestamp }}
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
