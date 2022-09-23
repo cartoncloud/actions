@@ -26,7 +26,7 @@ inputs:
     description: 'Url of the environment that is being deployed to'
     required: true
   existingImageTag:
-    description: Tag of existing docker image
+    description: 'Tag of existing docker image'
     required: true
   environmentTag:
     description: 'Docker environment tag to apply to docker image'
