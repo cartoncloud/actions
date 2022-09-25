@@ -93,7 +93,7 @@ runs:
       env:
         REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
         REPOSITORY: ${{ inputs.appName }}
-        IMAGE_TAG: ${{ inputs.versionTag }}
+        IMAGE_TAG: ${{ inputs.dockerTag }}
       run: |
         docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:${{ inputs.versionTag }}
 
