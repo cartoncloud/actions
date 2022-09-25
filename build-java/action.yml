@@ -1,101 +1,106 @@
 name: 'Build Java'
+description: 'Action to build Java project, upload Maven artefact and upload docker image'
+inputs:
+  appName:
+    description: 'Name of the application'
+  awsRegion:
+    description: 'AWS Region for ECR'
+    required: false
+    default: us-west-2
+  pomVersion:
+    description: 'Pom version to apply to maven artefact'
+    required: false
+    default: ${{ github.sha }}
+  dockerTag:
+    description: 'Docker tag to apply to docker image'
+    required: false
+    default: ${{ github.sha }}
+  versionTag:
+    description: 'Version tag to apply to docker image'
+    required: false
+  mavenS3AccessKeyId:
+    description: 'Maven S3 Access Key Id to upload artefact'
+  mavenS3SecretAccessKey:
+    description: 'Maven S3 Secret Access Key to upload artefact'
+  sonarUrl:
+    description: 'URL to Sonar Server'
+  sonarToken:
+    description: 'Sonar token'
 
-on:
-  workflow_call:
-    inputs:
-      appName:
-        description: 'Name of the application'
-        type: string
-      awsRegion:
-        description: 'AWS Region for ECR'
-        type: string
-        required: false
-        default: us-west-2
-      pomVersion:
-        description: 'Pom version to apply to maven artefact'
-        type: string
-        required: false
-        default: ${{ github.sha }}
-      dockerTag:
-        description: 'Docker tag to apply to docker image'
-        type: string
-        required: false
-        default: ${{ github.sha }}
-      versionTag:
-        type: string
-        description: 'Version tag to apply to docker image'
-        required: false
-      mavenS3AccessKeyId:
-        type: string
-        description: 'Maven S3 Access Key Id to upload artefact'
-      mavenS3SecretAccessKey:
-        type: string
-        description: 'Maven S3 Secret Access Key to upload artefact'
-      sonarUrl:
-        type: string
-        description: 'URL to Sonar Server'
-      sonarToken:
-        type: string
-        description: 'Sonar token'
+runs:
+  using: composite
 
-jobs:
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    env:
-      AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
-      AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
-      REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
-      REPOSITORY: ${{ inputs.appName }}
-      IMAGE_TAG: ${{ inputs.dockerTag }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: 'maven'
+  steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'maven'
 
-      - name: Update pom version
-        run: mvn versions:set -DnewVersion="${{ inputs.pomVersion }}"
+    - name: Update pom version
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+      shell: bash
+      run: mvn versions:set -DnewVersion="${{ inputs.pomVersion }}"
 
-      - name: Build project
-        run: mvn -Dmaven.wagon.http.pool=false -s settings.xml -B clean deploy
+    - name: Build project
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+      shell: bash
+      run: mvn -Dmaven.wagon.http.pool=false -s settings.xml -B clean deploy
 
-      - name: Run Sonar
-        if: inputs.sonarUrl != '' && inputs.sonarToken != ''
-        run:  mvn sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
+    - name: Run Sonar
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+      shell: bash
+      run:  mvn sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@master
-        with:
-          role-to-assume: arn:aws:iam::026388519853:role/GithubToAwsOpenIdConnect
-          aws-region: ${{ inputs.awsRegion }}
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@master
+      with:
+        role-to-assume: arn:aws:iam::026388519853:role/GithubToAwsOpenIdConnect
+        aws-region: ${{ inputs.awsRegion }}
 
-      - name: Docker login
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+    - name: Docker login
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build tag docker image
-        run: |
-          mvn initialize dockerfile:build
+    - name: Build tag docker image
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+      shell: bash
+      run: |
+        mvn initialize dockerfile:build
 
-      - name: Tag docker image
-        run: |
-          docker tag $REGISTRY/$REPOSITORY:latest $REGISTRY/$REPOSITORY:$IMAGE_TAG
+    - name: Tag docker image
+      shell: bash
+      env:
+        REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
+        REPOSITORY: ${{ inputs.appName }}
+        IMAGE_TAG: ${{ inputs.dockerTag }}
+      run: |
+        docker tag $REGISTRY/$REPOSITORY:latest $REGISTRY/$REPOSITORY:$IMAGE_TAG    
 
-      - name: Tag image with version tag if present
-        if: inputs.versionTag != ''
-        run: |
-          docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:${{ inputs.versionTag }}       
+    - name: Tag image with version tag if present
+      if: inputs.versionTag != ''
+      shell: bash
+      env:
+        REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
+        REPOSITORY: ${{ inputs.appName }}
+        IMAGE_TAG: ${{ inputs.versionTag }}
+      run: |
+        docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:${{ inputs.versionTag }}
 
-      - name: Push docker image to Amazon ECR
-        env:
-          REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
-          REPOSITORY: ${{ inputs.appName }}
-        run: |
-          docker push $REGISTRY/$REPOSITORY --all-tags
+    - name: Push docker image to Amazon ECR
+      shell: bash
+      env:
+        REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
+        REPOSITORY: ${{ inputs.appName }}
+      run: |
+        docker push $REGISTRY/$REPOSITORY --all-tags
