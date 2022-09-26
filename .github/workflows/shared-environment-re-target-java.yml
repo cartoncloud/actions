@@ -1,0 +1,76 @@
+name: Java environment Re-target
+
+on:
+  workflow_call:
+    inputs:
+      appName:
+        type: string
+        required: true
+      prBaseRef:
+        type: string
+        required: true
+      prHeadRef:
+        type: string
+        required: true
+      prBaseRepoId:
+        type: string
+        required: true
+      prHeadRepoId:
+        type: string
+        required: true
+      prMerged:
+        type: boolean
+        required: true
+
+env:
+  jiraServer: cartoncloud.atlassian.net
+
+jobs:
+  re-target-list:
+    name: Environment Updates
+    runs-on: ubuntu-latest
+    if: ${{ inputs.prMerged }} && ${{ inputs.prHeadRepoId }} == ${{ inputs.prBaseRepoId }} && ${{ inputs.prBaseRef }} == 'main'
+
+    outputs:
+      environments: ${{ steps.map-issues.outputs.issues }}
+
+    steps:
+      - uses: cartoncloud/actions/jira-environment-revision-search@v3
+        id: find-issues
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          projectKey: ENV
+          appName: ${{ inputs.appName }}
+          revision: ${{ inputs.prHeadRef }}
+
+      - id: map-issues
+        run: echo "::set-output name=issues::$(echo '${{ steps.find-issues.outputs.issues }}' | jq -c '[.[] | .["name"] = .fields.customfield_10224 | .["url"] = .fields.customfield_10225] | map({name, url})')"
+
+  update-jira-environment:
+    name: Update jira environment
+    runs-on: ubuntu-latest
+    needs: re-target-list
+    if: needs.re-target-list.outputs.environments != '[]'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ fromJSON(needs.re-target-list.outputs.environments) }}
+
+    concurrency: update-jira-${{ matrix.environment.name }}
+    environment:
+      name: ${{ matrix.environment.name }}
+      url: ${{ matrix.environment.url }}
+
+    steps:
+      - name: Update Jira issue
+        uses: cartoncloud/actions/jira-environment-revision-set@v3
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ matrix.environment.name }}"'
+          appName: ${{ inputs.appName }}
+          revision: ${{ inputs.prBaseRef }}
