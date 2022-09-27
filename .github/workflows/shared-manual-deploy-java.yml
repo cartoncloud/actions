@@ -1,0 +1,86 @@
+name: Java Deploy to Environment
+
+on:
+  workflow_call:
+    inputs:
+      appName:
+        type: string
+        required: true
+      environmentName:
+        type: string
+        required: true
+      environmentUrl:
+        type: string
+        required: true
+      githubSha:
+        type: string
+        required: true
+      githubRefType:
+        type: string
+        required: true
+      githubRefName:
+        type: string
+        required: true
+      repositoryUrl:
+        type: string
+        required: true
+
+env:
+  jiraServer: cartoncloud.atlassian.net
+
+jobs:
+  deploy-from-tag:
+    runs-on: ubuntu-latest
+    name: Deploy
+    if: ${{ inputs.githubRefType }} == 'tag' && startsWith(${{ inputs.githubRefName }}, 'v')
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: ${{ inputs.environmentName }}
+    steps:
+      - name: Deploy
+        uses: cartoncloud/actions/deploy-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          revision: ${{ inputs.githubRefName }}
+          revisionUrl: ${{ inputs.repositoryUrl }}/tree/${{ inputs.githubRefName }}
+          reason: ':technologist::skin-tone-4: Manual deploy by *${{ github.actor }}*'
+          environment: ${{ inputs.environmentName }}
+          environmentUrl: ${{ inputs.environmentUrl }}/deployments
+          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          existingImageTag: ${{ inputs.githubRefName }}
+          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+
+  deploy-branch:
+    runs-on: ubuntu-latest
+    name: Deploy branch
+    if: ${{ inputs.githubRefType }} == 'branch' && ${{ inputs.environmentName }} != 'Production'
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: ${{ inputs.environmentName }}
+    steps:
+      - name: Deploy
+        uses: cartoncloud/actions/deploy-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          revision: ${{ inputs.githubRefName }}
+          revisionUrl: ${{ inputs.repositoryUrl }}/tree/${{ inputs.githubRefName }}
+          reason: ':technologist::skin-tone-4: Manual deploy by *${{ github.actor }}*'
+          environment: ${{ inputs.environmentName }}
+          environmentUrl: ${{ inputs.environmentUrl }}/deployments
+          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          existingImageTag: ${{ inputs.githubSha }}
+          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
