@@ -1,0 +1,424 @@
+name: Java Release Pull Request
+on:
+  workflow_call:
+    inputs:
+      appName:
+        type: string
+        required: true
+      githubEventAction:
+        type: string
+        required: true
+      prBaseSha:
+        type: string
+        required: true
+      prHeadSha:
+        type: string
+        required: true
+      prNumber:
+        type: string
+        required: true
+      prHeadRef:
+        type: string
+        required: true
+      prUrl:
+        type: string
+        required: true
+      repositoryUrl:
+        type: string
+        required: true
+      repositoryName:
+        type: string
+        required: true
+      prMerged:
+        type: boolean
+        required: true
+
+env:
+  jiraServer: cartoncloud.atlassian.net
+  jiraProjectId: 10002
+
+jobs:
+  determine-version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    if: ${{ inputs.githubEventAction != 'closed' }}
+
+    outputs:
+      version: ${{ steps.increment-version.outputs.new_tag }}
+      draftVersion: ${{ steps.increment-version.outputs.new_tag }}-${{ steps.sha.outputs.short-sha }}
+      pomVersion: ${{ steps.pom-version.outputs.pom-version }}
+      markdownReleaseNotes: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Get JIRA issues from commits
+        id: jira-issues-from-commits
+        uses: cartoncloud/actions/jira-issues-from-commits@v3
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          jiraProjectKeys: CC
+          refFrom: ${{ inputs.prBaseSha  }}
+          refTo: ${{ inputs.prHeadSha  }}
+
+      - name: Get incremented version
+        uses: anothrNick/github-tag-action@1.36.0
+        id: increment-version
+        env:
+          WITH_V: true
+          DRY_RUN: true
+          RELEASE_BRANCHES: .*
+          DEFAULT_BUMP: ${{ steps.jira-issues-from-commits.outputs.suggestedVersionBump }}
+          VERBOSE: false
+          INITIAL_VERSION: 1.0.12
+
+      - name: Get pom version
+        id: pom-version
+        run: echo "::set-output name=pom-version::$(echo ${{ steps.increment-version.outputs.new_tag }} | sed 's/v//')"
+
+      - name: Get short SHA
+        id: sha
+        run: echo "::set-output name=short-sha::$(git rev-parse --short HEAD)"
+
+      - name: Generate Markdown release notes
+        id: release-notes-markdown
+        uses: cartoncloud/actions/jira-release-notes-markdown@v3
+        with:
+          title: 'Release ${{ steps.increment-version.outputs.new_tag }}-${{ steps.sha.outputs.short-sha }} (#${{ inputs.prNumber }})'
+
+      - name: Update pull request description (main release)
+        if: ${{ inputs.prHeadRef == 'release/production' }}
+        run: |
+          gh pr edit $PR --body "$BODY
+          ---
+          [Steps to release](https://help.cartoncloud.com/x/zoYbIw)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ inputs.prNumber }}
+          BODY: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
+
+      - name: Update pull request description (hotfix)
+        if: ${{ inputs.prHeadRef != 'release/production' }}
+        run: |
+          gh pr edit $PR --body "$BODY
+          ---
+          [Steps to release this hotfix](https://help.cartoncloud.com/x/2ocbIw)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ inputs.prNumber }}
+          BODY: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: determine-version
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Build
+        uses: cartoncloud/actions/build-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          pomVersion: ${{ needs.determine-version.outputs.pomVersion }}
+          versionTag: ${{ needs.determine-version.outputs.draftVersion }}
+          dockerTag: ${{ inputs.prHeadSha  }}
+          mavenS3AccessKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
+          mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
+          sonarUrl: ${{ secrets.SONAR_HOST_URL }}
+          sonarToken: ${{ secrets.SONAR_TOKEN }}
+
+  create-draft-release:
+    name: Create Draft Release
+    runs-on: ubuntu-latest
+    needs: [determine-version, build]
+
+    outputs:
+      releaseId: ${{ steps.github-release.outputs.id }}
+      htmlUrl: ${{ steps.github-release.outputs.html_url }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Delete past draft releases
+        uses: cartoncloud/actions/github-delete-draft-releases@v3
+        with:
+          name: ${{ inputs.prHeadRef }}
+
+      - name: Create release
+        id: github-release
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ inputs.prHeadRef }}
+          body: ${{ needs.determine-version.outputs.markdownReleaseNotes }}
+          draft: true
+          tag: ${{ needs.determine-version.outputs.draftVersion }}
+
+  deploy-test:
+    name: Deploy to Test 01
+    runs-on: ubuntu-latest
+    needs: [ determine-version, build, create-draft-release ]
+    if: ${{ inputs.prHeadRef == 'release/production'
+    concurrency: deploy-Test 01
+
+    environment:
+      name: Test 01
+      url: http://app.test01/
+
+    env:
+      environmentName: Test 01
+      environmentTag: test01
+      environmentUrl: http://app.test01/
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Deploy
+        uses: cartoncloud/actions/deploy-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          revision: ${{ needs.determine-version.outputs.draftVersion }}
+          revisionUrl: ${{ needs.create-draft-release.outputs.htmlUrl }}
+          reason: ':zap: <${{ inputs.prUrl }}|Next Release>'
+          environment: ${{ env.environmentName }}
+          environmentUrl: ${{ env.environmentUrl }}
+          environmentTag: ${{ env.environmentTag }}
+          existingImageTag: ${{ inputs.prHeadSha  }}
+          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [determine-version, build, create-draft-release]
+    if: ${{ inputs.prHeadRef == 'release/production' }}
+    concurrency: deploy-staging
+
+    environment:
+      name: Staging 01
+      url: http://app.staging01/
+
+    env:
+      environmentName: Staging 01
+      environmentTag: staging01
+      environmentUrl: http://app.test01/
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Deploy
+        uses: cartoncloud/actions/deploy-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          revision: ${{ needs.determine-version.outputs.draftVersion }}
+          revisionUrl: ${{ needs.create-draft-release.outputs.htmlUrl }}
+          environment: ${{ env.environmentName }}
+          environmentUrl: ${{ env.environmentUrl }}
+          environmentTag: ${{ env.environmentTag }}
+          existingImageTag: ${{ inputs.prHeadSha  }}
+          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+
+  create-releases:
+    name: Create Releases
+    runs-on: ubuntu-latest
+    if: ${{ inputs.githubEventAction == 'closed' && inputs.prMerged == true }}
+    concurrency: create-prod-releases
+
+    outputs:
+      version: ${{ steps.increment-version.outputs.new_tag }}
+      slackReleaseNotes: ${{ steps.release-notes-slack.outputs.releaseNotes }}
+      releaseUrl: ${{ steps.create-release.outputs.html_url }}
+      jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Get draft release
+        id: draft-release
+        uses: cartoncloud/actions/github-release-find-by-name@v3
+        with:
+          name: ${{ inputs.prHeadRef }}
+
+      - name: Get JIRA issues from commits
+        id: jira-issues-from-commits
+        uses: cartoncloud/actions/jira-issues-from-commits@v3
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          jiraProjectKeys: CC
+          refFrom: ${{ inputs.prBaseSha  }}
+          refTo: ${{ inputs.prHeadSha  }}
+
+      - name: Get version and tag
+        uses: anothrNick/github-tag-action@1.36.0
+        id: increment-version
+        env:
+          WITH_V: true
+          DRY_RUN: false
+          RELEASE_BRANCHES: .*
+          DEFAULT_BUMP: ${{ steps.jira-issues-from-commits.outputs.suggestedVersionBump }}
+          VERBOSE: false
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INITIAL_VERSION: 1.0.12
+
+      - name: Generate Markdown release notes
+        id: release-notes-markdown
+        uses: cartoncloud/actions/jira-release-notes-markdown@v3
+
+      - name: Generate Slack release notes
+        id: release-notes-slack
+        uses: cartoncloud/actions/jira-release-notes-slack@v3
+        with:
+          title: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
+          slackToken: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        id: create-release
+        with:
+          name: ${{ steps.increment-version.outputs.new_tag }}
+          body: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
+          tag: ${{ steps.increment-version.outputs.new_tag }}
+
+      - name: Delete draft release
+        uses: cartoncloud/actions/github-delete-draft-releases@v3
+        with:
+          name: ${{ inputs.prHeadRef }}
+
+      - name: Create JIRA Release
+        id: create-jira-release
+        uses: cartoncloud/actions/jira-project-version-create@v3
+        with:
+          username: ${{ secrets.JIRA_USERNAME }}
+          password: ${{ secrets.JIRA_PASSWORD }}
+          serverAddress: ${{ env.jiraServer }}
+          projectId: ${{ env.jiraProjectId }}
+          name: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
+          description: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
+          isReleased: false
+
+      - name: Update JIRA fix versions
+        uses: cartoncloud/actions/jira-issues-update-fix-version@v3
+        with:
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: create-releases
+    concurrency: deploy-Production
+
+    environment:
+      name: Production
+      url: https://app.cartoncloud.com.au/
+
+    env:
+      environmentName: Production
+      environmentUrl: https://app.cartoncloud.com.au/
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Deploy
+        uses: cartoncloud/actions/deploy-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          revision: ${{ needs.create-releases.outputs.version }}
+          revisionUrl: ${{ needs.create-releases.outputs.releaseUrl }}
+          releaseNotes: ${{ needs.create-releases.outputs.slackReleaseNotes }}
+          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          environment: ${{ env.environmentName }}
+          environmentUrl: ${{ env.environmentUrl }}
+          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          versionTag: ${{ needs.create-releases.outputs.version }}
+          existingImageTag: ${{ inputs.prHeadSha  }}
+          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          jiraServer: ${{ env.jiraServer }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+
+      - name: Mark JIRA as released
+        uses: cartoncloud/actions/jira-project-version-update@v3
+        with:
+          username: ${{ secrets.JIRA_USERNAME }}
+          password: ${{ secrets.JIRA_PASSWORD }}
+          serverAddress: ${{ env.jiraServer }}
+          projectId: ${{ env.jiraProjectId }}
+          releaseId: ${{ needs.create-releases.outputs.jiraReleaseId }}
+          isReleased: true
+
+  back-merge:
+    name: Back-merge
+    runs-on: ubuntu-latest
+    needs: deploy-production
+
+    env:
+      PIPELINES_CHANNEL: C02P64WUT2T
+
+    steps:
+      - name: Merge production into main
+        uses: devmasx/merge-branch@8b86512c768bec19827894f0a39a776809668189
+        id: back-merge-production
+        with:
+          type: now
+          from_branch: production
+          target_branch: main
+          message: Back-merge from production
+          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Used to bypass required PRs
+
+      - name: Merge conflict Slack notification
+        if: ${{ failure() && steps.back-merge-production.conclusion == 'failure' }}
+        uses: slackapi/slack-github-action@v1.21.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        with:
+          channel-id: ${{ env.PIPELINES_CHANNEL }}
+          payload: |
+            {
+              "text": "${{ inputs.repositoryName }} has merge conflicts",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*⚠️ <${{ inputs.repositoryUrl }}|${{ inputs.repositoryName }}>* has merge conflicts between `production` and `main`"
+                  }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "Please resolve *manually*"
+                    }
+                  ]
+                }
+              ]
+            }
