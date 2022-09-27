@@ -164,7 +164,7 @@ jobs:
     name: Deploy to Test 01
     runs-on: ubuntu-latest
     needs: [ determine-version, build, create-draft-release ]
-    if: ${{ inputs.prHeadRef == 'release/production'
+    if: ${{ inputs.prHeadRef == 'release/production' }}
     concurrency: deploy-Test 01
 
     environment:
