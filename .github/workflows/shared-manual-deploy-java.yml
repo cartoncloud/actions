@@ -29,7 +29,7 @@ jobs:
   deploy-from-tag:
     runs-on: ubuntu-latest
     name: Deploy tag
-    if: ${{ inputs.githubRefType }} == 'tag' && startsWith(${{ inputs.githubRefName }}, 'v')
+    if: ${{ inputs.githubRefType == 'tag' && startsWith(inputs.githubRefName, 'v') }}
     permissions:
       id-token: write
       contents: read
@@ -57,7 +57,7 @@ jobs:
   deploy-branch:
     runs-on: ubuntu-latest
     name: Deploy branch
-    if: ${{ inputs.githubRefType }} == 'branch' && ${{ inputs.environmentName }} != 'Production'
+    if: ${{ inputs.githubRefType == 'branch' && inputs.environmentName != 'Production' }}
     permissions:
       id-token: write
       contents: read
