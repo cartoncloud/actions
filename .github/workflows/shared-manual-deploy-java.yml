@@ -28,7 +28,7 @@ env:
 jobs:
   deploy-from-tag:
     runs-on: ubuntu-latest
-    name: Deploy
+    name: Deploy tag
     if: ${{ inputs.githubRefType }} == 'tag' && startsWith(${{ inputs.githubRefName }}, 'v')
     permissions:
       id-token: write
