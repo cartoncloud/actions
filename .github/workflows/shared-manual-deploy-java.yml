@@ -9,9 +9,6 @@ on:
       environmentName:
         type: string
         required: true
-      environmentUrl:
-        type: string
-        required: true
       githubSha:
         type: string
         required: true
@@ -48,7 +45,7 @@ jobs:
           revisionUrl: ${{ inputs.repositoryUrl }}/tree/${{ inputs.githubRefName }}
           reason: ':technologist::skin-tone-4: Manual deploy by *${{ github.actor }}*'
           environment: ${{ inputs.environmentName }}
-          environmentUrl: ${{ inputs.environmentUrl }}/deployments
+          environmentUrl: ${{ inputs.repositoryUrl }}/deployments
           environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
           existingImageTag: ${{ inputs.githubRefName }}
           awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
@@ -76,7 +73,7 @@ jobs:
           revisionUrl: ${{ inputs.repositoryUrl }}/tree/${{ inputs.githubRefName }}
           reason: ':technologist::skin-tone-4: Manual deploy by *${{ github.actor }}*'
           environment: ${{ inputs.environmentName }}
-          environmentUrl: ${{ inputs.environmentUrl }}/deployments
+          environmentUrl: ${{ inputs.repositoryUrl }}/deployments
           environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
           existingImageTag: ${{ inputs.githubSha }}
           awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
