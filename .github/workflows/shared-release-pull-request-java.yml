@@ -395,7 +395,7 @@ jobs:
 
       - name: Merge conflict Slack notification
         if: ${{ failure() && steps.back-merge-production.conclusion == 'failure' }}
-        uses: slackapi/slack-github-action@v1.21.0
+        uses: slackapi/slack-github-action@v1.22.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         with:
