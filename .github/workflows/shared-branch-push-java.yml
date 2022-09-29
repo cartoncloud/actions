@@ -6,6 +6,9 @@ on:
       appName:
         type: string
         required: true
+      githubRefName:
+        type: string
+        required: false
 
 env:
   jiraServer: cartoncloud.atlassian.net
@@ -26,6 +29,7 @@ jobs:
           mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
           sonarUrl: ${{ secrets.SONAR_HOST_URL }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
+          githubRefName: ${{ inputs.githubRefName }}
 
   auto-update-list:
     name: Environment Updates
