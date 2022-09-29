@@ -84,15 +84,6 @@ runs:
       run: |
         docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
 
-    - name: Tag docker image
-      shell: bash
-      env:
-        REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
-        REPOSITORY: ${{ inputs.appName }}
-        IMAGE_TAG: ${{ inputs.dockerTag }}
-      run: |
-        docker tag $REGISTRY/$REPOSITORY:latest $REGISTRY/$REPOSITORY:$IMAGE_TAG    
-
     - name: Tag image with version tag if present
       if: inputs.versionTag != ''
       shell: bash
