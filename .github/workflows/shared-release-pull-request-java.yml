@@ -120,7 +120,7 @@ jobs:
           BODY: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
 
   build:
-    if: postgres == false
+    if: ${{ inputs.postgres == false }}
     name: Build
     runs-on: ubuntu-latest
     needs: determine-version
@@ -141,7 +141,7 @@ jobs:
           sonarToken: ${{ secrets.SONAR_TOKEN }}
 
   build-with-postgres:
-    if: postgres == true
+    if: ${{ inputs.postgres == true }}
     name: Build
     services:
       postgres:
