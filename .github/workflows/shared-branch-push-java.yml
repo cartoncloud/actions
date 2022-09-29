@@ -6,13 +6,49 @@ on:
       appName:
         type: string
         required: true
+      db:
+        type: boolean
+        required: false
+        default: false
 
 env:
   jiraServer: cartoncloud.atlassian.net
 
 jobs:
   build:
+    if: db == false
     name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Build
+        uses: cartoncloud/actions/build-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          mavenS3AccessKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
+          mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
+          sonarUrl: ${{ secrets.SONAR_HOST_URL }}
+          sonarToken: ${{ secrets.SONAR_TOKEN }}
+
+  build-with-db:
+    if: db == true
+    name: Build
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: cartoncloud
+          POSTGRES_PASSWORD: cartoncloud
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     runs-on: ubuntu-latest
     permissions:
       id-token: write
