@@ -6,7 +6,7 @@ on:
       appName:
         type: string
         required: true
-      db:
+    postgres:
         type: boolean
         required: false
         default: false
@@ -16,7 +16,7 @@ env:
 
 jobs:
   build:
-    if: db == false
+    if: postgres == false
     name: Build
     runs-on: ubuntu-latest
     permissions:
@@ -32,8 +32,8 @@ jobs:
           sonarUrl: ${{ secrets.SONAR_HOST_URL }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
 
-  build-with-db:
-    if: db == true
+  build-with-postgres:
+    if: postgres == true
     name: Build
     services:
       postgres:
