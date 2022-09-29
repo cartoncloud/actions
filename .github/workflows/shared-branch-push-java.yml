@@ -34,7 +34,7 @@ jobs:
 
   build-with-postgres:
     if: ${{ inputs.postgres == true }}
-    name: Build
+    name: Build with Postgres
     services:
       postgres:
         image: postgres
@@ -54,6 +54,9 @@ jobs:
       id-token: write
       contents: read
     steps:
+      - name: Add hosts to /etc/hosts
+        run: sudo echo "127.0.0.1 postgres.localhost.com" | sudo tee -a /etc/hosts
+
       - name: Build
         uses: cartoncloud/actions/build-java@v3
         with:
