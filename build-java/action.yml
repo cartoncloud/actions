@@ -18,6 +18,9 @@ inputs:
   versionTag:
     description: 'Version tag to apply to docker image'
     required: false
+  githubRefName:
+    description: 'Github ref name'
+    required: false
   mavenS3AccessKeyId:
     description: 'Maven S3 Access Key Id to upload artefact'
   mavenS3SecretAccessKey:
@@ -70,22 +73,16 @@ runs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build tag docker image
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+    - name: Build and tag docker image
       shell: bash
       run: |
-        mvn initialize dockerfile:build
+        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
 
-    - name: Tag docker image
+    - name: Tag docker image with latest for pushes on main branch
       shell: bash
-      env:
-        REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
-        REPOSITORY: ${{ inputs.appName }}
-        IMAGE_TAG: ${{ inputs.dockerTag }}
+      if: $ {{ inputs.githubRefName == 'main' }}
       run: |
-        docker tag $REGISTRY/$REPOSITORY:latest $REGISTRY/$REPOSITORY:$IMAGE_TAG    
+        docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
 
     - name: Tag image with version tag if present
       if: inputs.versionTag != ''

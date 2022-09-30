@@ -10,6 +10,9 @@ on:
         type: boolean
         required: false
         default: false
+      githubRefName:
+        type: string
+        required: false
 
 env:
   jiraServer: cartoncloud.atlassian.net
@@ -31,6 +34,7 @@ jobs:
           mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
           sonarUrl: ${{ secrets.SONAR_HOST_URL }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
+          githubRefName: ${{ inputs.githubRefName }}
 
   build-with-postgres:
     if: ${{ inputs.postgres == true }}
