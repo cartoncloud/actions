@@ -75,6 +75,10 @@ runs:
 
     - name: Build and tag docker image
       shell: bash
+      env:
+        REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
+        REPOSITORY: ${{ inputs.appName }}
+        IMAGE_TAG: ${{ inputs.dockerTag }}
       run: |
         docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
 
