@@ -80,7 +80,7 @@ runs:
 
     - name: Tag docker image with latest for pushes on main branch
       shell: bash
-      if: $ {{ inputs.githubRefName == 'main' }}
+      if: ${{ inputs.githubRefName == 'main' }}
       run: |
         docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
 
