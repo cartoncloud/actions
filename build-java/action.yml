@@ -80,7 +80,7 @@ runs:
         REPOSITORY: ${{ inputs.appName }}
         IMAGE_TAG: ${{ inputs.dockerTag }}
       run: |
-        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG --build-arg jar_file=./target/${{ inputs.appName }}-${{ inputs.pomVersion }}.jar .
 
     - name: Tag docker image with latest for pushes on main branch
       if: ${{ inputs.githubRefName == 'main' }}
