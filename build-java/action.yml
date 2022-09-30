@@ -79,8 +79,12 @@ runs:
         docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
 
     - name: Tag docker image with latest for pushes on main branch
-      shell: bash
       if: ${{ inputs.githubRefName == 'main' }}
+      shell: bash
+      env:
+        REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
+        REPOSITORY: ${{ inputs.appName }}
+        IMAGE_TAG: ${{ inputs.dockerTag }}
       run: |
         docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
 
