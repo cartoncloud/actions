@@ -35,10 +35,6 @@ on:
       initialVersion:
         type: string
         required: false
-      postgres:
-        type: boolean
-        required: false
-        default: false
 
 env:
   jiraServer: cartoncloud.atlassian.net
@@ -120,29 +116,12 @@ jobs:
           BODY: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
 
   build:
-    if: ${{ inputs.postgres == false }}
     name: Build
     runs-on: ubuntu-latest
     needs: determine-version
     permissions:
       id-token: write
       contents: read
-    steps:
-      - name: Build
-        uses: cartoncloud/actions/build-java@v3
-        with:
-          appName: ${{ inputs.appName }}
-          pomVersion: ${{ needs.determine-version.outputs.pomVersion }}
-          versionTag: ${{ needs.determine-version.outputs.draftVersion }}
-          dockerTag: ${{ inputs.prHeadSha  }}
-          mavenS3AccessKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
-          mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
-          sonarUrl: ${{ secrets.SONAR_HOST_URL }}
-          sonarToken: ${{ secrets.SONAR_TOKEN }}
-
-  build-with-postgres:
-    if: ${{ inputs.postgres == true }}
-    name: Build with Postgres
     services:
       postgres:
         image: postgres
@@ -156,11 +135,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    runs-on: ubuntu-latest
-    needs: determine-version
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - name: Add hosts to /etc/hosts
         run: sudo echo "127.0.0.1 postgres.localhost.com" | sudo tee -a /etc/hosts
