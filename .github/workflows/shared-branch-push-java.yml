@@ -6,10 +6,6 @@ on:
       appName:
         type: string
         required: true
-      postgres:
-        type: boolean
-        required: false
-        default: false
       githubRefName:
         type: string
         required: false
