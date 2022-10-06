@@ -135,9 +135,25 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        # Docker Hub image
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Add hosts to /etc/hosts
         run: sudo echo "127.0.0.1 postgres.localhost.com" | sudo tee -a /etc/hosts
+
+      - name: Connect to Redis
+        run: node client.js
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
 
       - name: Build
         uses: cartoncloud/actions/build-java@v3
