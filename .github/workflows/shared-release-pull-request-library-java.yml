@@ -116,7 +116,7 @@ jobs:
   build:
     name: Build
     if: ${{ inputs.githubEventAction == 'closed' && inputs.prMerged == true }}
-    uses: ./.github/workflows/java-common-build.yml
+    uses: ./.github/workflows/action.yml
     needs: determine-version
     with:
       pomVersion: ${{ inputs.pomVersion }}
