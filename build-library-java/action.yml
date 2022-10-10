@@ -1,0 +1,40 @@
+name: 'Build Library Java'
+description: 'Action to build library java'
+inputs:
+  pomVersion:
+    description: 'Pom version to apply to maven artefact'
+    required: false
+    default: ${{ github.sha }}
+  mavenS3AccessKeyId:
+    description: 'Maven S3 Access Key Id to upload artefact'
+  mavenS3SecretAccessKey:
+    description: 'Maven S3 Secret Access Key to upload artefact'
+
+
+runs:
+  using: "composite"
+
+  steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Update pom version
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+      shell: bash
+      run: mvn versions:set -DnewVersion="${{ inputs.pomVersion }}"
+
+    - name: Build project
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+      shell: bash
+      run: mvn -Dmaven.wagon.http.pool=false -s settings.xml -B clean deploy
+
+
