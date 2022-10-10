@@ -1,0 +1,44 @@
+name: Release Labels for Java
+
+on:
+  workflow_call:
+    inputs:
+      appName:
+        type: string
+        required: true
+      repository:
+        type: string
+        required: true
+      pullRequestNumber:
+        type: string
+        required: true
+      containsReleaseLabel:
+        type: boolean
+        required: true
+      prHeadRef:
+        type: string
+        required: true
+      githubEventAction:
+        type: string
+        required: true
+
+jobs:
+  labels:
+    name: Required Labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add release label
+        run: gh pr edit $PR --repo $REPO --add-label "Release"
+        if: ${{ inputs.githubEventAction == 'opened' && inputs.containsReleaseLabel == false }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: '${{ github.repository_owner }}/${{ inputs.appName }}'
+          PR: ${{ inputs.pullRequestNumber }}
+
+      - name: Check for Api Functional Pass label
+        uses: mheap/github-action-required-labels@v2
+        if: ${{ inputs.prHeadRef == 'release/production' }}
+        with:
+          mode: exactly
+          count: 1
+          labels: "API Functional Pass"
