@@ -6,9 +6,6 @@ on:
       appName:
         type: string
         required: true
-      repository:
-        type: string
-        required: true
       pullRequestNumber:
         type: string
         required: true
