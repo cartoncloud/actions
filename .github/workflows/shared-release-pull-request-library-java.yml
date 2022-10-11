@@ -116,7 +116,7 @@ jobs:
   build:
     name: Build
     if: ${{ inputs.githubEventAction == 'closed' && inputs.prMerged == true }}
-    uses: ./.github/workflows/action.yml
+    uses: cartoncloud/actions/build-library-java@v3
     needs: determine-version
     with:
       pomVersion: ${{ needs.determine-version.outputs.pomVersion }}
