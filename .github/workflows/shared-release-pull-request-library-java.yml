@@ -119,7 +119,7 @@ jobs:
     uses: ./.github/workflows/action.yml
     needs: determine-version
     with:
-      pomVersion: ${{ inputs.pomVersion }}
+      pomVersion: ${{ needs.determine-version.outputs.pomVersion }}
     secrets:
       awsKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
       awsSecretKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
