@@ -116,10 +116,10 @@ jobs:
   build:
     name: Build
     if: ${{ inputs.githubEventAction == 'closed' && inputs.prMerged == true }}
-    uses: ./.github/workflows/action.yml
+    uses: cartoncloud/actions/build-library-java@v3
     needs: determine-version
     with:
-      pomVersion: ${{ inputs.pomVersion }}
+      pomVersion: ${{ needs.determine-version.outputs.pomVersion }}
     secrets:
       awsKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
       awsSecretKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
