@@ -167,6 +167,7 @@ jobs:
           sonarUrl: ${{ secrets.SONAR_HOST_URL }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           jasperBuild: ${{ inputs.jasperBuild }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
   create-draft-release:
     name: Create Draft Release
