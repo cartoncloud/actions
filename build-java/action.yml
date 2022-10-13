@@ -53,7 +53,7 @@ runs:
       run: mvn versions:set -DnewVersion="${{ inputs.pomVersion }}"
 
     - uses: actions/checkout@v3
-      if: ${{ inputs.jasperBuild != '' }}
+      if: ${{ inputs.jasperBuild == 'true' }}
       with:
         name: cartoncloud/jasper-report
         ref: refs/heads/main
@@ -62,7 +62,7 @@ runs:
         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
     - name: Jasper Report Steps
-      if: ${{ inputs.jasperBuild != '' }}
+      if: ${{ inputs.jasperBuild == 'true' }}
       shell: bash
       run: |
         rm jasper/*.jasper
