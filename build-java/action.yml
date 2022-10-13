@@ -58,10 +58,9 @@ runs:
     - uses: actions/checkout@v3
       if: ${{ inputs.jasperBuild == 'true' }}
       with:
-        name: cartoncloud/jasper-report
+        repository: cartoncloud/jasper-report
         ref: refs/heads/main
         path: jasper-report
-      env:
         token: ${{ inputs.token }}
 
     - name: Jasper Report Steps
