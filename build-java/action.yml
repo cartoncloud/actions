@@ -32,6 +32,9 @@ inputs:
   jasperBuild:
     description: 'Flag for jasper build'
     required: false
+  token:
+    description: 'Personal access token with auth for the jasper-report repository'
+    required: true
 
 runs:
   using: composite
@@ -59,7 +62,7 @@ runs:
         ref: refs/heads/main
         path: jasper-report
       env:
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        token: ${{ inputs.token }}
 
     - name: Jasper Report Steps
       if: ${{ inputs.jasperBuild == 'true' }}
