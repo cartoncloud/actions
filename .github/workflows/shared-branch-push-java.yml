@@ -10,7 +10,7 @@ on:
         type: string
         required: false
       jasperBuild:
-        type: string
+        type: boolean
         required: false
 
 env:
