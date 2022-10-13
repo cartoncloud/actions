@@ -62,7 +62,6 @@ jobs:
           mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
           sonarUrl: ${{ secrets.SONAR_HOST_URL }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
-          githubRefName: ${{ inputs.githubRefName }}
           jasperBuild: ${{ inputs.jasperBuild }}
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 

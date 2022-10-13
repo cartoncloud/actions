@@ -18,9 +18,6 @@ inputs:
   versionTag:
     description: 'Version tag to apply to docker image'
     required: false
-  githubRefName:
-    description: 'Github ref name'
-    required: false
   mavenS3AccessKeyId:
     description: 'Maven S3 Access Key Id to upload artefact'
   mavenS3SecretAccessKey:
@@ -106,7 +103,7 @@ runs:
         docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG --build-arg jar_file=./target/${{ inputs.appName }}-${{ inputs.pomVersion }}.jar .
 
     - name: Tag docker image with latest for pushes on main branch
-      if: ${{ inputs.githubRefName == 'main' }}
+      if: ${{ github.ref_name == 'main' }}
       shell: bash
       env:
         REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
