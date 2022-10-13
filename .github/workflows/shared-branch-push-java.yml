@@ -9,6 +9,9 @@ on:
       githubRefName:
         type: string
         required: false
+      jasperBuild:
+        type: string
+        required: false
 
 env:
   jiraServer: cartoncloud.atlassian.net
@@ -60,6 +63,7 @@ jobs:
           sonarUrl: ${{ secrets.SONAR_HOST_URL }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           githubRefName: ${{ inputs.githubRefName }}
+          jasperBuild: ${{ inputs.jasperBuild }}
 
   auto-update-list:
     name: Environment Updates

@@ -29,6 +29,10 @@ inputs:
     description: 'URL to Sonar Server'
   sonarToken:
     description: 'Sonar token'
+  jasperBuild:
+    description: 'Flag for jasper build'
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -48,6 +52,24 @@ runs:
         AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
       shell: bash
       run: mvn versions:set -DnewVersion="${{ inputs.pomVersion }}"
+
+    - uses: actions/checkout@v3
+      if: ${{ inputs.jasperBuild != '' }}
+      with:
+        name: cartoncloud/jasper-report
+        ref: refs/heads/main
+        path: jasper-report
+      env:
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+    - name: Jasper Report Steps
+      if: ${{ inputs.jasperBuild != '' }}
+      shell: bash
+      run: |
+        rm jasper/*.jasper
+        rm src/main/resources/ratecardreport.properties
+        cp jasper-report/jasper/*.jrxml jasper-compile
+        cp jasper-report/ratecardreport.properties src/main/resources        
 
     - name: Build project
       env:

@@ -35,6 +35,9 @@ on:
       initialVersion:
         type: string
         required: false
+      jasperBuild:
+        type: string
+        required: false
 
 env:
   jiraServer: cartoncloud.atlassian.net
@@ -163,6 +166,7 @@ jobs:
           mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
           sonarUrl: ${{ secrets.SONAR_HOST_URL }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
+          jasperBuild: ${{ inputs.jasperBuild }}
 
   create-draft-release:
     name: Create Draft Release
