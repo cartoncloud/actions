@@ -32,7 +32,6 @@ inputs:
   jasperBuild:
     description: 'Flag for jasper build'
     required: false
-    default: 'false'
 
 runs:
   using: composite
