@@ -33,7 +33,7 @@ inputs:
     description: 'Flag for jasper build'
     required: false
   token:
-    description: 'Personal access token with auth for the intended repository'
+    description: 'Personal access token with auth for the jasper-report repository'
     required: true
 
 runs:
