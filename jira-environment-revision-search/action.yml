@@ -19,10 +19,18 @@ inputs:
   revision:
     description: 'Git branch or tag'
     required: true
+  nameField:
+    description: 'JSON field for the environment name'
+    required: false
+  urlField:
+    description: 'JSON field for the environment URL'
+    required: false
 
 outputs:
   issues:
-    description: 'Matching Jira issues'
+    description: 'Full JSON output of matching Jira issues.'
+  environments:
+    description: 'Array of matching environment names and urls. For this, nameField and urlField must be supplied.'
 
 runs:
   using: 'node16'

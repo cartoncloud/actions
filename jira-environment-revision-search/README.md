@@ -20,3 +20,17 @@ App/project name i.e. React
 
 ### revision (required)
 Git branch or tag
+
+### nameField (optional)
+JSON field for the environment name
+
+### urlField (optional)
+JSON field for the environment URL
+
+## Outputs
+
+### issues
+Full JSON output of matching Jira issues.
+
+### environments
+Array of matching environment names and urls. For this, nameField and urlField must be supplied.

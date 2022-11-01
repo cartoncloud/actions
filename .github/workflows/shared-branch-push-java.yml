@@ -71,7 +71,7 @@ jobs:
     needs: build
 
     outputs:
-      environments: ${{ steps.map-issues.outputs.issues }}
+      environments: ${{ steps.find-issues.outputs.environments }}
 
     steps:
       - uses: cartoncloud/actions/jira-environment-revision-search@v3
@@ -83,9 +83,8 @@ jobs:
           projectKey: ENV
           appName: ${{ inputs.appName }}
           revision: ${{ github.ref_name }}
-
-      - id: map-issues
-        run: echo "::set-output name=issues::$(echo '${{ steps.find-issues.outputs.issues }}' | jq -c '[.[] | .["name"] = .fields.customfield_10224 | .["url"] = .fields.customfield_10225] | map({name, url})')"
+          nameField: customfield_10224
+          urlField: customfield_10225
 
   deploy:
     name: Deploy
