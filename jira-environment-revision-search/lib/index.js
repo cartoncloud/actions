@@ -36,6 +36,8 @@ async function run() {
         const projectKey = core.getInput('projectKey', { required: true });
         const appName = core.getInput('appName', { required: true });
         const revision = core.getInput('revision', { required: true });
+        const nameField = core.getInput('nameField', { required: false });
+        const urlField = core.getInput('urlField', { required: false });
         const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
         const labelToFind = `${appName.toLowerCase().replaceAll(' ', '-')}-${revision}`;
         const jql = `project = ${projectKey} AND labels = "${labelToFind}"`;
@@ -55,6 +57,13 @@ async function run() {
         const matchingIssues = await issuesResponse.json();
         core.info(`${matchingIssues.total > 0 ? matchingIssues.total : 'No'} matching issue(s) found.`);
         core.setOutput('issues', matchingIssues.issues);
+        if (nameField && urlField) {
+            const mappedIssues = matchingIssues.issues.map((issue) => ({
+                name: issue.fields[nameField],
+                url: issue.fields[urlField],
+            }));
+            core.setOutput('environments', mappedIssues);
+        }
     }
     catch (error) {
         core.setFailed(error.message);

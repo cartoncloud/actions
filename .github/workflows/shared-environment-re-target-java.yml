@@ -32,7 +32,7 @@ jobs:
     if: ${{ inputs.prMerged }} && ${{ inputs.prHeadRepoId }} == ${{ inputs.prBaseRepoId }} && ${{ inputs.prBaseRef }} == 'main'
 
     outputs:
-      environments: ${{ steps.map-issues.outputs.issues }}
+      environments: ${{ steps.find-issues.outputs.environments }}
 
     steps:
       - uses: cartoncloud/actions/jira-environment-revision-search@v3
@@ -44,9 +44,8 @@ jobs:
           projectKey: ENV
           appName: ${{ inputs.appName }}
           revision: ${{ inputs.prHeadRef }}
-
-      - id: map-issues
-        run: echo "::set-output name=issues::$(echo '${{ steps.find-issues.outputs.issues }}' | jq -c '[.[] | .["name"] = .fields.customfield_10224 | .["url"] = .fields.customfield_10225] | map({name, url})')"
+          nameField: customfield_10224
+          urlField: customfield_10225
 
   update-jira-environment:
     name: Update jira environment
