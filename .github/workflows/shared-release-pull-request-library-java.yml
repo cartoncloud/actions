@@ -25,6 +25,9 @@ on:
         type: string
         required: false
 
+permissions:
+  pull-requests: write
+
 env:
   jiraServer: cartoncloud.atlassian.net
   jiraProjectId: 10002
