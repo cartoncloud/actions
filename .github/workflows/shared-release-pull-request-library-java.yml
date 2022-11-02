@@ -28,6 +28,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  repository-projects: read
 
 env:
   jiraServer: cartoncloud.atlassian.net
