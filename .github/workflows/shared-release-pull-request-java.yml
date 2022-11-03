@@ -84,11 +84,11 @@ jobs:
 
       - name: Get pom version
         id: pom-version
-        run: echo "::set-output name=pom-version::$(echo ${{ steps.increment-version.outputs.new_tag }} | sed 's/v//')"
+        run: echo "pom-version=$(echo ${{ steps.increment-version.outputs.new_tag }} | sed 's/v//')" >> $GITHUB_OUTPUT
 
       - name: Get short SHA
         id: sha
-        run: echo "::set-output name=short-sha::$(git rev-parse --short HEAD)"
+        run: echo "short-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Generate Markdown release notes
         id: release-notes-markdown
@@ -432,7 +432,7 @@ jobs:
 
       - name: Merge conflict Slack notification
         if: ${{ failure() && steps.back-merge-production.conclusion == 'failure' }}
-        uses: slackapi/slack-github-action@v1.22.0
+        uses: slackapi/slack-github-action@v1.23.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         with:

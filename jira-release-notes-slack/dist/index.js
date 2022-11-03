@@ -23,7 +23,10 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 
 // node_modules/web-streams-polyfill/dist/ponyfill.es2018.js
 var require_ponyfill_es2018 = __commonJS({
@@ -4498,59 +4501,6 @@ var require_command = __commonJS({
   }
 });
 
-// node_modules/@actions/core/lib/file-command.js
-var require_file_command = __commonJS({
-  "node_modules/@actions/core/lib/file-command.js"(exports) {
-    "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
-      Object.defineProperty(o, k2, { enumerable: true, get: function() {
-        return m2[k];
-      } });
-    } : function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
-      o[k2] = m2[k];
-    });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    } : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
-      var result = {};
-      if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
-      }
-      __setModuleDefault(result, mod);
-      return result;
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.issueCommand = void 0;
-    var fs3 = __importStar(require("fs"));
-    var os = __importStar(require("os"));
-    var utils_1 = require_utils();
-    function issueCommand(command, message) {
-      const filePath = process.env[`GITHUB_${command}`];
-      if (!filePath) {
-        throw new Error(`Unable to find environment variable for file command ${command}`);
-      }
-      if (!fs3.existsSync(filePath)) {
-        throw new Error(`Missing file at path: ${filePath}`);
-      }
-      fs3.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
-        encoding: "utf8"
-      });
-    }
-    exports.issueCommand = issueCommand;
-  }
-});
-
 // node_modules/uuid/dist/rng.js
 var require_rng = __commonJS({
   "node_modules/uuid/dist/rng.js"(exports) {
@@ -5042,6 +4992,72 @@ var require_dist = __commonJS({
   }
 });
 
+// node_modules/@actions/core/lib/file-command.js
+var require_file_command = __commonJS({
+  "node_modules/@actions/core/lib/file-command.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
+      if (k2 === void 0)
+        k2 = k;
+      Object.defineProperty(o, k2, { enumerable: true, get: function() {
+        return m2[k];
+      } });
+    } : function(o, m2, k, k2) {
+      if (k2 === void 0)
+        k2 = k;
+      o[k2] = m2[k];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    } : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k in mod)
+          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
+            __createBinding(result, mod, k);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
+    var fs3 = __importStar(require("fs"));
+    var os = __importStar(require("os"));
+    var uuid_1 = require_dist();
+    var utils_1 = require_utils();
+    function issueFileCommand(command, message) {
+      const filePath = process.env[`GITHUB_${command}`];
+      if (!filePath) {
+        throw new Error(`Unable to find environment variable for file command ${command}`);
+      }
+      if (!fs3.existsSync(filePath)) {
+        throw new Error(`Missing file at path: ${filePath}`);
+      }
+      fs3.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+        encoding: "utf8"
+      });
+    }
+    exports.issueFileCommand = issueFileCommand;
+    function prepareKeyValueMessage(key, value) {
+      const delimiter = `ghadelimiter_${uuid_1.v4()}`;
+      const convertedValue = utils_1.toCommandValue(value);
+      if (key.includes(delimiter)) {
+        throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+      }
+      if (convertedValue.includes(delimiter)) {
+        throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+      }
+      return `${key}<<${delimiter}${os.EOL}${convertedValue}${os.EOL}${delimiter}`;
+    }
+    exports.prepareKeyValueMessage = prepareKeyValueMessage;
+  }
+});
+
 // node_modules/@actions/http-client/lib/proxy.js
 var require_proxy = __commonJS({
   "node_modules/@actions/http-client/lib/proxy.js"(exports) {
@@ -5221,7 +5237,10 @@ var require_tunnel = __commonJS({
         connectReq.removeAllListeners();
         socket.removeAllListeners();
         if (res.statusCode !== 200) {
-          debug("tunneling socket could not be established, statusCode=%d", res.statusCode);
+          debug(
+            "tunneling socket could not be established, statusCode=%d",
+            res.statusCode
+          );
           socket.destroy();
           var error = new Error("tunneling socket could not be established, statusCode=" + res.statusCode);
           error.code = "ECONNRESET";
@@ -5244,7 +5263,11 @@ var require_tunnel = __commonJS({
       }
       function onError(cause) {
         connectReq.removeAllListeners();
-        debug("tunneling socket could not be established, cause=%s\n", cause.message, cause.stack);
+        debug(
+          "tunneling socket could not be established, cause=%s\n",
+          cause.message,
+          cause.stack
+        );
         var error = new Error("tunneling socket could not be established, cause=" + cause.message);
         error.code = "ECONNRESET";
         options.request.emit("error", error);
@@ -6356,7 +6379,6 @@ var require_core = __commonJS({
     var utils_1 = require_utils();
     var os = __importStar(require("os"));
     var path = __importStar(require("path"));
-    var uuid_1 = require_dist();
     var oidc_utils_1 = require_oidc_utils();
     var ExitCode;
     (function(ExitCode2) {
@@ -6368,18 +6390,9 @@ var require_core = __commonJS({
       process.env[name] = convertedVal;
       const filePath = process.env["GITHUB_ENV"] || "";
       if (filePath) {
-        const delimiter = `ghadelimiter_${uuid_1.v4()}`;
-        if (name.includes(delimiter)) {
-          throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
-        }
-        if (convertedVal.includes(delimiter)) {
-          throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
-        }
-        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
-        file_command_1.issueCommand("ENV", commandValue);
-      } else {
-        command_1.issueCommand("set-env", { name }, convertedVal);
+        return file_command_1.issueFileCommand("ENV", file_command_1.prepareKeyValueMessage(name, val));
       }
+      command_1.issueCommand("set-env", { name }, convertedVal);
     }
     exports.exportVariable = exportVariable;
     function setSecret(secret) {
@@ -6389,7 +6402,7 @@ var require_core = __commonJS({
     function addPath(inputPath) {
       const filePath = process.env["GITHUB_PATH"] || "";
       if (filePath) {
-        file_command_1.issueCommand("PATH", inputPath);
+        file_command_1.issueFileCommand("PATH", inputPath);
       } else {
         command_1.issueCommand("add-path", {}, inputPath);
       }
@@ -6409,7 +6422,10 @@ var require_core = __commonJS({
     exports.getInput = getInput2;
     function getMultilineInput(name, options) {
       const inputs = getInput2(name, options).split("\n").filter((x2) => x2 !== "");
-      return inputs;
+      if (options && options.trimWhitespace === false) {
+        return inputs;
+      }
+      return inputs.map((input) => input.trim());
     }
     exports.getMultilineInput = getMultilineInput;
     function getBooleanInput(name, options) {
@@ -6425,8 +6441,12 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
     exports.getBooleanInput = getBooleanInput;
     function setOutput2(name, value) {
+      const filePath = process.env["GITHUB_OUTPUT"] || "";
+      if (filePath) {
+        return file_command_1.issueFileCommand("OUTPUT", file_command_1.prepareKeyValueMessage(name, value));
+      }
       process.stdout.write(os.EOL);
-      command_1.issueCommand("set-output", { name }, value);
+      command_1.issueCommand("set-output", { name }, utils_1.toCommandValue(value));
     }
     exports.setOutput = setOutput2;
     function setCommandEcho(enabled) {
@@ -6484,7 +6504,11 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
     exports.group = group;
     function saveState(name, value) {
-      command_1.issueCommand("save-state", { name }, value);
+      const filePath = process.env["GITHUB_STATE"] || "";
+      if (filePath) {
+        return file_command_1.issueFileCommand("STATE", file_command_1.prepareKeyValueMessage(name, value));
+      }
+      command_1.issueCommand("save-state", { name }, utils_1.toCommandValue(value));
     }
     exports.saveState = saveState;
     function getState(name) {
@@ -9069,11 +9093,14 @@ var require_lib3 = __commonJS({
       blob() {
         let ct = this.headers && this.headers.get("content-type") || "";
         return consumeBody2.call(this).then(function(buf) {
-          return Object.assign(new Blob3([], {
-            type: ct.toLowerCase()
-          }), {
-            [BUFFER]: buf
-          });
+          return Object.assign(
+            new Blob3([], {
+              type: ct.toLowerCase()
+            }),
+            {
+              [BUFFER]: buf
+            }
+          );
         });
       },
       json() {
@@ -10130,12 +10157,15 @@ var require_dist_node5 = __commonJS({
       let status;
       let url;
       const fetch2 = requestOptions.request && requestOptions.request.fetch || nodeFetch;
-      return fetch2(requestOptions.url, Object.assign({
-        method: requestOptions.method,
-        body: requestOptions.body,
-        headers: requestOptions.headers,
-        redirect: requestOptions.redirect
-      }, requestOptions.request)).then(async (response) => {
+      return fetch2(requestOptions.url, Object.assign(
+        {
+          method: requestOptions.method,
+          body: requestOptions.body,
+          headers: requestOptions.headers,
+          redirect: requestOptions.redirect
+        },
+        requestOptions.request
+      )).then(async (response) => {
         url = response.url;
         status = response.status;
         for (const keyAndValue of response.headers) {
@@ -11724,7 +11754,7 @@ var require_utils4 = __commonJS({
       return result;
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getOctokitOptions = exports.GitHub = exports.context = void 0;
+    exports.getOctokitOptions = exports.GitHub = exports.defaults = exports.context = void 0;
     var Context = __importStar(require_context());
     var Utils = __importStar(require_utils2());
     var core_1 = require_dist_node8();
@@ -11732,13 +11762,13 @@ var require_utils4 = __commonJS({
     var plugin_paginate_rest_1 = require_dist_node10();
     exports.context = new Context.Context();
     var baseUrl = Utils.getApiBaseUrl();
-    var defaults = {
+    exports.defaults = {
       baseUrl,
       request: {
         agent: Utils.getProxyAgent(baseUrl)
       }
     };
-    exports.GitHub = core_1.Octokit.plugin(plugin_rest_endpoint_methods_1.restEndpointMethods, plugin_paginate_rest_1.paginateRest).defaults(defaults);
+    exports.GitHub = core_1.Octokit.plugin(plugin_rest_endpoint_methods_1.restEndpointMethods, plugin_paginate_rest_1.paginateRest).defaults(exports.defaults);
     function getOctokitOptions(token, options) {
       const opts = Object.assign({}, options || {});
       const auth = Utils.getAuthString(token, opts);
@@ -11788,8 +11818,9 @@ var require_github = __commonJS({
     var Context = __importStar(require_context());
     var utils_1 = require_utils4();
     exports.context = new Context.Context();
-    function getOctokit(token, options) {
-      return new utils_1.GitHub(utils_1.getOctokitOptions(token, options));
+    function getOctokit(token, options, ...additionalPlugins) {
+      const GitHubWithPlugins = utils_1.GitHub.plugin(...additionalPlugins);
+      return new GitHubWithPlugins(utils_1.getOctokitOptions(token, options));
     }
     exports.getOctokit = getOctokit;
   }
@@ -11992,8 +12023,12 @@ Object.defineProperties(Body.prototype, {
   blob: { enumerable: true },
   json: { enumerable: true },
   text: { enumerable: true },
-  data: { get: (0, import_node_util.deprecate)(() => {
-  }, "data doesn't exist, use json(), text(), arrayBuffer(), or body instead", "https://github.com/node-fetch/node-fetch/issues/1000 (response)") }
+  data: { get: (0, import_node_util.deprecate)(
+    () => {
+    },
+    "data doesn't exist, use json(), text(), arrayBuffer(), or body instead",
+    "https://github.com/node-fetch/node-fetch/issues/1000 (response)"
+  ) }
 });
 async function consumeBody(data) {
   if (data[INTERNALS].disturbed) {
@@ -12056,7 +12091,11 @@ var clone = (instance, highWaterMark) => {
   }
   return body;
 };
-var getNonSpecFormDataBoundary = (0, import_node_util.deprecate)((body) => body.getBoundary(), "form-data doesn't follow the spec and requires special treatment. Use alternative package", "https://github.com/node-fetch/node-fetch/issues/1167");
+var getNonSpecFormDataBoundary = (0, import_node_util.deprecate)(
+  (body) => body.getBoundary(),
+  "form-data doesn't follow the spec and requires special treatment. Use alternative package",
+  "https://github.com/node-fetch/node-fetch/issues/1167"
+);
 var extractContentType = (body, request) => {
   if (body === null) {
     return null;
@@ -12171,14 +12210,21 @@ var Headers = class extends URLSearchParams {
             return (name, value) => {
               validateHeaderName(name);
               validateHeaderValue(name, String(value));
-              return URLSearchParams.prototype[p].call(target, String(name).toLowerCase(), String(value));
+              return URLSearchParams.prototype[p].call(
+                target,
+                String(name).toLowerCase(),
+                String(value)
+              );
             };
           case "delete":
           case "has":
           case "getAll":
             return (name) => {
               validateHeaderName(name);
-              return URLSearchParams.prototype[p].call(target, String(name).toLowerCase());
+              return URLSearchParams.prototype[p].call(
+                target,
+                String(name).toLowerCase()
+              );
             };
           case "keys":
             return () => {
@@ -12244,25 +12290,30 @@ var Headers = class extends URLSearchParams {
     }, {});
   }
 };
-Object.defineProperties(Headers.prototype, ["get", "entries", "forEach", "values"].reduce((result, property) => {
-  result[property] = { enumerable: true };
-  return result;
-}, {}));
-function fromRawHeaders(headers = []) {
-  return new Headers(headers.reduce((result, value, index, array) => {
-    if (index % 2 === 0) {
-      result.push(array.slice(index, index + 2));
-    }
+Object.defineProperties(
+  Headers.prototype,
+  ["get", "entries", "forEach", "values"].reduce((result, property) => {
+    result[property] = { enumerable: true };
     return result;
-  }, []).filter(([name, value]) => {
-    try {
-      validateHeaderName(name);
-      validateHeaderValue(name, String(value));
-      return true;
-    } catch {
-      return false;
-    }
-  }));
+  }, {})
+);
+function fromRawHeaders(headers = []) {
+  return new Headers(
+    headers.reduce((result, value, index, array) => {
+      if (index % 2 === 0) {
+        result.push(array.slice(index, index + 2));
+      }
+      return result;
+    }, []).filter(([name, value]) => {
+      try {
+        validateHeaderName(name);
+        validateHeaderValue(name, String(value));
+        return true;
+      } catch {
+        return false;
+      }
+    })
+  );
 }
 
 // node_modules/node-fetch/src/utils/is-redirect.js
@@ -12425,7 +12476,7 @@ function isOriginPotentiallyTrustworthy(url) {
   if (hostIPVersion === 6 && /^(((0+:){7})|(::(0+:){0,6}))0*1$/.test(hostIp)) {
     return true;
   }
-  if (/^(.+\.)*localhost$/.test(url.host)) {
+  if (url.host === "localhost" || url.host.endsWith(".localhost")) {
     return false;
   }
   if (url.protocol === "file:") {
@@ -12521,8 +12572,12 @@ var INTERNALS3 = Symbol("Request internals");
 var isRequest = (object) => {
   return typeof object === "object" && typeof object[INTERNALS3] === "object";
 };
-var doBadDataWarn = (0, import_node_util3.deprecate)(() => {
-}, ".data is not a valid RequestInit property, use .body instead", "https://github.com/node-fetch/node-fetch/issues/1000 (request)");
+var doBadDataWarn = (0, import_node_util3.deprecate)(
+  () => {
+  },
+  ".data is not a valid RequestInit property, use .body instead",
+  "https://github.com/node-fetch/node-fetch/issues/1000 (request)"
+);
 var Request = class extends Body {
   constructor(input, init = {}) {
     let parsedURL;
@@ -13033,14 +13088,16 @@ async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
     const jiraKey = `<${issue.htmlUrl}|${issue.key}>`;
     const reporter = issue.fields.reporter?.emailAddress ? emailsToUser[issue.fields.reporter.emailAddress] : "_No Reporter_";
     const assignee = issue.fields.assignee?.emailAddress ? emailsToUser[issue.fields.assignee.emailAddress] : "_Unassigned_";
-    slackMessage.blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `${blockPrefix}\u2022 ${jiraKey} ${summary}
+    slackMessage.blocks.push(
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `${blockPrefix}\u2022 ${jiraKey} ${summary}
 	${reporter}	${assignee}`
+        }
       }
-    });
+    );
   }
   if (issues.length === 0) {
     core.warning("No Jira changes found");
