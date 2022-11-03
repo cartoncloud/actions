@@ -58,7 +58,7 @@ runs:
     - uses: actions/checkout@v3
 
     - name: Slack notification (release notes)
-      uses: slackapi/slack-github-action@v1.21.0
+      uses: slackapi/slack-github-action@v1.23.0
       if: inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.releaseNotes != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
@@ -98,7 +98,7 @@ runs:
       shell: bash
       run: |
         image_meta=$( aws ecr describe-images --region us-west-2 --repository-name ${{ inputs.appName }} --image-ids imageTag=${{ inputs.existingImageTag }} )
-        echo "::set-output name=existing::$(echo ${image_meta} | jq -c '.imageDetails[0] | select(.imageTags[] | contains("${{ inputs.environmentTag }}"))')"
+        echo "existing=$(echo ${image_meta} | jq -c '.imageDetails[0] | select(.imageTags[] | contains("${{ inputs.environmentTag }}"))')" >> $GITHUB_OUTPUT
 
     - name: Tag image with environment tag
       if: ${{ steps.deploy-check.outputs.existing == '' }}
@@ -114,7 +114,7 @@ runs:
       run: |
         manifest=$(aws ecr batch-get-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-ids imageTag=${{ inputs.existingImageTag }} --output json | jq --raw-output --join-output '.images[0].imageManifest')
         aws ecr put-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-tag ${{ inputs.versionTag }} --image-manifest "$manifest"
-        echo "::set-output name=restart::true"
+        echo "restart=true" >> $GITHUB_OUTPUT
 
     - name: Deploy to a region
       if: ${{ steps.deploy-check.outputs.existing == '' }} || ${{ steps.version-tag.outputs.restart == 'true' }}

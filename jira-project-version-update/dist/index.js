@@ -23,7 +23,10 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 
 // node_modules/web-streams-polyfill/dist/ponyfill.es2018.js
 var require_ponyfill_es2018 = __commonJS({
@@ -4498,59 +4501,6 @@ var require_command = __commonJS({
   }
 });
 
-// node_modules/@actions/core/lib/file-command.js
-var require_file_command = __commonJS({
-  "node_modules/@actions/core/lib/file-command.js"(exports) {
-    "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
-      Object.defineProperty(o, k2, { enumerable: true, get: function() {
-        return m2[k];
-      } });
-    } : function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
-      o[k2] = m2[k];
-    });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    } : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
-      var result = {};
-      if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
-      }
-      __setModuleDefault(result, mod);
-      return result;
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.issueCommand = void 0;
-    var fs2 = __importStar(require("fs"));
-    var os = __importStar(require("os"));
-    var utils_1 = require_utils();
-    function issueCommand(command, message) {
-      const filePath = process.env[`GITHUB_${command}`];
-      if (!filePath) {
-        throw new Error(`Unable to find environment variable for file command ${command}`);
-      }
-      if (!fs2.existsSync(filePath)) {
-        throw new Error(`Missing file at path: ${filePath}`);
-      }
-      fs2.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
-        encoding: "utf8"
-      });
-    }
-    exports.issueCommand = issueCommand;
-  }
-});
-
 // node_modules/uuid/dist/rng.js
 var require_rng = __commonJS({
   "node_modules/uuid/dist/rng.js"(exports) {
@@ -5042,6 +4992,72 @@ var require_dist = __commonJS({
   }
 });
 
+// node_modules/@actions/core/lib/file-command.js
+var require_file_command = __commonJS({
+  "node_modules/@actions/core/lib/file-command.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
+      if (k2 === void 0)
+        k2 = k;
+      Object.defineProperty(o, k2, { enumerable: true, get: function() {
+        return m2[k];
+      } });
+    } : function(o, m2, k, k2) {
+      if (k2 === void 0)
+        k2 = k;
+      o[k2] = m2[k];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    } : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k in mod)
+          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
+            __createBinding(result, mod, k);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
+    var fs2 = __importStar(require("fs"));
+    var os = __importStar(require("os"));
+    var uuid_1 = require_dist();
+    var utils_1 = require_utils();
+    function issueFileCommand(command, message) {
+      const filePath = process.env[`GITHUB_${command}`];
+      if (!filePath) {
+        throw new Error(`Unable to find environment variable for file command ${command}`);
+      }
+      if (!fs2.existsSync(filePath)) {
+        throw new Error(`Missing file at path: ${filePath}`);
+      }
+      fs2.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+        encoding: "utf8"
+      });
+    }
+    exports.issueFileCommand = issueFileCommand;
+    function prepareKeyValueMessage(key, value) {
+      const delimiter = `ghadelimiter_${uuid_1.v4()}`;
+      const convertedValue = utils_1.toCommandValue(value);
+      if (key.includes(delimiter)) {
+        throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+      }
+      if (convertedValue.includes(delimiter)) {
+        throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+      }
+      return `${key}<<${delimiter}${os.EOL}${convertedValue}${os.EOL}${delimiter}`;
+    }
+    exports.prepareKeyValueMessage = prepareKeyValueMessage;
+  }
+});
+
 // node_modules/@actions/http-client/lib/proxy.js
 var require_proxy = __commonJS({
   "node_modules/@actions/http-client/lib/proxy.js"(exports) {
@@ -5221,7 +5237,10 @@ var require_tunnel = __commonJS({
         connectReq.removeAllListeners();
         socket.removeAllListeners();
         if (res.statusCode !== 200) {
-          debug("tunneling socket could not be established, statusCode=%d", res.statusCode);
+          debug(
+            "tunneling socket could not be established, statusCode=%d",
+            res.statusCode
+          );
           socket.destroy();
           var error2 = new Error("tunneling socket could not be established, statusCode=" + res.statusCode);
           error2.code = "ECONNRESET";
@@ -5244,7 +5263,11 @@ var require_tunnel = __commonJS({
       }
       function onError(cause) {
         connectReq.removeAllListeners();
-        debug("tunneling socket could not be established, cause=%s\n", cause.message, cause.stack);
+        debug(
+          "tunneling socket could not be established, cause=%s\n",
+          cause.message,
+          cause.stack
+        );
         var error2 = new Error("tunneling socket could not be established, cause=" + cause.message);
         error2.code = "ECONNRESET";
         options.request.emit("error", error2);
@@ -6356,7 +6379,6 @@ var require_core = __commonJS({
     var utils_1 = require_utils();
     var os = __importStar(require("os"));
     var path = __importStar(require("path"));
-    var uuid_1 = require_dist();
     var oidc_utils_1 = require_oidc_utils();
     var ExitCode;
     (function(ExitCode2) {
@@ -6368,18 +6390,9 @@ var require_core = __commonJS({
       process.env[name] = convertedVal;
       const filePath = process.env["GITHUB_ENV"] || "";
       if (filePath) {
-        const delimiter = `ghadelimiter_${uuid_1.v4()}`;
-        if (name.includes(delimiter)) {
-          throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
-        }
-        if (convertedVal.includes(delimiter)) {
-          throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
-        }
-        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
-        file_command_1.issueCommand("ENV", commandValue);
-      } else {
-        command_1.issueCommand("set-env", { name }, convertedVal);
+        return file_command_1.issueFileCommand("ENV", file_command_1.prepareKeyValueMessage(name, val));
       }
+      command_1.issueCommand("set-env", { name }, convertedVal);
     }
     exports.exportVariable = exportVariable;
     function setSecret(secret) {
@@ -6389,7 +6402,7 @@ var require_core = __commonJS({
     function addPath(inputPath) {
       const filePath = process.env["GITHUB_PATH"] || "";
       if (filePath) {
-        file_command_1.issueCommand("PATH", inputPath);
+        file_command_1.issueFileCommand("PATH", inputPath);
       } else {
         command_1.issueCommand("add-path", {}, inputPath);
       }
@@ -6409,7 +6422,10 @@ var require_core = __commonJS({
     exports.getInput = getInput2;
     function getMultilineInput(name, options) {
       const inputs = getInput2(name, options).split("\n").filter((x2) => x2 !== "");
-      return inputs;
+      if (options && options.trimWhitespace === false) {
+        return inputs;
+      }
+      return inputs.map((input) => input.trim());
     }
     exports.getMultilineInput = getMultilineInput;
     function getBooleanInput2(name, options) {
@@ -6425,8 +6441,12 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
     exports.getBooleanInput = getBooleanInput2;
     function setOutput(name, value) {
+      const filePath = process.env["GITHUB_OUTPUT"] || "";
+      if (filePath) {
+        return file_command_1.issueFileCommand("OUTPUT", file_command_1.prepareKeyValueMessage(name, value));
+      }
       process.stdout.write(os.EOL);
-      command_1.issueCommand("set-output", { name }, value);
+      command_1.issueCommand("set-output", { name }, utils_1.toCommandValue(value));
     }
     exports.setOutput = setOutput;
     function setCommandEcho(enabled) {
@@ -6484,7 +6504,11 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
     exports.group = group;
     function saveState(name, value) {
-      command_1.issueCommand("save-state", { name }, value);
+      const filePath = process.env["GITHUB_STATE"] || "";
+      if (filePath) {
+        return file_command_1.issueFileCommand("STATE", file_command_1.prepareKeyValueMessage(name, value));
+      }
+      command_1.issueCommand("save-state", { name }, utils_1.toCommandValue(value));
     }
     exports.saveState = saveState;
     function getState(name) {
@@ -6715,8 +6739,12 @@ Object.defineProperties(Body.prototype, {
   blob: { enumerable: true },
   json: { enumerable: true },
   text: { enumerable: true },
-  data: { get: (0, import_node_util.deprecate)(() => {
-  }, "data doesn't exist, use json(), text(), arrayBuffer(), or body instead", "https://github.com/node-fetch/node-fetch/issues/1000 (response)") }
+  data: { get: (0, import_node_util.deprecate)(
+    () => {
+    },
+    "data doesn't exist, use json(), text(), arrayBuffer(), or body instead",
+    "https://github.com/node-fetch/node-fetch/issues/1000 (response)"
+  ) }
 });
 async function consumeBody(data) {
   if (data[INTERNALS].disturbed) {
@@ -6779,7 +6807,11 @@ var clone = (instance, highWaterMark) => {
   }
   return body;
 };
-var getNonSpecFormDataBoundary = (0, import_node_util.deprecate)((body) => body.getBoundary(), "form-data doesn't follow the spec and requires special treatment. Use alternative package", "https://github.com/node-fetch/node-fetch/issues/1167");
+var getNonSpecFormDataBoundary = (0, import_node_util.deprecate)(
+  (body) => body.getBoundary(),
+  "form-data doesn't follow the spec and requires special treatment. Use alternative package",
+  "https://github.com/node-fetch/node-fetch/issues/1167"
+);
 var extractContentType = (body, request) => {
   if (body === null) {
     return null;
@@ -6894,14 +6926,21 @@ var Headers = class extends URLSearchParams {
             return (name, value) => {
               validateHeaderName(name);
               validateHeaderValue(name, String(value));
-              return URLSearchParams.prototype[p].call(target, String(name).toLowerCase(), String(value));
+              return URLSearchParams.prototype[p].call(
+                target,
+                String(name).toLowerCase(),
+                String(value)
+              );
             };
           case "delete":
           case "has":
           case "getAll":
             return (name) => {
               validateHeaderName(name);
-              return URLSearchParams.prototype[p].call(target, String(name).toLowerCase());
+              return URLSearchParams.prototype[p].call(
+                target,
+                String(name).toLowerCase()
+              );
             };
           case "keys":
             return () => {
@@ -6967,25 +7006,30 @@ var Headers = class extends URLSearchParams {
     }, {});
   }
 };
-Object.defineProperties(Headers.prototype, ["get", "entries", "forEach", "values"].reduce((result, property) => {
-  result[property] = { enumerable: true };
-  return result;
-}, {}));
-function fromRawHeaders(headers = []) {
-  return new Headers(headers.reduce((result, value, index, array) => {
-    if (index % 2 === 0) {
-      result.push(array.slice(index, index + 2));
-    }
+Object.defineProperties(
+  Headers.prototype,
+  ["get", "entries", "forEach", "values"].reduce((result, property) => {
+    result[property] = { enumerable: true };
     return result;
-  }, []).filter(([name, value]) => {
-    try {
-      validateHeaderName(name);
-      validateHeaderValue(name, String(value));
-      return true;
-    } catch {
-      return false;
-    }
-  }));
+  }, {})
+);
+function fromRawHeaders(headers = []) {
+  return new Headers(
+    headers.reduce((result, value, index, array) => {
+      if (index % 2 === 0) {
+        result.push(array.slice(index, index + 2));
+      }
+      return result;
+    }, []).filter(([name, value]) => {
+      try {
+        validateHeaderName(name);
+        validateHeaderValue(name, String(value));
+        return true;
+      } catch {
+        return false;
+      }
+    })
+  );
 }
 
 // node_modules/node-fetch/src/utils/is-redirect.js
@@ -7148,7 +7192,7 @@ function isOriginPotentiallyTrustworthy(url) {
   if (hostIPVersion === 6 && /^(((0+:){7})|(::(0+:){0,6}))0*1$/.test(hostIp)) {
     return true;
   }
-  if (/^(.+\.)*localhost$/.test(url.host)) {
+  if (url.host === "localhost" || url.host.endsWith(".localhost")) {
     return false;
   }
   if (url.protocol === "file:") {
@@ -7244,8 +7288,12 @@ var INTERNALS3 = Symbol("Request internals");
 var isRequest = (object) => {
   return typeof object === "object" && typeof object[INTERNALS3] === "object";
 };
-var doBadDataWarn = (0, import_node_util3.deprecate)(() => {
-}, ".data is not a valid RequestInit property, use .body instead", "https://github.com/node-fetch/node-fetch/issues/1000 (request)");
+var doBadDataWarn = (0, import_node_util3.deprecate)(
+  () => {
+  },
+  ".data is not a valid RequestInit property, use .body instead",
+  "https://github.com/node-fetch/node-fetch/issues/1000 (request)"
+);
 var Request = class extends Body {
   constructor(input, init = {}) {
     let parsedURL;
@@ -7986,7 +8034,15 @@ function daysInMonth(year, month) {
   }
 }
 function objToLocalTS(obj) {
-  let d = Date.UTC(obj.year, obj.month - 1, obj.day, obj.hour, obj.minute, obj.second, obj.millisecond);
+  let d = Date.UTC(
+    obj.year,
+    obj.month - 1,
+    obj.day,
+    obj.hour,
+    obj.minute,
+    obj.second,
+    obj.millisecond
+  );
   if (obj.year < 100 && obj.year >= 0) {
     d = new Date(d);
     d.setUTCFullYear(d.getUTCFullYear() - 1900);
@@ -8300,7 +8356,10 @@ var Formatter = class {
         return "Z";
       }
       return dt.isValid ? dt.zone.formatOffset(dt.ts, opts.format) : "";
-    }, meridiem = () => knownEnglish ? meridiemForDateTime(dt) : string({ hour: "numeric", hourCycle: "h12" }, "dayperiod"), month = (length, standalone) => knownEnglish ? monthForDateTime(dt, length) : string(standalone ? { month: length } : { month: length, day: "numeric" }, "month"), weekday = (length, standalone) => knownEnglish ? weekdayForDateTime(dt, length) : string(standalone ? { weekday: length } : { weekday: length, month: "long", day: "numeric" }, "weekday"), maybeMacro = (token) => {
+    }, meridiem = () => knownEnglish ? meridiemForDateTime(dt) : string({ hour: "numeric", hourCycle: "h12" }, "dayperiod"), month = (length, standalone) => knownEnglish ? monthForDateTime(dt, length) : string(standalone ? { month: length } : { month: length, day: "numeric" }, "month"), weekday = (length, standalone) => knownEnglish ? weekdayForDateTime(dt, length) : string(
+      standalone ? { weekday: length } : { weekday: length, month: "long", day: "numeric" },
+      "weekday"
+    ), maybeMacro = (token) => {
       const formatOpts = Formatter.macroTokenToFormatOpts(token);
       if (formatOpts) {
         return this.formatWithSystemDefault(dt, formatOpts);
@@ -8457,7 +8516,10 @@ var Formatter = class {
       } else {
         return token;
       }
-    }, tokens = Formatter.parseFormat(fmt), realTokens = tokens.reduce((found, { literal, val }) => literal ? found : found.concat(val), []), collapsed = dur.shiftTo(...realTokens.map(tokenToField).filter((t2) => t2));
+    }, tokens = Formatter.parseFormat(fmt), realTokens = tokens.reduce(
+      (found, { literal, val }) => literal ? found : found.concat(val),
+      []
+    ), collapsed = dur.shiftTo(...realTokens.map(tokenToField).filter((t2) => t2));
     return stringifyTokens(tokens, tokenToString(collapsed));
   }
 };
@@ -9078,7 +9140,12 @@ var Locale = class {
     if (!alts || Object.getOwnPropertyNames(alts).length === 0) {
       return this;
     } else {
-      return Locale.create(alts.locale || this.specifiedLocale, alts.numberingSystem || this.numberingSystem, alts.outputCalendar || this.outputCalendar, alts.defaultToEN || false);
+      return Locale.create(
+        alts.locale || this.specifiedLocale,
+        alts.numberingSystem || this.numberingSystem,
+        alts.outputCalendar || this.outputCalendar,
+        alts.defaultToEN || false
+      );
     }
   }
   redefaultToEN(alts = {}) {
@@ -9100,25 +9167,37 @@ var Locale = class {
     return listStuff(this, length, defaultOK, weekdays, () => {
       const intl = format ? { weekday: length, year: "numeric", month: "long", day: "numeric" } : { weekday: length }, formatStr = format ? "format" : "standalone";
       if (!this.weekdaysCache[formatStr][length]) {
-        this.weekdaysCache[formatStr][length] = mapWeekdays((dt) => this.extract(dt, intl, "weekday"));
+        this.weekdaysCache[formatStr][length] = mapWeekdays(
+          (dt) => this.extract(dt, intl, "weekday")
+        );
       }
       return this.weekdaysCache[formatStr][length];
     });
   }
   meridiems(defaultOK = true) {
-    return listStuff(this, void 0, defaultOK, () => meridiems, () => {
-      if (!this.meridiemCache) {
-        const intl = { hour: "numeric", hourCycle: "h12" };
-        this.meridiemCache = [DateTime.utc(2016, 11, 13, 9), DateTime.utc(2016, 11, 13, 19)].map((dt) => this.extract(dt, intl, "dayperiod"));
+    return listStuff(
+      this,
+      void 0,
+      defaultOK,
+      () => meridiems,
+      () => {
+        if (!this.meridiemCache) {
+          const intl = { hour: "numeric", hourCycle: "h12" };
+          this.meridiemCache = [DateTime.utc(2016, 11, 13, 9), DateTime.utc(2016, 11, 13, 19)].map(
+            (dt) => this.extract(dt, intl, "dayperiod")
+          );
+        }
+        return this.meridiemCache;
       }
-      return this.meridiemCache;
-    });
+    );
   }
   eras(length, defaultOK = true) {
     return listStuff(this, length, defaultOK, eras, () => {
       const intl = { era: length };
       if (!this.eraCache[length]) {
-        this.eraCache[length] = [DateTime.utc(-40, 1, 1), DateTime.utc(2017, 1, 1)].map((dt) => this.extract(dt, intl, "era"));
+        this.eraCache[length] = [DateTime.utc(-40, 1, 1), DateTime.utc(2017, 1, 1)].map(
+          (dt) => this.extract(dt, intl, "era")
+        );
       }
       return this.eraCache[length];
     });
@@ -9153,10 +9232,13 @@ function combineRegexes(...regexes) {
   return RegExp(`^${full}$`);
 }
 function combineExtractors(...extractors) {
-  return (m2) => extractors.reduce(([mergedVals, mergedZone, cursor], ex) => {
-    const [val, zone, next] = ex(m2, cursor);
-    return [{ ...mergedVals, ...val }, zone || mergedZone, next];
-  }, [{}, null, 1]).slice(0, 2);
+  return (m2) => extractors.reduce(
+    ([mergedVals, mergedZone, cursor], ex) => {
+      const [val, zone, next] = ex(m2, cursor);
+      return [{ ...mergedVals, ...val }, zone || mergedZone, next];
+    },
+    [{}, null, 1]
+  ).slice(0, 2);
 }
 function parse(s3, ...patterns) {
   if (s3 == null) {
@@ -9191,7 +9273,9 @@ var isoOrdinalRegex = /(\d{4})-?(\d{3})/;
 var extractISOWeekData = simpleParse("weekYear", "weekNumber", "weekDay");
 var extractISOOrdinalData = simpleParse("year", "ordinal");
 var sqlYmdRegex = /(\d{4})-(\d\d)-(\d\d)/;
-var sqlTimeRegex = RegExp(`${isoTimeBaseRegex.source} ?(?:${offsetRegex.source}|(${ianaRegex.source}))?`);
+var sqlTimeRegex = RegExp(
+  `${isoTimeBaseRegex.source} ?(?:${offsetRegex.source}|(${ianaRegex.source}))?`
+);
 var sqlTimeExtensionRegex = RegExp(`(?: ${sqlTimeRegex.source})?`);
 function int(match2, pos, fallback) {
   const m2 = match2[pos];
@@ -9312,18 +9396,48 @@ var isoYmdWithTimeExtensionRegex = combineRegexes(isoYmdRegex, isoTimeExtensionR
 var isoWeekWithTimeExtensionRegex = combineRegexes(isoWeekRegex, isoTimeExtensionRegex);
 var isoOrdinalWithTimeExtensionRegex = combineRegexes(isoOrdinalRegex, isoTimeExtensionRegex);
 var isoTimeCombinedRegex = combineRegexes(isoTimeRegex);
-var extractISOYmdTimeAndOffset = combineExtractors(extractISOYmd, extractISOTime, extractISOOffset, extractIANAZone);
-var extractISOWeekTimeAndOffset = combineExtractors(extractISOWeekData, extractISOTime, extractISOOffset, extractIANAZone);
-var extractISOOrdinalDateAndTime = combineExtractors(extractISOOrdinalData, extractISOTime, extractISOOffset, extractIANAZone);
-var extractISOTimeAndOffset = combineExtractors(extractISOTime, extractISOOffset, extractIANAZone);
+var extractISOYmdTimeAndOffset = combineExtractors(
+  extractISOYmd,
+  extractISOTime,
+  extractISOOffset,
+  extractIANAZone
+);
+var extractISOWeekTimeAndOffset = combineExtractors(
+  extractISOWeekData,
+  extractISOTime,
+  extractISOOffset,
+  extractIANAZone
+);
+var extractISOOrdinalDateAndTime = combineExtractors(
+  extractISOOrdinalData,
+  extractISOTime,
+  extractISOOffset,
+  extractIANAZone
+);
+var extractISOTimeAndOffset = combineExtractors(
+  extractISOTime,
+  extractISOOffset,
+  extractIANAZone
+);
 function parseISODate(s3) {
-  return parse(s3, [isoYmdWithTimeExtensionRegex, extractISOYmdTimeAndOffset], [isoWeekWithTimeExtensionRegex, extractISOWeekTimeAndOffset], [isoOrdinalWithTimeExtensionRegex, extractISOOrdinalDateAndTime], [isoTimeCombinedRegex, extractISOTimeAndOffset]);
+  return parse(
+    s3,
+    [isoYmdWithTimeExtensionRegex, extractISOYmdTimeAndOffset],
+    [isoWeekWithTimeExtensionRegex, extractISOWeekTimeAndOffset],
+    [isoOrdinalWithTimeExtensionRegex, extractISOOrdinalDateAndTime],
+    [isoTimeCombinedRegex, extractISOTimeAndOffset]
+  );
 }
 function parseRFC2822Date(s3) {
   return parse(preprocessRFC2822(s3), [rfc2822, extractRFC2822]);
 }
 function parseHTTPDate(s3) {
-  return parse(s3, [rfc1123, extractRFC1123Or850], [rfc850, extractRFC1123Or850], [ascii, extractASCII]);
+  return parse(
+    s3,
+    [rfc1123, extractRFC1123Or850],
+    [rfc850, extractRFC1123Or850],
+    [ascii, extractASCII]
+  );
 }
 function parseISODuration(s3) {
   return parse(s3, [isoDuration, extractISODuration]);
@@ -9334,9 +9448,17 @@ function parseISOTimeOnly(s3) {
 }
 var sqlYmdWithTimeExtensionRegex = combineRegexes(sqlYmdRegex, sqlTimeExtensionRegex);
 var sqlTimeCombinedRegex = combineRegexes(sqlTimeRegex);
-var extractISOTimeOffsetAndIANAZone = combineExtractors(extractISOTime, extractISOOffset, extractIANAZone);
+var extractISOTimeOffsetAndIANAZone = combineExtractors(
+  extractISOTime,
+  extractISOOffset,
+  extractIANAZone
+);
 function parseSQL(s3) {
-  return parse(s3, [sqlYmdWithTimeExtensionRegex, extractISOYmdTimeAndOffset], [sqlTimeCombinedRegex, extractISOTimeOffsetAndIANAZone]);
+  return parse(
+    s3,
+    [sqlYmdWithTimeExtensionRegex, extractISOYmdTimeAndOffset],
+    [sqlTimeCombinedRegex, extractISOTimeOffsetAndIANAZone]
+  );
 }
 
 // node_modules/luxon/src/duration.js
@@ -9437,7 +9559,8 @@ function clone2(dur, alts, clear = false) {
   const conf = {
     values: clear ? alts.values : { ...dur.values, ...alts.values || {} },
     loc: dur.loc.clone(alts.loc),
-    conversionAccuracy: alts.conversionAccuracy || dur.conversionAccuracy
+    conversionAccuracy: alts.conversionAccuracy || dur.conversionAccuracy,
+    matrix: alts.matrix || dur.matrix
   };
   return new Duration(conf);
 }
@@ -9461,14 +9584,27 @@ function normalizeValues(matrix, vals) {
     }
   }, null);
 }
+function removeZeroes(vals) {
+  const newVals = {};
+  for (const [key, value] of Object.entries(vals)) {
+    if (value !== 0) {
+      newVals[key] = value;
+    }
+  }
+  return newVals;
+}
 var Duration = class {
   constructor(config) {
     const accurate = config.conversionAccuracy === "longterm" || false;
+    let matrix = accurate ? accurateMatrix : casualMatrix;
+    if (config.matrix) {
+      matrix = config.matrix;
+    }
     this.values = config.values;
     this.loc = config.loc || Locale.create();
     this.conversionAccuracy = accurate ? "longterm" : "casual";
     this.invalid = config.invalid || null;
-    this.matrix = accurate ? accurateMatrix : casualMatrix;
+    this.matrix = matrix;
     this.isLuxonDuration = true;
   }
   static fromMillis(count, opts) {
@@ -9476,12 +9612,15 @@ var Duration = class {
   }
   static fromObject(obj, opts = {}) {
     if (obj == null || typeof obj !== "object") {
-      throw new InvalidArgumentError(`Duration.fromObject: argument expected to be an object, got ${obj === null ? "null" : typeof obj}`);
+      throw new InvalidArgumentError(
+        `Duration.fromObject: argument expected to be an object, got ${obj === null ? "null" : typeof obj}`
+      );
     }
     return new Duration({
       values: normalizeObject(obj, Duration.normalizeUnit),
       loc: Locale.fromObject(opts),
-      conversionAccuracy: opts.conversionAccuracy
+      conversionAccuracy: opts.conversionAccuracy,
+      matrix: opts.matrix
     });
   }
   static fromDurationLike(durationLike) {
@@ -9492,7 +9631,9 @@ var Duration = class {
     } else if (typeof durationLike === "object") {
       return Duration.fromObject(durationLike);
     } else {
-      throw new InvalidArgumentError(`Unknown duration argument ${durationLike} of type ${typeof durationLike}`);
+      throw new InvalidArgumentError(
+        `Unknown duration argument ${durationLike} of type ${typeof durationLike}`
+      );
     }
   }
   static fromISO(text, opts) {
@@ -9676,11 +9817,9 @@ var Duration = class {
     const mixed = { ...this.values, ...normalizeObject(values, Duration.normalizeUnit) };
     return clone2(this, { values: mixed });
   }
-  reconfigure({ locale, numberingSystem, conversionAccuracy } = {}) {
-    const loc = this.loc.clone({ locale, numberingSystem }), opts = { loc };
-    if (conversionAccuracy) {
-      opts.conversionAccuracy = conversionAccuracy;
-    }
+  reconfigure({ locale, numberingSystem, conversionAccuracy, matrix } = {}) {
+    const loc = this.loc.clone({ locale, numberingSystem });
+    const opts = { loc, matrix, conversionAccuracy };
     return clone2(this, opts);
   }
   as(unit) {
@@ -9691,6 +9830,12 @@ var Duration = class {
       return this;
     const vals = this.toObject();
     normalizeValues(this.matrix, vals);
+    return clone2(this, { values: vals }, true);
+  }
+  rescale() {
+    if (!this.isValid)
+      return this;
+    const vals = removeZeroes(this.normalize().shiftToAll().toObject());
     return clone2(this, { values: vals }, true);
   }
   shiftTo(...units) {
@@ -9731,6 +9876,20 @@ var Duration = class {
       }
     }
     return clone2(this, { values: built }, true).normalize();
+  }
+  shiftToAll() {
+    if (!this.isValid)
+      return this;
+    return this.shiftTo(
+      "years",
+      "months",
+      "weeks",
+      "days",
+      "hours",
+      "minutes",
+      "seconds",
+      "milliseconds"
+    );
   }
   negate() {
     if (!this.isValid)
@@ -9806,7 +9965,10 @@ function validateStartEnd(start, end) {
   } else if (!end || !end.isValid) {
     return Interval.invalid("missing or invalid end");
   } else if (end < start) {
-    return Interval.invalid("end before start", `The end of an interval must be after its start, but you had start=${start.toISO()} and end=${end.toISO()}`);
+    return Interval.invalid(
+      "end before start",
+      `The end of an interval must be after its start, but you had start=${start.toISO()} and end=${end.toISO()}`
+    );
   } else {
     return null;
   }
@@ -10011,15 +10173,18 @@ var Interval = class {
     return Interval.fromDateTimes(s3, e2);
   }
   static merge(intervals) {
-    const [found, final] = intervals.sort((a, b) => a.s - b.s).reduce(([sofar, current], item) => {
-      if (!current) {
-        return [sofar, item];
-      } else if (current.overlaps(item) || current.abutsStart(item)) {
-        return [sofar, current.union(item)];
-      } else {
-        return [sofar.concat([current]), item];
-      }
-    }, [[], null]);
+    const [found, final] = intervals.sort((a, b) => a.s - b.s).reduce(
+      ([sofar, current], item) => {
+        if (!current) {
+          return [sofar, item];
+        } else if (current.overlaps(item) || current.abutsStart(item)) {
+          return [sofar, current.union(item)];
+        } else {
+          return [sofar.concat([current]), item];
+        }
+      },
+      [[], null]
+    );
     if (final) {
       found.push(final);
     }
@@ -10126,7 +10291,7 @@ function dayDiff(earlier, later) {
 function highOrderDiffs(cursor, later, units) {
   const differs = [
     ["years", (a, b) => b.year - a.year],
-    ["quarters", (a, b) => b.quarter - a.quarter],
+    ["quarters", (a, b) => b.quarter - a.quarter + (b.year - a.year) * 4],
     ["months", (a, b) => b.month - a.month + (b.year - a.year) * 12],
     [
       "weeks",
@@ -10158,7 +10323,9 @@ function highOrderDiffs(cursor, later, units) {
 function diff_default(earlier, later, units, opts) {
   let [cursor, results, highWater, lowestOrder] = highOrderDiffs(earlier, later, units);
   const remainingMillis = later - cursor;
-  const lowerOrderUnits = units.filter((u) => ["hours", "minutes", "seconds", "milliseconds"].indexOf(u) >= 0);
+  const lowerOrderUnits = units.filter(
+    (u) => ["hours", "minutes", "seconds", "milliseconds"].indexOf(u) >= 0
+  );
   if (lowerOrderUnits.length === 0) {
     if (highWater < later) {
       highWater = cursor.plus({ [lowestOrder]: 1 });
@@ -10572,7 +10739,9 @@ function explainFromTokens(locale, input, format) {
   } else {
     const [regexString, handlers] = buildRegex(units), regex = RegExp(regexString, "i"), [rawMatches, matches] = match(input, regex, handlers), [result, zone, specificOffset] = matches ? dateTimeFromMatches(matches) : [null, null, void 0];
     if (hasOwnProperty(matches, "a") && hasOwnProperty(matches, "H")) {
-      throw new ConflictingSpecificationError("Can't include meridiem when specifying 24-hour format");
+      throw new ConflictingSpecificationError(
+        "Can't include meridiem when specifying 24-hour format"
+      );
     }
     return { input, tokens, regex, rawMatches, matches, result, zone, specificOffset };
   }
@@ -10594,7 +10763,10 @@ function formatOptsToTokens(formatOpts, locale) {
 var nonLeapLadder = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
 var leapLadder = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
 function unitOutOfRange(unit, value) {
-  return new Invalid("unit out of range", `you specified ${value} (of type ${typeof value}) as a ${unit}, which is invalid`);
+  return new Invalid(
+    "unit out of range",
+    `you specified ${value} (of type ${typeof value}) as a ${unit}, which is invalid`
+  );
 }
 function dayOfWeek(year, month, day) {
   const d = new Date(Date.UTC(year, month - 1, day));
@@ -10782,7 +10954,9 @@ function parseDataToDateTime(parsed, parsedZone, opts, format, text, specificOff
     });
     return setZone ? inst : inst.setZone(zone);
   } else {
-    return DateTime.invalid(new Invalid("unparsable", `the input "${text}" can't be parsed as ${format}`));
+    return DateTime.invalid(
+      new Invalid("unparsable", `the input "${text}" can't be parsed as ${format}`)
+    );
   }
 }
 function toTechFormat(dt, format, allowZ = true) {
@@ -11022,7 +11196,9 @@ var DateTime = class {
   }
   static fromMillis(milliseconds, options = {}) {
     if (!isNumber(milliseconds)) {
-      throw new InvalidArgumentError(`fromMillis requires a numerical input, but received a ${typeof milliseconds} with value ${milliseconds}`);
+      throw new InvalidArgumentError(
+        `fromMillis requires a numerical input, but received a ${typeof milliseconds} with value ${milliseconds}`
+      );
     } else if (milliseconds < -MAX_DATE || milliseconds > MAX_DATE) {
       return DateTime.invalid("Timestamp out of range");
     } else {
@@ -11052,7 +11228,9 @@ var DateTime = class {
     }
     const tsNow = Settings.now(), offsetProvis = !isUndefined(opts.specificOffset) ? opts.specificOffset : zoneToUse.offset(tsNow), normalized = normalizeObject(obj, normalizeUnit), containsOrdinal = !isUndefined(normalized.ordinal), containsGregorYear = !isUndefined(normalized.year), containsGregorMD = !isUndefined(normalized.month) || !isUndefined(normalized.day), containsGregor = containsGregorYear || containsGregorMD, definiteWeekDef = normalized.weekYear || normalized.weekNumber, loc = Locale.fromObject(opts);
     if ((containsGregor || containsOrdinal) && definiteWeekDef) {
-      throw new ConflictingSpecificationError("Can't mix weekYear/weekNumber units with year/month/day or ordinals");
+      throw new ConflictingSpecificationError(
+        "Can't mix weekYear/weekNumber units with year/month/day or ordinals"
+      );
     }
     if (containsGregorMD && containsOrdinal) {
       throw new ConflictingSpecificationError("Can't mix ordinal dates with month/day");
@@ -11093,7 +11271,10 @@ var DateTime = class {
       loc
     });
     if (normalized.weekday && containsGregor && obj.weekday !== inst.weekday) {
-      return DateTime.invalid("mismatched weekday", `you can't specify both a weekday of ${normalized.weekday} and a date of ${inst.toISO()}`);
+      return DateTime.invalid(
+        "mismatched weekday",
+        `you can't specify both a weekday of ${normalized.weekday} and a date of ${inst.toISO()}`
+      );
     }
     return inst;
   }
@@ -11148,6 +11329,10 @@ var DateTime = class {
   static parseFormatForOpts(formatOpts, localeOpts = {}) {
     const tokenList = formatOptsToTokens(formatOpts, Locale.fromObject(localeOpts));
     return !tokenList ? null : tokenList.map((t2) => t2 ? t2.val : null).join("");
+  }
+  static expandFormat(fmt, localeOpts = {}) {
+    const expanded = expandMacroTokens(Formatter.parseFormat(fmt), Locale.fromObject(localeOpts));
+    return expanded.map((t2) => t2.val).join("");
   }
   get(unit) {
     return this[unit];
@@ -11270,7 +11455,10 @@ var DateTime = class {
     return this.isValid ? weeksInWeekYear(this.weekYear) : NaN;
   }
   resolvedLocaleOptions(opts = {}) {
-    const { locale, numberingSystem, calendar } = Formatter.create(this.loc.clone(opts), opts).resolvedOptions(this);
+    const { locale, numberingSystem, calendar } = Formatter.create(
+      this.loc.clone(opts),
+      opts
+    ).resolvedOptions(this);
     return { locale, numberingSystem, outputCalendar: calendar };
   }
   toUTC(offset2 = 0, opts = {}) {
@@ -11307,7 +11495,9 @@ var DateTime = class {
       return this;
     const normalized = normalizeObject(values, normalizeUnit), settingWeekStuff = !isUndefined(normalized.weekYear) || !isUndefined(normalized.weekNumber) || !isUndefined(normalized.weekday), containsOrdinal = !isUndefined(normalized.ordinal), containsGregorYear = !isUndefined(normalized.year), containsGregorMD = !isUndefined(normalized.month) || !isUndefined(normalized.day), containsGregor = containsGregorYear || containsGregorMD, definiteWeekDef = normalized.weekYear || normalized.weekNumber;
     if ((containsGregor || containsOrdinal) && definiteWeekDef) {
-      throw new ConflictingSpecificationError("Can't mix weekYear/weekNumber units with year/month/day or ordinals");
+      throw new ConflictingSpecificationError(
+        "Can't mix weekYear/weekNumber units with year/month/day or ordinals"
+      );
     }
     if (containsGregorMD && containsOrdinal) {
       throw new ConflictingSpecificationError("Can't mix ordinal dates with month/day");
@@ -11419,7 +11609,14 @@ var DateTime = class {
       return null;
     }
     let c = includePrefix ? "T" : "";
-    return c + toISOTime(this, format === "extended", suppressSeconds, suppressMilliseconds, includeOffset, extendedZone);
+    return c + toISOTime(
+      this,
+      format === "extended",
+      suppressSeconds,
+      suppressMilliseconds,
+      includeOffset,
+      extendedZone
+    );
   }
   toRFC2822() {
     return toTechFormat(this, "EEE, dd LLL yyyy HH:mm:ss ZZZ", false);
@@ -11637,7 +11834,9 @@ function friendlyDateTime(dateTimeish) {
   } else if (dateTimeish && typeof dateTimeish === "object") {
     return DateTime.fromObject(dateTimeish);
   } else {
-    throw new InvalidArgumentError(`Unknown datetime argument: ${dateTimeish}, of type ${typeof dateTimeish}`);
+    throw new InvalidArgumentError(
+      `Unknown datetime argument: ${dateTimeish}, of type ${typeof dateTimeish}`
+    );
   }
 }
 

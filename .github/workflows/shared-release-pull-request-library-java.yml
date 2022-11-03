@@ -74,11 +74,11 @@ jobs:
 
       - name: Get pom version
         id: pom-version
-        run: echo "::set-output name=pom-version::$(echo ${{ steps.increment-version.outputs.new_tag }} | sed 's/v//')"
+        run: echo "pom-version=$(echo ${{ steps.increment-version.outputs.new_tag }} | sed 's/v//')" >> $GITHUB_OUTPUT
 
       - name: Get short SHA
         id: sha
-        run: echo "::set-output name=short-sha::$(git rev-parse --short HEAD)"
+        run: echo "short-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
   create-draft-release:
     name: Create Draft Release
