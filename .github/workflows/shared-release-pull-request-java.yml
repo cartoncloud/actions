@@ -421,7 +421,7 @@ jobs:
 
     steps:
       - name: Merge production into main
-        uses: devmasx/merge-branch@8b86512c768bec19827894f0a39a776809668189
+        uses: devmasx/merge-branch@5db181cdddbc510e300b5ff615a18b6bddcfcb4b
         id: back-merge-production
         with:
           type: now
