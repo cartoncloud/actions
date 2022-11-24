@@ -84,7 +84,7 @@ runs:
         jiraPassword: ${{ inputs.jiraPassword }}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@master
+      uses: aws-actions/configure-aws-credentials@v1-node16
       with:
         role-to-assume: arn:aws:iam::026388519853:role/GithubToAwsOpenIdConnect
         aws-region: ${{ inputs.awsRegion }}
