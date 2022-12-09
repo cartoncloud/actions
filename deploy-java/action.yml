@@ -138,6 +138,19 @@ runs:
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
 
+    - name: On success notify okay to test
+      uses: actions/github-script@v6
+      if: ${{ (inputs.environment !='Production') }}
+      with:
+        github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        script: |
+          const result = await github.rest.actions.createWorkflowDispatch({
+            owner: 'cartoncloud',
+            repo: 'api-functional-tests',
+            workflow_id: 'run-tests.yml',
+            environment: ${{ inputs.environment }}
+          });
+
     - name: Deployment status (failed)
       uses: cartoncloud/actions/deployment-status@v3
       if: ${{ failure() }}
