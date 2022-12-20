@@ -57,7 +57,7 @@ jobs:
   deploy-branch:
     runs-on: ubuntu-latest
     name: Deploy branch
-    if: ${{ inputs.githubRefType == 'branch' && inputs.environmentName != 'Production' }}
+    if: ${{ inputs.githubRefType == 'branch' && inputs.environmentName != 'prod' }}
     permissions:
       id-token: write
       contents: read

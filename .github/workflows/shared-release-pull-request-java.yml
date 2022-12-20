@@ -370,11 +370,11 @@ jobs:
     concurrency: deploy-Production
 
     environment:
-      name: Production
+      name: prod
       url: https://app.cartoncloud.com.au/
 
     env:
-      environmentName: Production
+      environmentName: prod
       environmentUrl: https://app.cartoncloud.com.au/
 
     permissions:
