@@ -72,7 +72,7 @@ jobs:
           refTo: ${{ inputs.prHeadSha  }}
 
       - name: Get incremented version
-        uses: anothrNick/github-tag-action@1.36.0
+        uses: anothrNick/github-tag-action@1.60.0
         id: increment-version
         env:
           WITH_V: true
@@ -308,7 +308,7 @@ jobs:
           refTo: ${{ inputs.prHeadSha  }}
 
       - name: Get version and tag
-        uses: anothrNick/github-tag-action@1.36.0
+        uses: anothrNick/github-tag-action@1.60.0
         id: increment-version
         env:
           WITH_V: true
