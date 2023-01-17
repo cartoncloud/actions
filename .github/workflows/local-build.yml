@@ -36,7 +36,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ${{ matrix.package }}/package-lock.json
 
-      - name: Install depdendencies
+      - name: Install dependencies
         working-directory: ${{ matrix.package }}
         run: npm ci
 
