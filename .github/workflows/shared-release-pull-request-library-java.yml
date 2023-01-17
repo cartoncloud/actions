@@ -61,7 +61,7 @@ jobs:
           refTo: ${{ inputs.refTo }}
 
       - name: Get incremented version
-        uses: anothrNick/github-tag-action@1.36.0
+        uses: anothrNick/github-tag-action@1.61.0
         id: increment-version
         env:
           WITH_V: true
