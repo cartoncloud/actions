@@ -36246,7 +36246,7 @@ async function syncFlag(flag, config = {}) {
     }
     const observer = jsonPatch.observe(flag);
 
-    if (verbose) core.debug(`Checking ${flag.key}`);
+    if (verbose) core.info(`Checking ${flag.key}`);
 
     copyValues(flag, config);
 
@@ -36270,7 +36270,7 @@ async function syncFlag(flag, config = {}) {
         });
     } else {
         flagsWithoutChanges += 1;
-        if (verbose) core.debug(`No changes in ${flag.key}`);
+        if (verbose) core.info(`No changes in ${flag.key}`);
     }
 }
 

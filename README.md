@@ -6,7 +6,7 @@ Re-usable GitHub Actions
 
 1. Create a new directory with your action
 2. Setup dependabot updates in `.github/dependabot.yml`
-3. If it is a JS action, add the package folder to the `.github/local-build.yml` matrix
+3. If it is a JS action, add the package folder to the `.github/workflows/local-build.yml` matrix
 
 ## Included Actions
 
@@ -28,3 +28,8 @@ Re-usable GitHub Actions
 - jira-project-version-update
 - jira-release-notes-markdown
 - jira-release-notes-slack
+
+### Javascript Actions
+
+- launchdarkly-flags-sync
+- launchdarkly-segments-sync
