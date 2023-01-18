@@ -59,7 +59,7 @@ runs:
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
-        environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ inputs.environment }}"'
+        environmentJql: 'project = ENV AND "Environment Key[Short text]" ~ "${{ inputs.environment }}"'
         appName: ${{ inputs.appName }}
         revision: "Deploying…"
 
@@ -70,7 +70,7 @@ runs:
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
-        environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ inputs.environment }}"'
+        environmentJql: 'project = ENV AND "Environment Key[Short text]" ~ "${{ inputs.environment }}"'
         appName: ${{ inputs.appName }}
         revision: ${{ inputs.revision }}
 
@@ -81,7 +81,7 @@ runs:
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
-        environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ inputs.environment }}"'
+        environmentJql: 'project = ENV AND "Environment Key[Short text]" ~ "${{ inputs.environment }}"'
         appName: ${{ inputs.appName }}
         revision: "Deploy-Failed"
 
