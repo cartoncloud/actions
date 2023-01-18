@@ -23,7 +23,7 @@ Sync flags with the given tag(s). Only flags with all tags will sync
 
 ### omitSegments (optional)
 Omit segments when syncing. A sync may fail if it dependenet on a segment existing in the 
-destination environment. If this is the case then run launchdarkly-segments0sync action beforehand.
+destination environment. If this is the case then run launchdarkly-segments-sync action beforehand.
 
 ### host (optional)
 Launch Darkly host domain url. Defaults to https://app.launchdarkly.com

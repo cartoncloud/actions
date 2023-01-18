@@ -15,7 +15,6 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@actions/github": "^5.1.1",
     "fast-json-patch": "^3.1.1",
     "axios": "^1.2.2",
     "axios-logger": "^2.6.2"
