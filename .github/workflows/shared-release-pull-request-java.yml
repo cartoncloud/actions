@@ -218,7 +218,7 @@ jobs:
         uses: cartoncloud/actions/deploy-java@v3
         with:
           appName: ${{ inputs.appName }}
-          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
           revision: ${{ needs.determine-version.outputs.draftVersion }}
           revisionUrl: ${{ needs.create-draft-release.outputs.htmlUrl }}
           reason: ':zap: <${{ inputs.prUrl }}|Next Release>'
@@ -226,7 +226,7 @@ jobs:
           environmentUrl: ${{ env.environmentUrl }}
           environmentTag: ${{ env.environmentTag }}
           existingImageTag: ${{ inputs.prHeadSha  }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
@@ -263,7 +263,7 @@ jobs:
           environmentUrl: ${{ env.environmentUrl }}
           environmentTag: ${{ env.environmentTag }}
           existingImageTag: ${{ inputs.prHeadSha  }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
@@ -385,13 +385,13 @@ jobs:
           revision: ${{ needs.create-releases.outputs.version }}
           revisionUrl: ${{ needs.create-releases.outputs.releaseUrl }}
           releaseNotes: ${{ needs.create-releases.outputs.slackReleaseNotes }}
-          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
           environment: ${{ env.environmentName }}
           environmentUrl: ${{ env.environmentUrl }}
-          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
           versionTag: ${{ needs.create-releases.outputs.version }}
           existingImageTag: ${{ inputs.prHeadSha  }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}

@@ -37,15 +37,15 @@ jobs:
         uses: cartoncloud/actions/deploy-java@v3
         with:
           appName: ${{ inputs.appName }}
-          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
           revision: ${{ inputs.githubRefName }}
           revisionUrl: ${{ inputs.repositoryUrl }}/tree/${{ inputs.githubRefName }}
           reason: ':technologist::skin-tone-4: Manual deploy by *${{ github.actor }}*'
           environment: ${{ inputs.environmentName }}
           environmentUrl: ${{ inputs.repositoryUrl }}/deployments
-          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
           existingImageTag: ${{ inputs.githubRefName }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
@@ -65,15 +65,15 @@ jobs:
         uses: cartoncloud/actions/deploy-java@v3
         with:
           appName: ${{ inputs.appName }}
-          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
           revision: ${{ inputs.githubRefName }}
           revisionUrl: ${{ inputs.repositoryUrl }}/tree/${{ inputs.githubRefName }}
           reason: ':technologist::skin-tone-4: Manual deploy by *${{ github.actor }}*'
           environment: ${{ inputs.environmentName }}
           environmentUrl: ${{ inputs.repositoryUrl }}/deployments
-          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
           existingImageTag: ${{ inputs.githubSha }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}

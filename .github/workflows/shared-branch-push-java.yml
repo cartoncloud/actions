@@ -112,9 +112,9 @@ jobs:
           revisionUrl: ${{ github.event.repository.html_url }}/tree/${{ github.ref_name }}
           environment: ${{ matrix.environment.name }}
           environmentUrl: ${{ matrix.environment.url }}
-          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
           existingImageTag: ${{ github.sha }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
