@@ -1,0 +1,70 @@
+name: 'Jira Deployment Status'
+description: 'Updates Jira environments project'
+inputs:
+  appName:
+    description: 'Name of the app and matching project field'
+    required: true
+  revision:
+    description: 'Version of the app that is being deployed'
+    required: true
+  environment:
+    description: 'Name of the environment that is being deployed to'
+    required: true
+  status:
+    description: 'One of started, success, failed'
+    required: true
+
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+
+  jiraEnvironmentProjectKey:
+    description: 'Jira project key'
+    required: false
+    default: 'ENV'
+  jiraEnvironmentField:
+    description: 'JQL field used to find the given environment'
+    required: false
+    default: 'Environment Key[Short text]'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update Jira issue (started)
+      uses: cartoncloud/actions/jira-environment-revision-set@v3
+      if: inputs.status == 'started'
+      with:
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+        environmentJql: 'project = ${{ inputs.jiraEnvironmentProjectKey }} AND "${{ inputs.jiraEnvironmentField }}" ~ "${{ inputs.environment }}"'
+        appName: ${{ inputs.appName }}
+        revision: "Deploying…"
+
+    - name: Update Jira issue (success)
+      uses: cartoncloud/actions/jira-environment-revision-set@v3
+      if: inputs.status == 'success'
+      with:
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+        environmentJql: 'project = ${{ inputs.jiraEnvironmentProjectKey }} AND "${{ inputs.jiraEnvironmentField }}" ~ "${{ inputs.environment }}"'
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+
+    - name: Update Jira issue (failed)
+      uses: cartoncloud/actions/jira-environment-revision-set@v3
+      if: inputs.status == 'failed'
+      with:
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+        environmentJql: 'project = ${{ inputs.jiraEnvironmentProjectKey }} AND "${{ inputs.jiraEnvironmentField }}" ~ "${{ inputs.environment }}"'
+        appName: ${{ inputs.appName }}
+        revision: "Deploy-Failed"

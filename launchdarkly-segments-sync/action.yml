@@ -1,0 +1,38 @@
+name: 'Launch Darkly user segments sync'
+description: 'Sync Launch Darkly user segments between environments'
+inputs:
+  projectKey:
+    description: 'Project key'
+    required: true
+  sourceEnv:
+    description: 'Source environment key'
+    required: true
+  destinationEnv:
+    description: 'Destination environment key'
+    required: true
+  apiToken:
+    description: 'LaunchDarkly personal access token with write-level access'
+    required: true
+  userSegment:
+    description: 'Sync only the specified user segment'
+    required: false
+  host:
+    description: 'Hostname override'
+    required: false
+    default: 'https://app.launchdarkly.com'
+  verbose:
+    description: 'Enable verbose logging'
+    required: false
+    default: 'false'
+  dryRun:
+    description: 'Preview changes'
+    required: false
+    default: 'false'
+  debug:
+    description: 'Enable HTTP debugging'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

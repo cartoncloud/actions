@@ -12,9 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Update autolink references
+      - name: Update CartonCloud autolink references
         uses: ./github-global-autolink
         with:
           prefix: 'CC-'
           targetUrl: 'https://cartoncloud.atlassian.net/browse/CC-<num>'
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Update platform autolink references
+        uses: ./github-global-autolink
+        with:
+          prefix: 'PLT-'
+          targetUrl: 'https://cartoncloud.atlassian.net/browse/PLT-<num>'
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
