@@ -1,14 +1,7 @@
-# Deployment Status
-Action to update an environments board and/or Slack with deployment status
-
-## Deprecated
-
-Use `jira-deployment-status` and/or `slack-deployment-status`
+# Slack Deployment Status
+Sends Slack notifications for the status of a deployment
 
 ## Inputs
-
-### slackChannel (optional)
-Slack channel id, channel name, or user id to post message. Prefer channel id to enable message updates on channel.
 
 ### appName (required)
 Name of the app and matching project field
@@ -31,19 +24,10 @@ Url of the environment that is being deployed to
 ### status (required)
 One of started, success, failed
 
-### jiraServer
-Jira server address i.e. acme.atlassian.net
+### slackChannel (required)
+Slack channel id, channel name, or user id to post message. Prefer channel id to enable message updates on channel.
 
-### jiraUsername
-Jira username to use to call the API
-
-### jiraPassword
-Jira password to use to call the API
-
-### projectsToken (optional)
-Personal access token with org:write permisions
-
-### slackBotToken (optional)
+### slackBotToken (required)
 Slack token of custom app for sending messages
 
 ### slackUpdateTimestamp (optional)

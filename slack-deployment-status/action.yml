@@ -1,0 +1,201 @@
+name: 'Slack Deployment Status'
+description: 'Sends Slack notifications for the status of a deployment'
+inputs:
+  appName:
+    description: 'Name of the app and matching project field'
+    required: true
+  revision:
+    description: 'Version of the app that is being deployed'
+    required: true
+  revisionUrl:
+    description: 'Url to the version of the app that is being deployed'
+    required: true
+  reason:
+    description: 'Optional reason for the deployment'
+    required: false
+  environment:
+    description: 'Name of the environment that is being deployed to'
+    required: true
+  environmentUrl:
+    description: 'Url of the environment that is being deployed to'
+    required: true
+  status:
+    description: 'One of started, success, failed'
+    required: true
+
+  slackChannel:
+    description: 'Slack channel id, channel name, or user id to post message'
+    required: true
+  slackBotToken:
+    description: 'Slack token of custom app for sending messages'
+    required: true
+  slackUpdateTimestamp:
+    description: 'The timestamp of a previous message posted to update it instead of posting a new message'
+    required: false
+
+outputs:
+  slackMessageTimestamp:
+    description: 'The timestamp on the started message that was posted into Slack when using bot token'
+    value: ${{ steps.slack-notification-started.outputs.ts && steps.slack-notification-started.outputs.ts || steps.slack-notification-started-reason.outputs.ts }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Slack notification (started)
+      id: slack-notification-started
+      uses: slackapi/slack-github-action@v1.23.0
+      if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        payload: |
+          {
+            "text": "Deployment Started :hourglass_flowing_sand:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":hourglass_flowing_sand: Deploying ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>…"
+                }
+              }
+            ]
+          }
+
+    - name: Slack notification (started with reason)
+      id: slack-notification-started-reason
+      uses: slackapi/slack-github-action@v1.23.0
+      if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        payload: |
+          {
+            "text": "Deployment Started :hourglass_flowing_sand:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "${{ inputs.reason }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":hourglass_flowing_sand: Deploying ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>…"
+                }
+              }
+            ]
+          }
+
+    - name: Slack notification (success)
+      uses: slackapi/slack-github-action@v1.23.0
+      if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        update-ts: ${{ inputs.slackUpdateTimestamp }}
+        payload: |
+          {
+            "text": "Deployment Complete :rocket:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":rocket: ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> deployed to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
+                }
+              }
+            ]
+          }
+
+    - name: Slack notification (success with reason)
+      uses: slackapi/slack-github-action@v1.23.0
+      if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        update-ts: ${{ inputs.slackUpdateTimestamp }}
+        payload: |
+          {
+            "text": "Deployment Complete :rocket:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "${{ inputs.reason }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":rocket: ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> deployed to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
+                }
+              }
+            ]
+          }
+
+    - name: Slack notification (failed)
+      uses: slackapi/slack-github-action@v1.23.0
+      if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        update-ts: ${{ inputs.slackUpdateTimestamp }}
+        payload: |
+          {
+            "text": "Deployment Failed :rotating_light:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":rotating_light: Failed to deploy ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
+                }
+              }
+            ]
+          }
+
+    - name: Slack notification (failed with reason)
+      uses: slackapi/slack-github-action@v1.23.0
+      if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
+      with:
+        channel-id: ${{ inputs.slackChannel }}
+        update-ts: ${{ inputs.slackUpdateTimestamp }}
+        payload: |
+          {
+            "text": "Deployment Failed :rotating_light:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}",
+            "blocks": [
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "${{ inputs.reason }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":rotating_light: Failed to deploy ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
+                }
+              }
+            ]
+          }

@@ -13,6 +13,8 @@ Re-usable GitHub Actions
 ### Composite Actions
 
 - deployment-status
+- jira-deployment-status
+- slack-deployment-status
 
 ### Typescript Actions
 

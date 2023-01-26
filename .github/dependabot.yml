@@ -4,9 +4,19 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
 
   - package-ecosystem: "github-actions"
     directory: "/deployment-status"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/jira-deployment-status"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/slack-deployment-status"
+    schedule:
+      interval: "weekly"
