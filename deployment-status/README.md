@@ -40,8 +40,8 @@ Jira username to use to call the API
 ### jiraPassword
 Jira password to use to call the API
 
-### jiraEnvironmentField
-JQL field used to find the given environment
+### projectsToken (optional)
+Personal access token with org:write permisions
 
 ### slackBotToken (optional)
 Slack token of custom app for sending messages
