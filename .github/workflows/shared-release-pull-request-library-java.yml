@@ -30,10 +30,6 @@ permissions:
   pull-requests: write
   repository-projects: read
 
-env:
-  jiraServer: cartoncloud.atlassian.net
-  jiraProjectId: 10002
-
 jobs:
   determine-version:
     name: Determine Version
@@ -53,10 +49,10 @@ jobs:
         id: jira-issues-from-commits
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: CC
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_KEY }}
           refFrom: ${{ inputs.refFrom }}
           refTo: ${{ inputs.refTo }}
 
@@ -95,10 +91,10 @@ jobs:
         id: jira-issues-from-commits
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: CC
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_KEY }}
           refFrom: ${{ inputs.refFrom }}
           refTo: ${{ inputs.refTo }}
 
@@ -154,10 +150,10 @@ jobs:
         id: jira-issues-from-commits
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: CC
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_KEY }}
           refFrom: ${{ inputs.refFrom }}
           refTo: ${{ inputs.refTo }}
 
@@ -179,8 +175,8 @@ jobs:
         with:
           username: ${{ secrets.JIRA_USERNAME }}
           password: ${{ secrets.JIRA_PASSWORD }}
-          serverAddress: ${{ env.jiraServer }}
-          projectId: ${{ env.jiraProjectId }}
+          serverAddress: ${{ vars.JIRA_SERVER }}
+          projectId: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           name: ${{ inputs.repositoryName }} ${{ needs.determine-version.outputs.version }}
           description: CartonCloud ${{ inputs.repositoryName }} ${{ needs.determine-version.outputs.version }}
           isReleased: false
@@ -188,7 +184,7 @@ jobs:
       - name: Update JIRA fix versions
         uses: cartoncloud/actions/jira-issues-update-fix-version@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}

@@ -39,10 +39,6 @@ on:
         type: boolean
         required: false
 
-env:
-  jiraServer: cartoncloud.atlassian.net
-  jiraProjectId: 10002
-
 jobs:
   determine-version:
     name: Determine Version
@@ -64,10 +60,10 @@ jobs:
         id: jira-issues-from-commits
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: CC
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           refFrom: ${{ inputs.prBaseSha  }}
           refTo: ${{ inputs.prHeadSha  }}
 
@@ -232,7 +228,7 @@ jobs:
           existingImageTag: ${{ inputs.prHeadSha  }}
           awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
 
@@ -269,7 +265,7 @@ jobs:
           existingImageTag: ${{ inputs.prHeadSha  }}
           awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
 
@@ -300,10 +296,10 @@ jobs:
         id: jira-issues-from-commits
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: CC
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           refFrom: ${{ inputs.prBaseSha  }}
           refTo: ${{ inputs.prHeadSha  }}
 
@@ -349,8 +345,8 @@ jobs:
         with:
           username: ${{ secrets.JIRA_USERNAME }}
           password: ${{ secrets.JIRA_PASSWORD }}
-          serverAddress: ${{ env.jiraServer }}
-          projectId: ${{ env.jiraProjectId }}
+          serverAddress: ${{ vars.JIRA_SERVER }}
+          projectId: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           name: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
           description: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
           isReleased: false
@@ -358,7 +354,7 @@ jobs:
       - name: Update JIRA fix versions
         uses: cartoncloud/actions/jira-issues-update-fix-version@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
@@ -397,7 +393,7 @@ jobs:
           existingImageTag: ${{ inputs.prHeadSha  }}
           awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
 
@@ -406,8 +402,8 @@ jobs:
         with:
           username: ${{ secrets.JIRA_USERNAME }}
           password: ${{ secrets.JIRA_PASSWORD }}
-          serverAddress: ${{ env.jiraServer }}
-          projectId: ${{ env.jiraProjectId }}
+          serverAddress: ${{ vars.JIRA_SERVER }}
+          projectId: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           releaseId: ${{ needs.create-releases.outputs.jiraReleaseId }}
           isReleased: true
 

@@ -22,9 +22,6 @@ on:
         type: string
         required: true
 
-env:
-  jiraServer: cartoncloud.atlassian.net
-
 jobs:
   deploy-from-tag:
     runs-on: ubuntu-latest
@@ -50,7 +47,7 @@ jobs:
           existingImageTag: ${{ inputs.githubRefName }}
           awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
 
@@ -78,6 +75,6 @@ jobs:
           existingImageTag: ${{ inputs.githubSha }}
           awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
