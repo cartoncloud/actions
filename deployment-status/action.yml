@@ -36,6 +36,10 @@ inputs:
   jiraPassword:
     description: 'Jira password to use to call the API'
     required: true
+  jiraEnvironmentField:
+    description: 'JQL field used to find the given environment'
+    required: false
+    default: 'GitHub Environment[Short text]'
 
   slackBotToken:
     description: 'Slack token of custom app for sending messages'
@@ -59,7 +63,7 @@ runs:
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
-        environmentJql: 'project = ENV AND "Environment Key[Short text]" ~ "${{ inputs.environment }}"'
+        environmentJql: 'project = ENV AND "${{ inputs.jiraEnvironmentField }}" ~ "${{ inputs.environment }}"'
         appName: ${{ inputs.appName }}
         revision: "Deploying…"
 
@@ -70,7 +74,7 @@ runs:
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
-        environmentJql: 'project = ENV AND "Environment Key[Short text]" ~ "${{ inputs.environment }}"'
+        environmentJql: 'project = ENV AND "${{ inputs.jiraEnvironmentField }}" ~ "${{ inputs.environment }}"'
         appName: ${{ inputs.appName }}
         revision: ${{ inputs.revision }}
 
@@ -81,7 +85,7 @@ runs:
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
-        environmentJql: 'project = ENV AND "Environment Key[Short text]" ~ "${{ inputs.environment }}"'
+        environmentJql: 'project = ENV AND "${{ inputs.jiraEnvironmentField }}" ~ "${{ inputs.environment }}"'
         appName: ${{ inputs.appName }}
         revision: "Deploy-Failed"
 
