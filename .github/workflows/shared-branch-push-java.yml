@@ -55,7 +55,7 @@ jobs:
         run: sudo echo "127.0.0.1 postgres.localhost.com" | sudo tee -a /etc/hosts
 
       - name: Build
-        uses: cartoncloud/actions/build-java@v3
+        uses: cartoncloud/actions/build-java@PLT-20-multi-platform-java
         with:
           appName: ${{ inputs.appName }}
           mavenS3AccessKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
