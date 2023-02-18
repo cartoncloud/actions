@@ -13,9 +13,6 @@ on:
         type: boolean
         required: false
 
-env:
-  jiraServer: cartoncloud.atlassian.net
-
 jobs:
   build:
     if: ${{ inputs.postgres == false }}
@@ -77,14 +74,14 @@ jobs:
       - uses: cartoncloud/actions/jira-environment-revision-search@v3
         id: find-issues
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          projectKey: ENV
+          projectKey: ${{ vars.JIRA_ENVIRONMENT_PROJECT_KEY }}
           appName: ${{ inputs.appName }}
           revision: ${{ github.ref_name }}
-          nameField: customfield_10224
-          urlField: customfield_10225
+          nameField: ${{ vars.JIRA_ENVIRONMENT_NAME_FIELD }}
+          urlField: ${{ vars.JIRA_ENVIRONMENT_URL_FIELD }}
 
   deploy:
     name: Deploy
@@ -115,9 +112,9 @@ jobs:
           revisionUrl: ${{ github.event.repository.html_url }}/tree/${{ github.ref_name }}
           environment: ${{ matrix.environment.name }}
           environmentUrl: ${{ matrix.environment.url }}
-          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
           existingImageTag: ${{ github.sha }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
-          jiraServer: ${{ env.jiraServer }}
+          awsRegion: ${{ vars.AWS_REGION }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}

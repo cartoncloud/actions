@@ -54,7 +54,6 @@ runs:
   using: "composite"
 
   steps:
-
     - uses: actions/checkout@v3
 
     - name: Slack notification (release notes)
@@ -66,9 +65,10 @@ runs:
         channel-id: ${{ inputs.slackChannel }}
         payload: ${{ inputs.releaseNotes }}
 
-    - name: Deployment status (started)
-      uses: cartoncloud/actions/deployment-status@v3
-      id: deploy-status-started
+    - name: Slack deployment status (started)
+      uses: cartoncloud/actions/slack-deployment-status@v3
+      id: slack-deploy-status-started
+      if: inputs.slackChannel != '' && inputs.slackBotToken != ''
       with:
         status: started
         slackChannel: ${{ inputs.slackChannel }}
@@ -79,6 +79,14 @@ runs:
         environment: ${{ inputs.environment }}
         environmentUrl: ${{ inputs.environmentUrl }}
         slackBotToken: ${{ inputs.slackBotToken }}
+
+    - name: Jira deployment status (started)
+      uses: cartoncloud/actions/jira-deployment-status@v3
+      with:
+        status: started
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+        environment: ${{ inputs.environment }}
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
@@ -121,8 +129,9 @@ runs:
       shell: bash
       run: aws ecs update-service --cluster services-${{ inputs.environmentTag }} --service ${{ inputs.appName }} --force-new-deployment
 
-    - name: Deployment status (success)
-      uses: cartoncloud/actions/deployment-status@v3
+    - name: Slack deployment status (success)
+      uses: cartoncloud/actions/slack-deployment-status@v3
+      if: inputs.slackChannel != '' && inputs.slackBotToken != ''
       with:
         status: success
         slackChannel: ${{ inputs.slackChannel }}
@@ -133,14 +142,30 @@ runs:
         environment: ${{ inputs.environment }}
         environmentUrl: ${{ inputs.environmentUrl }}
         slackBotToken: ${{ inputs.slackBotToken }}
-        slackUpdateTimestamp: ${{ steps.deploy-status-started.outputs.slackMessageTimestamp }}
+        slackUpdateTimestamp: ${{ steps.slack-deploy-status-started.outputs.slackMessageTimestamp }}
+
+    - name: Jira deployment status (success)
+      uses: cartoncloud/actions/jira-deployment-status@v3
+      with:
+        status: success
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+        environment: ${{ inputs.environment }}
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}
 
-    - name: Deployment status (failed)
-      uses: cartoncloud/actions/deployment-status@v3
-      if: ${{ failure() }}
+    - name: On success notify okay to test
+      uses: actions/github-script@v6
+      if: ${{ (inputs.environment !='prod') && (inputs.environment !='qa04') }}
+      with:
+        github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: |
+          gh workflow run run-tests.yml --repo cartoncloud/api-functional-tests --ref main --field environment=${{ inputs.environment }}
+
+    - name: Slack deployment status (failed)
+      uses: cartoncloud/actions/slack-deployment-status@v3
+      if: ${{ failure() && inputs.slackChannel != '' && inputs.slackBotToken != '' }}
       with:
         status: failed
         slackChannel: ${{ inputs.slackChannel }}
@@ -151,7 +176,16 @@ runs:
         environment: ${{ inputs.environment }}
         environmentUrl: ${{ inputs.environmentUrl }}
         slackBotToken: ${{ inputs.slackBotToken }}
-        slackUpdateTimestamp: ${{ steps.deploy-status-started.outputs.slackMessageTimestamp }}
+        slackUpdateTimestamp: ${{ steps.slack-deploy-status-started.outputs.slackMessageTimestamp }}
+
+    - name: Jira deployment status (failed)
+      uses: cartoncloud/actions/jira-deployment-status@v3
+      if: ${{ failure() }}
+      with:
+        status: failed
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+        environment: ${{ inputs.environment }}
         jiraServer: ${{ inputs.jiraServer }}
         jiraUsername: ${{ inputs.jiraUsername }}
         jiraPassword: ${{ inputs.jiraPassword }}

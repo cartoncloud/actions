@@ -39,10 +39,6 @@ on:
         type: boolean
         required: false
 
-env:
-  jiraServer: cartoncloud.atlassian.net
-  jiraProjectId: 10002
-
 jobs:
   determine-version:
     name: Determine Version
@@ -64,10 +60,10 @@ jobs:
         id: jira-issues-from-commits
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: CC
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           refFrom: ${{ inputs.prBaseSha  }}
           refTo: ${{ inputs.prHeadSha  }}
 
@@ -222,7 +218,7 @@ jobs:
         uses: cartoncloud/actions/deploy-java@v3
         with:
           appName: ${{ inputs.appName }}
-          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
           revision: ${{ needs.determine-version.outputs.draftVersion }}
           revisionUrl: ${{ needs.create-draft-release.outputs.htmlUrl }}
           reason: ':zap: <${{ inputs.prUrl }}|Next Release>'
@@ -230,9 +226,9 @@ jobs:
           environmentUrl: ${{ env.environmentUrl }}
           environmentTag: ${{ env.environmentTag }}
           existingImageTag: ${{ inputs.prHeadSha  }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
 
@@ -267,9 +263,9 @@ jobs:
           environmentUrl: ${{ env.environmentUrl }}
           environmentTag: ${{ env.environmentTag }}
           existingImageTag: ${{ inputs.prHeadSha  }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
 
@@ -300,10 +296,10 @@ jobs:
         id: jira-issues-from-commits
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: CC
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           refFrom: ${{ inputs.prBaseSha  }}
           refTo: ${{ inputs.prHeadSha  }}
 
@@ -349,8 +345,8 @@ jobs:
         with:
           username: ${{ secrets.JIRA_USERNAME }}
           password: ${{ secrets.JIRA_PASSWORD }}
-          serverAddress: ${{ env.jiraServer }}
-          projectId: ${{ env.jiraProjectId }}
+          serverAddress: ${{ vars.JIRA_SERVER }}
+          projectId: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           name: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
           description: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
           isReleased: false
@@ -358,7 +354,7 @@ jobs:
       - name: Update JIRA fix versions
         uses: cartoncloud/actions/jira-issues-update-fix-version@v3
         with:
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
@@ -370,11 +366,11 @@ jobs:
     concurrency: deploy-Production
 
     environment:
-      name: Production
+      name: prod
       url: https://app.cartoncloud.com.au/
 
     env:
-      environmentName: Production
+      environmentName: prod
       environmentUrl: https://app.cartoncloud.com.au/
 
     permissions:
@@ -389,15 +385,15 @@ jobs:
           revision: ${{ needs.create-releases.outputs.version }}
           revisionUrl: ${{ needs.create-releases.outputs.releaseUrl }}
           releaseNotes: ${{ needs.create-releases.outputs.slackReleaseNotes }}
-          slackChannel: ${{ secrets.DEPLOY_SLACK_CHANNEL }}
+          slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
           environment: ${{ env.environmentName }}
           environmentUrl: ${{ env.environmentUrl }}
-          environmentTag: ${{ secrets.DOCKER_ENVIRONMENT_TAG }}
+          environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
           versionTag: ${{ needs.create-releases.outputs.version }}
           existingImageTag: ${{ inputs.prHeadSha  }}
-          awsRegion: ${{ secrets.CODEDEPLOY_REGION }}
+          awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ env.jiraServer }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
 
@@ -406,8 +402,8 @@ jobs:
         with:
           username: ${{ secrets.JIRA_USERNAME }}
           password: ${{ secrets.JIRA_PASSWORD }}
-          serverAddress: ${{ env.jiraServer }}
-          projectId: ${{ env.jiraProjectId }}
+          serverAddress: ${{ vars.JIRA_SERVER }}
+          projectId: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
           releaseId: ${{ needs.create-releases.outputs.jiraReleaseId }}
           isReleased: true
 
