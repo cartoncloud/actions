@@ -50,6 +50,7 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+        secrets: inherit
 
   deploy-branch:
     runs-on: ubuntu-latest
@@ -78,3 +79,4 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+        secrets: inherit

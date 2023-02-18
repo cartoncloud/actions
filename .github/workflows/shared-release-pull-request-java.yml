@@ -231,6 +231,7 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+        secrets: inherit
 
   deploy-staging:
     name: Deploy to Staging
@@ -268,6 +269,7 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+        secrets: inherit
 
   create-releases:
     name: Create Releases
@@ -396,7 +398,8 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-
+        secrets: inherit
+        
       - name: Mark JIRA as released
         uses: cartoncloud/actions/jira-project-version-update@v3
         with:
