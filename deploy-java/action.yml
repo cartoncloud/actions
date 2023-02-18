@@ -164,7 +164,7 @@ runs:
     - name: On success notify okay to test
       shell: bash
       if: ${{ inputs.environment !='prod' && inputs.environment !='qa04' }}
-      run: gh workflow run run-tests.yml --repo --ref main --field environment=${{ inputs.environment }}
+      run: gh workflow run run-tests.yml --repo cartoncloud/api-functional-tests --ref main --field environment=${{ inputs.environment }}
       env:
         GITHUB_TOKEN: ${{ inputs.gitHubPAT }}
 
