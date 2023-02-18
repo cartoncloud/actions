@@ -156,7 +156,6 @@ runs:
         jiraPassword: ${{ inputs.jiraPassword }}
 
     - name: On success notify okay to test
-      uses: actions/github-script@v6
       # api-functional-tests only has resources for qa0[123],staging01,test01.  This trigger shouldn't really
       # need to know anything about the targets, but this check saves invoking against prod and environments that
       # we know won't work
