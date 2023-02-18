@@ -49,6 +49,9 @@ inputs:
   jiraPassword:
     description: 'Jira password to use to call the API'
     required: true
+  gitHubPAT:
+    descriptin: 'PAT for GitHub API calls'
+    required: false
 
 runs:
   using: "composite"
@@ -163,7 +166,7 @@ runs:
       if: ${{ inputs.environment !='prod' && inputs.environment !='qa04' }}
       run: gh workflow run run-tests.yml --repo --ref main --field environment=${{ inputs.environment }}
       env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.gitHubPAT }}
 
     - name: Slack deployment status (failed)
       uses: cartoncloud/actions/slack-deployment-status@v3
