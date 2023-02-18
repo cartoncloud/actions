@@ -159,7 +159,7 @@ runs:
 # need to know anything about the targets, but this check saves invoking against prod and environments that
 # we know won't work
     - name: On success notify okay to test
-      uses: actions/checkout@v3
+      shell: bash
       if: ${{ inputs.environment !='prod' && inputs.environment !='qa04' }}
       run: gh workflow run run-tests.yml --repo --ref main --field environment=${{ inputs.environment }}
       env:
