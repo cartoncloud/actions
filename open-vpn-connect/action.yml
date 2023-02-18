@@ -5,10 +5,10 @@ inputs:
     description: Complete self-contained .ovpn file
     required: true
   vpn-user:
-    description: Username for the VPN
+    description: Username for the VPN - not required if .ovpn includes
     required: false
   vpn-pass:
-    description: Password for the VPN
+    description: Password for the VPN - not required if .ovpn includes certificate
     required: false
 runs:
   using: composite

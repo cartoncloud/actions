@@ -157,11 +157,14 @@ runs:
 
     - name: On success notify okay to test
       uses: actions/github-script@v6
+      # api-functional-tests only has resources for qa0[123],staging01,test01.  This trigger shouldn't really
+      # need to know anything about the targets, but this check saves invoking against prod and environments that
+      # we know won't work
       if: ${{ (inputs.environment !='prod') && (inputs.environment !='qa04') }}
-      with:
+      run: |
+        gh workflow run run-tests.yml --repo cartoncloud/api-functional-tests --ref main --field environment=${{ inputs.environment }}
+      env:
         github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        run: |
-          gh workflow run run-tests.yml --repo cartoncloud/api-functional-tests --ref main --field environment=${{ inputs.environment }}
 
     - name: Slack deployment status (failed)
       uses: cartoncloud/actions/slack-deployment-status@v3
