@@ -159,9 +159,9 @@ runs:
 # need to know anything about the targets, but this check saves invoking against prod and environments that
 # we know won't work
     - name: On success notify okay to test
-      if: ${{ (inputs.environment !='prod') && (inputs.environment !='qa04') }}
-      shell: bash
-      run: gh workflow run run-tests.yml --repo cartoncloud/api-functional-tests --ref main --field environment=${{ inputs.environment }}
+      uses: actions/checkout@v3
+      if: ${{ inputs.environment !='prod' && inputs.environment !='qa04' }}
+      run: gh workflow run run-tests.yml --repo --ref main --field environment=${{ inputs.environment }}
       env:
         GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
