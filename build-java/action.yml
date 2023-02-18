@@ -38,12 +38,34 @@ runs:
 
   steps:
     - uses: actions/checkout@v3
+
+    - uses: actions/setup-go@v3
+      with:
+        go-version: '^1.19.4'
+
+    - uses: imjasonh/setup-crane@v0.2
+      with:
+        version: v0.12.1
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
     - name: Set up JDK 11
       uses: actions/setup-java@v3
       with:
         java-version: '11'
         distribution: 'temurin'
-        cache: 'maven'
+
+    - name: Cache local Maven repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
 
     - name: Update pom version
       env:
@@ -81,7 +103,7 @@ runs:
         AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
       shell: bash
-      run:  mvn sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
+      run: mvn sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1-node16
@@ -100,7 +122,13 @@ runs:
         REPOSITORY: ${{ inputs.appName }}
         IMAGE_TAG: ${{ inputs.dockerTag }}
       run: |
-        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG --build-arg jar_file=./target/${{ inputs.appName }}-${{ inputs.pomVersion }}.jar .
+        docker buildx create --name multiplatform-builder --driver docker-container --bootstrap
+        docker buildx use multiplatform-builder
+        docker buildx build --platform linux/amd64,linux/arm64 --tag $REGISTRY/$REPOSITORY:"$IMAGE_TAG" --build-arg jar_file=./target/${{ inputs.appName }}-${{ inputs.pomVersion }}.jar --push .
+        amdSha=$(crane digest $REGISTRY/$REPOSITORY:"$IMAGE_TAG" --platform linux/amd64)
+        armSha=$(crane digest $REGISTRY/$REPOSITORY:"$IMAGE_TAG" --platform linux/arm64)
+        crane tag $REGISTRY/$REPOSITORY@"$amdSha" "$IMAGE_TAG"-amd64
+        crane tag $REGISTRY/$REPOSITORY@"$armSha" "$IMAGE_TAG"-arm64
 
     - name: Tag docker image with latest for pushes on main branch
       if: ${{ github.ref_name == 'main' }}
@@ -109,8 +137,7 @@ runs:
         REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
         REPOSITORY: ${{ inputs.appName }}
         IMAGE_TAG: ${{ inputs.dockerTag }}
-      run: |
-        docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
+      run: crane tag $REGISTRY/$REPOSITORY:"$IMAGE_TAG" latest
 
     - name: Tag image with version tag if present
       if: inputs.versionTag != ''
@@ -119,13 +146,4 @@ runs:
         REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
         REPOSITORY: ${{ inputs.appName }}
         IMAGE_TAG: ${{ inputs.dockerTag }}
-      run: |
-        docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:${{ inputs.versionTag }}
-
-    - name: Push docker image to Amazon ECR
-      shell: bash
-      env:
-        REGISTRY: 026388519853.dkr.ecr.us-west-2.amazonaws.com
-        REPOSITORY: ${{ inputs.appName }}
-      run: |
-        docker push $REGISTRY/$REPOSITORY --all-tags
+      run: crane tag $REGISTRY/$REPOSITORY:"$IMAGE_TAG" ${{ inputs.versionTag }}
