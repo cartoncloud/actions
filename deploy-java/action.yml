@@ -50,7 +50,7 @@ inputs:
     description: 'Jira password to use to call the API'
     required: true
   gitHubPAT:
-    descriptin: 'PAT for GitHub API calls'
+    description: 'PAT for GitHub API calls'
     required: false
 
 runs:
@@ -127,10 +127,30 @@ runs:
         aws ecr put-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-tag ${{ inputs.versionTag }} --image-manifest "$manifest"
         echo "restart=true" >> $GITHUB_OUTPUT
 
-    - name: Deploy to a region
+    - name: Deploy to ECS
       if: ${{ steps.deploy-check.outputs.existing == '' }} || ${{ steps.version-tag.outputs.restart == 'true' }}
-      shell: bash
-      run: aws ecs update-service --cluster services-${{ inputs.environmentTag }} --service ${{ inputs.appName }} --force-new-deployment
+      runs-on: ubuntu-18.04
+      steps:
+      - uses: silinternational/ecs-deploy@master
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'us-west-2'
+        with:
+          aws_access_key_cmd: '--aws-access-key'
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key_cmd: '--aws-secret-key'
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          cluster_cmd: '--cluster'
+          cluster: services-${{ inputs.environmentTag }}
+          image_cmd: '--image'
+          image: 026388519853.dkr.ecr.us-west-2.amazonaws.com/${{ inputs.appName }}:${{ inputs.versionTag }}
+          region_cmd: '--region'
+          region: {{ inputs.awsRegion }}
+          service_name_cmd: '--service-name'
+          service_name: ${{ inputs.appName }}
+          timeout_cmd: '--timeout'
+          timeout: '360'
 
     - name: Slack deployment status (success)
       uses: cartoncloud/actions/slack-deployment-status@v3
