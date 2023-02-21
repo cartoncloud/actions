@@ -143,6 +143,8 @@ runs:
       with:
         cluster_cmd: '--cluster'
         cluster: services-${{ inputs.environmentTag }}
+        image_cmd: '--image'
+        image: 026388519853.dkr.ecr.us-west-2.amazonaws.com/${{ inputs.appName }}:${{ inputs.versionTag }}
         region_cmd: '--region'
         region: ${{ inputs.awsRegion }}
         service_name_cmd: '--service-name'
