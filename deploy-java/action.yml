@@ -144,7 +144,7 @@ runs:
         cluster_cmd: '--cluster'
         cluster: services-${{ inputs.environmentTag }}
         region_cmd: '--region'
-        region: {{ inputs.awsRegion }}
+        region: ${{ inputs.awsRegion }}
         service_name_cmd: '--service-name'
         service_name: ${{ inputs.appName }}
         timeout_cmd: '--timeout'
