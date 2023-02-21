@@ -140,7 +140,6 @@ runs:
         END_TIME=$(date -ud "$TIMEOUT" +%s)
         DEPLOYMENT_SUCCESS="false"
         WAIT_SECONDS=15
-        i=0
         echo "Waiting for service deployment to complete..."
         while [[ $(date -u +%s) -le $END_TIME ]]
         do
