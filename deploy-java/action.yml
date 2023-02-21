@@ -136,12 +136,13 @@ runs:
         # based on https://github.com/silinternational/ecs-deploy/ however their action doesn't use session credentials and builds a new docker each run
         SERVICE=${{ inputs.appName }}
         CLUSTER=services-${{ inputs.environmentTag }}
-        TIMEOUT_COUNT=80
+        TIMEOUT="20 minute"
+        END_TIME=$(date -ud "$TIMEOUT" +%s)
         DEPLOYMENT_SUCCESS="false"
         WAIT_SECONDS=15
         i=0
         echo "Waiting for service deployment to complete..."
-        while [ $i -lt $TIMEOUT_COUNT ]
+        while [[ $(date -u +%s) - le $END_TIME ]]
         do
           NUM_DEPLOYMENTS=$(aws ecs describe-services --services $SERVICE --cluster $CLUSTER | jq "[.services[].deployments[]] | length")
           # Wait until 1 deployment stays running
@@ -149,11 +150,9 @@ runs:
           if [ $NUM_DEPLOYMENTS -eq 1 ]; then
             echo "Service deployment successful."
             DEPLOYMENT_SUCCESS="true"
-            # Exit the loop.
-            i=$TIMEOUT_COUNT
+            break
           else
             sleep $WAIT_SECONDS
-            i=$(( $i + $every ))
           fi
         done
         if [[ "${DEPLOYMENT_SUCCESS}" != "true" ]]; then
