@@ -52,12 +52,6 @@ inputs:
   gitHubPAT:
     description: 'PAT for GitHub API calls'
     required: false
-  awsAccessKeyId:
-    description: 'AWS Access Key'
-    required: true
-  awsSecretAccessKey:
-    description: 'AWS Secret Access Key'
-    required: true
 
 runs:
   using: "composite"
@@ -134,25 +128,37 @@ runs:
         echo "restart=true" >> $GITHUB_OUTPUT
 
     - name: Deploy to ECS
-      uses: silinternational/ecs-deploy@master
       if: ${{ steps.deploy-check.outputs.existing == '' }} || ${{ steps.version-tag.outputs.restart == 'true' }}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.awsAccessKeyId }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.awsSecretAccessKey }}
-        AWS_DEFAULT_REGION: 'us-west-2'
-      with:
-        cluster_cmd: '--cluster'
-        cluster: services-${{ inputs.environmentTag }}
-        image_cmd: '--image'
-        image: 026388519853.dkr.ecr.us-west-2.amazonaws.com/${{ inputs.appName }}:${{ inputs.versionTag }}
-        region_cmd: '--region'
-        region: ${{ inputs.awsRegion }}
-        service_name_cmd: '--service-name'
-        service_name: ${{ inputs.appName }}
-        timeout_cmd: '--timeout'
-        timeout: '360'
-        force_new_deployment_cmd: '--force-new-deployment'
-        force_new_deployment: true
+      shell: bash
+      run: |
+        aws ecs update-service --cluster services-${{ inputs.environmentTag }} --service ${{ inputs.appName }} --force-new-deployment
+        # wait for success
+        # based on https://github.com/silinternational/ecs-deploy/ however their action doesn't use session credentials and builds a new docker each run
+        SERVICE=${{ inputs.appName }}
+        CLUSTER=services-${{ inputs.environmentTag }}
+        TIMEOUT_COUNT=80
+        DEPLOYMENT_SUCCESS="false"
+        WAIT_SECONDS=15
+        i=0
+        echo "Waiting for service deployment to complete..."
+        while [ $i -lt $TIMEOUT_COUNT ]
+        do
+          NUM_DEPLOYMENTS=$(aws ecs describe-services --services $SERVICE --cluster $CLUSTER | jq "[.services[].deployments[]] | length")
+          # Wait until 1 deployment stays running
+          # If the wait time has passed, we need to give up
+          if [ $NUM_DEPLOYMENTS -eq 1 ]; then
+            echo "Service deployment successful."
+            DEPLOYMENT_SUCCESS="true"
+            # Exit the loop.
+            i=$TIMEOUT_COUNT
+          else
+            sleep $WAIT_SECONDS
+            i=$(( $i + $every ))
+          fi
+        done
+        if [[ "${DEPLOYMENT_SUCCESS}" != "true" ]]; then
+          exit 1
+        fi
 
     - name: Slack deployment status (success)
       uses: cartoncloud/actions/slack-deployment-status@v3
