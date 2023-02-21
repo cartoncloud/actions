@@ -152,6 +152,7 @@ runs:
             DEPLOYMENT_SUCCESS="true"
             break
           else
+            echo "NUM_DEPLOYMENTS=$NUM_DEPLOYMENTS"
             sleep $WAIT_SECONDS
           fi
         done
