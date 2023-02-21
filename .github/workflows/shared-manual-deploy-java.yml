@@ -51,8 +51,6 @@ jobs:
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           gitHubPAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          awsAccessKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
-          awsSecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
 
   deploy-branch:
     runs-on: ubuntu-latest
