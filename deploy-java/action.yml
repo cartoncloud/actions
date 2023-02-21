@@ -151,7 +151,7 @@ runs:
         service_name: ${{ inputs.appName }}
         timeout_cmd: '--timeout'
         timeout: '360'
-        force-new-deployment_cmd: '--force-new-deployment'
+        force_new_deployment_cmd: '--force-new-deployment'
         force-new-deployment: true
         wait-for-success_cmd: '--wait-for-success'
         wait-for-success: true
