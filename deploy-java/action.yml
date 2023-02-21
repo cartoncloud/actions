@@ -52,6 +52,12 @@ inputs:
   gitHubPAT:
     description: 'PAT for GitHub API calls'
     required: false
+  awsAccessKeyId:
+    description: 'AWS Access Key'
+    required: true
+  awsSecretAccessKey:
+    description: 'AWS Secret Access Key'
+    required: true
 
 runs:
   using: "composite"
@@ -131,8 +137,8 @@ runs:
       uses: silinternational/ecs-deploy@master
       if: ${{ steps.deploy-check.outputs.existing == '' }} || ${{ steps.version-tag.outputs.restart == 'true' }}
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.awsAccessKeyId }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.awsSecretAccessKey }}
         AWS_DEFAULT_REGION: 'us-west-2'
       with:
         cluster_cmd: '--cluster'
