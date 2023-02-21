@@ -142,7 +142,7 @@ runs:
         WAIT_SECONDS=15
         i=0
         echo "Waiting for service deployment to complete..."
-        while [[ $(date -u +%s) - le $END_TIME ]]
+        while [[ $(date -u +%s) -le $END_TIME ]]
         do
           NUM_DEPLOYMENTS=$(aws ecs describe-services --services $SERVICE --cluster $CLUSTER | jq "[.services[].deployments[]] | length")
           # Wait until 1 deployment stays running
