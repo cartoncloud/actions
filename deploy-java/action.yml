@@ -152,9 +152,7 @@ runs:
         timeout_cmd: '--timeout'
         timeout: '360'
         force_new_deployment_cmd: '--force-new-deployment'
-        force-new-deployment: true
-        wait-for-success_cmd: '--wait-for-success'
-        wait-for-success: true
+        force_new_deployment: true
 
     - name: Slack deployment status (success)
       uses: cartoncloud/actions/slack-deployment-status@v3
