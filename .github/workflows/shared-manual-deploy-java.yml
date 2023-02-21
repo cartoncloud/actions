@@ -34,7 +34,7 @@ jobs:
       name: ${{ inputs.environmentName }}
     steps:
       - name: Deploy
-        uses: cartoncloud/actions/deploy-java@v3
+        uses: cartoncloud/actions/deploy-java@tech/CC-26846
         with:
           appName: ${{ inputs.appName }}
           slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
@@ -63,7 +63,7 @@ jobs:
       name: ${{ inputs.environmentName }}
     steps:
       - name: Deploy
-        uses: cartoncloud/actions/deploy-java@v3
+        uses: cartoncloud/actions/deploy-java@tech/CC-26846
         with:
           appName: ${{ inputs.appName }}
           slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
