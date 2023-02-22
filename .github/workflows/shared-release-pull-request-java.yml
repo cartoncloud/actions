@@ -201,11 +201,11 @@ jobs:
     concurrency: deploy-Test 01
 
     environment:
-      name: Test 01
+      name: test01
       url: http://app.test01/
 
     env:
-      environmentName: Test 01
+      environmentName: test01
       environmentTag: test01
       environmentUrl: http://app.test01/
 
@@ -241,11 +241,11 @@ jobs:
     concurrency: deploy-staging
 
     environment:
-      name: Staging 01
+      name: staging01
       url: http://app.staging01/
 
     env:
-      environmentName: Staging 01
+      environmentName: staging01
       environmentTag: staging01
       environmentUrl: http://app.test01/
 
