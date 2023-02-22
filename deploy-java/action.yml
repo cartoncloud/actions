@@ -50,7 +50,7 @@ inputs:
     description: 'Jira password to use to call the API'
     required: true
   gitHubPAT:
-    descriptin: 'PAT for GitHub API calls'
+    description: 'PAT for GitHub API calls'
     required: false
 
 runs:
@@ -127,10 +127,37 @@ runs:
         aws ecr put-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-tag ${{ inputs.versionTag }} --image-manifest "$manifest"
         echo "restart=true" >> $GITHUB_OUTPUT
 
-    - name: Deploy to a region
+    - name: Deploy to ECS
       if: ${{ steps.deploy-check.outputs.existing == '' }} || ${{ steps.version-tag.outputs.restart == 'true' }}
       shell: bash
-      run: aws ecs update-service --cluster services-${{ inputs.environmentTag }} --service ${{ inputs.appName }} --force-new-deployment
+      run: |
+        aws ecs update-service --cluster services-${{ inputs.environmentTag }} --service ${{ inputs.appName }} --force-new-deployment
+        # wait for success
+        # based on https://github.com/silinternational/ecs-deploy/ however their action doesn't use session credentials and builds a new docker each run
+        SERVICE=${{ inputs.appName }}
+        CLUSTER=services-${{ inputs.environmentTag }}
+        TIMEOUT="20 minute"
+        END_TIME=$(date -ud "$TIMEOUT" +%s)
+        DEPLOYMENT_SUCCESS="false"
+        WAIT_SECONDS=15
+        echo "Waiting for service deployment to complete..."
+        while [[ $(date -u +%s) -le $END_TIME ]]
+        do
+          NUM_DEPLOYMENTS=$(aws ecs describe-services --services $SERVICE --cluster $CLUSTER | jq "[.services[].deployments[]] | length")
+          # Wait until 1 deployment stays running
+          # If the wait time has passed, we need to give up
+          if [ $NUM_DEPLOYMENTS -eq 1 ]; then
+            echo "Service deployment successful."
+            DEPLOYMENT_SUCCESS="true"
+            break
+          else
+            echo "NUM_DEPLOYMENTS=$NUM_DEPLOYMENTS"
+            sleep $WAIT_SECONDS
+          fi
+        done
+        if [[ "${DEPLOYMENT_SUCCESS}" != "true" ]]; then
+          exit 1
+        fi
 
     - name: Slack deployment status (success)
       uses: cartoncloud/actions/slack-deployment-status@v3
