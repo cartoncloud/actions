@@ -47,7 +47,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.8
+        image: docker.elastic.co/elasticsearch/elasticsearch:6.8.23
         env:
           discovery.type: single-node
         options: >-
