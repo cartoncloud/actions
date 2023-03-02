@@ -188,3 +188,13 @@ jobs:
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
+
+      - name: Mark JIRA as released
+        uses: cartoncloud/actions/jira-project-version-update@v3
+        with:
+          username: ${{ secrets.JIRA_USERNAME }}
+          password: ${{ secrets.JIRA_PASSWORD }}
+          serverAddress: ${{ vars.JIRA_SERVER }}
+          projectId: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
+          releaseId: ${{ steps.create-jira-release.outputs.releaseId }}
+          isReleased: true
