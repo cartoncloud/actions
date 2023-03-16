@@ -97,7 +97,7 @@ jobs:
         run: |
           gh pr edit $PR --body "$BODY
           ---
-          [Steps to release](https://help.cartoncloud.com/x/zoYbIw)"
+          [Steps to release](https://cartoncloud.atlassian.net/wiki/x/LwCgB)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ inputs.prNumber }}
@@ -108,7 +108,7 @@ jobs:
         run: |
           gh pr edit $PR --body "$BODY
           ---
-          [Steps to release this hotfix](https://help.cartoncloud.com/x/2ocbIw)"
+          [Steps to release this hotfix](https://cartoncloud.atlassian.net/wiki/x/cQCgB)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ inputs.prNumber }}
