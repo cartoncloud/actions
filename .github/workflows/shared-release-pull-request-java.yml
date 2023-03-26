@@ -63,7 +63,7 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_KEY }}
           refFrom: ${{ inputs.prBaseSha  }}
           refTo: ${{ inputs.prHeadSha  }}
 
@@ -313,7 +313,7 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_ID }}
+          jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_KEY }}
           refFrom: ${{ inputs.prBaseSha  }}
           refTo: ${{ inputs.prHeadSha  }}
 
