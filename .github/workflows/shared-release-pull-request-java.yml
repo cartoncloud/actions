@@ -5,33 +5,33 @@ on:
       appName:
         type: string
         required: true
-      githubEventAction:
+      githubEventAction: # TODO: Remove
         type: string
-        required: true
-      prBaseSha:
+        required: false
+      prBaseSha: # TODO: Remove
         type: string
-        required: true
-      prHeadSha:
+        required: false
+      prHeadSha: # TODO: Remove
         type: string
-        required: true
-      prNumber:
+        required: false
+      prNumber: # TODO: Remove
         type: string
-        required: true
-      prHeadRef:
+        required: false
+      prHeadRef: # TODO: Remove
         type: string
-        required: true
-      prUrl:
+        required: false
+      prUrl: # TODO: Remove
         type: string
-        required: true
-      repositoryUrl:
+        required: false
+      repositoryUrl: # TODO: Remove
         type: string
-        required: true
-      repositoryName:
+        required: false
+      repositoryName: # TODO: Remove
         type: string
-        required: true
-      prMerged:
+        required: false
+      prMerged: # TODO: Remove
         type: boolean
-        required: true
+        required: false
       initialVersion:
         type: string
         required: false
@@ -43,7 +43,7 @@ jobs:
   determine-version:
     name: Determine Version
     runs-on: ubuntu-latest
-    if: ${{ inputs.githubEventAction != 'closed' }}
+    if: ${{ github.event.action != 'closed' }}
 
     outputs:
       version: ${{ steps.increment-version.outputs.new_tag }}
@@ -56,6 +56,16 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - name: Validate branch
+        if: github.event.pull_request.head.ref == 'main'
+        run: |
+          gh pr close $PR --comment "$COMMENT"
+          exit 1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          COMMENT: "Please wait for the next daily release or run the **Cut Release** workflow. If this is a hotfix, please point your hotfix branch to `production`."
+
       - name: Get JIRA issues from commits
         id: jira-issues-from-commits
         uses: cartoncloud/actions/jira-issues-from-commits@v3
@@ -64,8 +74,8 @@ jobs:
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_KEY }}
-          refFrom: ${{ inputs.prBaseSha  }}
-          refTo: ${{ inputs.prHeadSha  }}
+          refFrom: ${{ github.event.pull_request.base.sha  }}
+          refTo: ${{ github.event.pull_request.head.sha  }}
 
       - name: Get incremented version
         uses: anothrNick/github-tag-action@1.61.0
@@ -90,28 +100,28 @@ jobs:
         id: release-notes-markdown
         uses: cartoncloud/actions/jira-release-notes-markdown@v3
         with:
-          title: 'Release ${{ steps.increment-version.outputs.new_tag }}-${{ steps.sha.outputs.short-sha }} (#${{ inputs.prNumber }})'
+          title: 'Release ${{ steps.increment-version.outputs.new_tag }}-${{ steps.sha.outputs.short-sha }} (#${{ github.event.pull_request.number }})'
 
       - name: Update pull request description (main release)
-        if: ${{ inputs.prHeadRef == 'release/production' }}
+        if: ${{ github.event.pull_request.head.ref == 'release/production' }}
         run: |
           gh pr edit $PR --body "$BODY
           ---
           [Steps to release](https://cartoncloud.atlassian.net/wiki/x/LwCgB)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ inputs.prNumber }}
+          PR: ${{ github.event.pull_request.number }}
           BODY: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
 
       - name: Update pull request description (hotfix)
-        if: ${{ inputs.prHeadRef != 'release/production' }}
+        if: ${{ github.event.pull_request.head.ref != 'release/production' }}
         run: |
           gh pr edit $PR --body "$BODY
           ---
           [Steps to release this hotfix](https://cartoncloud.atlassian.net/wiki/x/cQCgB)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ inputs.prNumber }}
+          PR: ${{ github.event.pull_request.number }}
           BODY: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
 
   build:
@@ -169,7 +179,7 @@ jobs:
           appName: ${{ inputs.appName }}
           pomVersion: ${{ needs.determine-version.outputs.pomVersion }}
           versionTag: ${{ needs.determine-version.outputs.draftVersion }}
-          dockerTag: ${{ inputs.prHeadSha  }}
+          dockerTag: ${{ github.event.pull_request.head.sha  }}
           mavenS3AccessKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
           mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
           sonarUrl: ${{ secrets.SONAR_HOST_URL }}
@@ -194,13 +204,13 @@ jobs:
       - name: Delete past draft releases
         uses: cartoncloud/actions/github-delete-draft-releases@v3
         with:
-          name: ${{ inputs.prHeadRef }}
+          name: ${{ github.event.pull_request.head.ref }}
 
       - name: Create release
         id: github-release
         uses: ncipollo/release-action@v1
         with:
-          name: ${{ inputs.prHeadRef }}
+          name: ${{ github.event.pull_request.head.ref }}
           body: ${{ needs.determine-version.outputs.markdownReleaseNotes }}
           draft: true
           tag: ${{ needs.determine-version.outputs.draftVersion }}
@@ -209,7 +219,7 @@ jobs:
     name: Deploy to Test 01
     runs-on: ubuntu-latest
     needs: [ determine-version, build, create-draft-release ]
-    if: ${{ inputs.prHeadRef == 'release/production' }}
+    if: ${{ github.event.pull_request.head.ref == 'release/production' }}
     concurrency: deploy-Test 01
 
     environment:
@@ -233,11 +243,11 @@ jobs:
           slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
           revision: ${{ needs.determine-version.outputs.draftVersion }}
           revisionUrl: ${{ needs.create-draft-release.outputs.htmlUrl }}
-          reason: ':zap: <${{ inputs.prUrl }}|Next Release>'
+          reason: ':zap: <${{ github.event.repository.html_url }}|Next Release>'
           environment: ${{ env.environmentName }}
           environmentUrl: ${{ env.environmentUrl }}
           environmentTag: ${{ env.environmentTag }}
-          existingImageTag: ${{ inputs.prHeadSha  }}
+          existingImageTag: ${{ github.event.pull_request.head.sha  }}
           awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
@@ -249,8 +259,8 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: [determine-version, build, create-draft-release]
-    if: ${{ inputs.prHeadRef == 'release/production' }}
-    concurrency: deploy-staging
+    if: github.event.pull_request.head.ref == 'release/production' && contains(github.event.pull_request.labels.*.name, 'API Functional Pass') == true && contains(github.event.pull_request.labels.*.name, 'End-to-end Pass') == true
+    concurrency: deploy-staging01
 
     environment:
       name: staging01
@@ -259,7 +269,7 @@ jobs:
     env:
       environmentName: staging01
       environmentTag: staging01
-      environmentUrl: http://app.test01/
+      environmentUrl: http://app.staging01/
 
     permissions:
       id-token: write
@@ -275,7 +285,7 @@ jobs:
           environment: ${{ env.environmentName }}
           environmentUrl: ${{ env.environmentUrl }}
           environmentTag: ${{ env.environmentTag }}
-          existingImageTag: ${{ inputs.prHeadSha  }}
+          existingImageTag: ${{ github.event.pull_request.head.sha  }}
           awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
@@ -286,7 +296,7 @@ jobs:
   create-releases:
     name: Create Releases
     runs-on: ubuntu-latest
-    if: ${{ inputs.githubEventAction == 'closed' && inputs.prMerged == true }}
+    if: ${{ github.event.action == 'closed' && github.event.pull_request.merged == true }}
     concurrency: create-prod-releases
 
     outputs:
@@ -304,7 +314,7 @@ jobs:
         id: draft-release
         uses: cartoncloud/actions/github-release-find-by-name@v3
         with:
-          name: ${{ inputs.prHeadRef }}
+          name: ${{ github.event.pull_request.head.ref }}
 
       - name: Get JIRA issues from commits
         id: jira-issues-from-commits
@@ -314,8 +324,8 @@ jobs:
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           jiraProjectKeys: ${{ vars.JIRA_CARTONCLOUD_PROJECT_KEY }}
-          refFrom: ${{ inputs.prBaseSha  }}
-          refTo: ${{ inputs.prHeadSha  }}
+          refFrom: ${{ github.event.pull_request.base.sha  }}
+          refTo: ${{ github.event.pull_request.head.sha  }}
 
       - name: Get version and tag
         uses: anothrNick/github-tag-action@1.61.0
@@ -351,7 +361,7 @@ jobs:
       - name: Delete draft release
         uses: cartoncloud/actions/github-delete-draft-releases@v3
         with:
-          name: ${{ inputs.prHeadRef }}
+          name: ${{ github.event.pull_request.head.ref }}
 
       - name: Create JIRA Release
         id: create-jira-release
@@ -404,7 +414,7 @@ jobs:
           environmentUrl: ${{ env.environmentUrl }}
           environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
           versionTag: ${{ needs.create-releases.outputs.version }}
-          existingImageTag: ${{ inputs.prHeadSha  }}
+          existingImageTag: ${{ github.event.pull_request.head.sha  }}
           awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
@@ -450,13 +460,13 @@ jobs:
           channel-id: ${{ env.PIPELINES_CHANNEL }}
           payload: |
             {
-              "text": "${{ inputs.repositoryName }} has merge conflicts",
+              "text": "${{ github.event.repository.name }} has merge conflicts",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*⚠️ <${{ inputs.repositoryUrl }}|${{ inputs.repositoryName }}>* has merge conflicts between `production` and `main`"
+                    "text": "*⚠️ <${{ github.event.repository.html_url }}|${{ github.event.repository.name }}>* has merge conflicts between `production` and `main`"
                   }
                 },
                 {
