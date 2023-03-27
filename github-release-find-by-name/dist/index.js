@@ -7487,7 +7487,7 @@ async function run() {
         return;
       }
     }
-    throw new Error("Release not found");
+    throw new Error(`Release not found in ${owner}/${repo}`);
   } catch (error) {
     core.setFailed(error.message);
   }
