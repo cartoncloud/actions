@@ -24,7 +24,9 @@ async function run() {
       throw new Error('Error listing releases');
     }
 
+    core.debug(`Searching for release named "${name}" in ${listReleasesResponse.data.length} releases`);
     for (const release of listReleasesResponse.data) {
+      core.debug(`Release ${JSON.stringify(release)}`);
       if (release.name === name) {
         core.setOutput('release', release);
         return;
