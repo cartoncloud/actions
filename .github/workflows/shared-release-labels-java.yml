@@ -33,7 +33,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
 
       - name: Check for test pass labels
-        uses: mheap/github-action-required-labels@v3
+        uses: mheap/github-action-required-labels@v4
         if: ${{ github.event.pull_request.head.ref == 'release/production' }}
         with:
           mode: exactly
