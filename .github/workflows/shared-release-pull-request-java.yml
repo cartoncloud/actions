@@ -78,7 +78,7 @@ jobs:
           refTo: ${{ github.event.pull_request.head.sha  }}
 
       - name: Get incremented version
-        uses: anothrNick/github-tag-action@1.61.0
+        uses: anothrNick/github-tag-action@1.62.0
         id: increment-version
         env:
           WITH_V: true
@@ -328,7 +328,7 @@ jobs:
           refTo: ${{ github.event.pull_request.head.sha  }}
 
       - name: Get version and tag
-        uses: anothrNick/github-tag-action@1.61.0
+        uses: anothrNick/github-tag-action@1.62.0
         id: increment-version
         env:
           WITH_V: true
