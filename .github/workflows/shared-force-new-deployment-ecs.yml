@@ -1,0 +1,22 @@
+name: Force New Deployment
+
+on:
+  workflow_call:
+    inputs:
+      clusterName:
+        type: string
+        required: true
+      serviceName:
+        type: string
+        required: true
+
+jobs:
+  force-new-deployment:
+    name: Forcing new deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environmentName }}
+    steps:
+      - name: Forcing new deployment for ${clusterName} - ${serviceName}
+        run: |
+          aws ecs update-service --cluster ${clusterName} --service ${serviceName} --force-new-deployment
