@@ -9,14 +9,24 @@ on:
       serviceName:
         type: string
         required: true
+      roleToAssume:
+        type: string
+        required: true
+      awsRegion:
+        type: string
+        required: true
 
 jobs:
   force-new-deployment:
     name: Forcing new deployment
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ inputs.environmentName }}
     steps:
-      - name: Forcing new deployment for ${clusterName} - ${serviceName}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.clusterName }}
+          aws-region: ${{ inputs.awsRegion }}
+
+      - name: Forcing new deployment for ${{ inputs.clusterName }} - ${{ inputs.serviceName }}
         run: |
-          aws ecs update-service --cluster ${clusterName} --service ${serviceName} --force-new-deployment
+          aws ecs update-service --cluster ${{ inputs.clusterName }} --service ${{ inputs.serviceName }} --force-new-deployment
