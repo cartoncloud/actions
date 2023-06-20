@@ -3,6 +3,9 @@ name: Force New Deployment
 on:
   workflow_call:
     inputs:
+      environmentName:
+        type: string
+        required: true
       clusterName:
         type: string
         required: true
@@ -23,6 +26,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    concurrency: deploy-${{ inputs.environmentName }}
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
