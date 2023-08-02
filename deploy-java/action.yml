@@ -190,7 +190,7 @@ runs:
 # we know won't work
     - name: On success notify okay to test
       shell: bash
-      if: ${{ inputs.environment !='prod' && inputs.environment !='qa04' }}
+      if: ${{ inputs.environment == 'test01' || inputs.environment == 'staging01' }}
       run: gh workflow run run-tests.yml --repo cartoncloud/api-functional-tests --ref main --field environment=${{ inputs.environment }}
       env:
         GITHUB_TOKEN: ${{ inputs.gitHubPAT }}
