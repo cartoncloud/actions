@@ -59,6 +59,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    concurrency: deploy-${{ inputs.environmentName }}
     environment:
       name: ${{ inputs.environmentName }}
     steps:
