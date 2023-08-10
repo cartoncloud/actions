@@ -82,6 +82,11 @@ runs:
         path: jasper-report
         token: ${{ inputs.token }}
 
+    - uses: actions/checkout@v3
+      if: ${{ inputs.jasperBuild != 'true' }}
+      with:
+        fetch-depth: 0
+
     - name: Jasper Report Steps
       if: ${{ inputs.jasperBuild == 'true' }}
       shell: bash
