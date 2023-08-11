@@ -38,6 +38,8 @@ runs:
 
   steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
     - uses: actions/setup-go@v3
       with:
@@ -81,11 +83,6 @@ runs:
         ref: refs/heads/main
         path: jasper-report
         token: ${{ inputs.token }}
-
-    - uses: actions/checkout@v3
-      if: ${{ inputs.jasperBuild != 'true' }}
-      with:
-        fetch-depth: 0
 
     - name: Jasper Report Steps
       if: ${{ inputs.jasperBuild == 'true' }}
