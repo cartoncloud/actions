@@ -30,8 +30,12 @@ inputs:
     description: 'Flag for jasper build'
     required: false
   token:
-    description: 'Personal access token with auth for the jasper-report repository'
+    description: 'Personal access token with auth for the jasper-report and common-service repositories'
     required: true
+  tokenUsername:
+    description: 'Personal access token owner username'
+    default: cartoncloud-robot
+    required: false
 
 runs:
   using: composite
@@ -71,8 +75,10 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+        GITHUB_PACKAGES_USERNAME: ${{ inputs.tokenUsername }}
+        GITHUB_PACKAGES_TOKEN: ${{ inputs.token }}
       shell: bash
-      run: mvn versions:set -DnewVersion="${{ inputs.pomVersion }}"
+      run: mvn -s settings.xml versions:set -DnewVersion="${{ inputs.pomVersion }}"
 
     - uses: actions/checkout@v3
       if: ${{ inputs.jasperBuild == 'true' }}
@@ -100,15 +106,19 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+        GITHUB_PACKAGES_USERNAME: ${{ inputs.tokenUsername }}
+        GITHUB_PACKAGES_TOKEN: ${{ inputs.token }}
       shell: bash
-      run: mvn -Dmaven.wagon.http.pool=false -s settings.xml -B clean deploy
+      run: mvn -Dmaven.wagon.http.pool=false -s settings.xml -B clean verify
 
     - name: Run Sonar
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
+        GITHUB_PACKAGES_USERNAME: ${{ inputs.tokenUsername }}
+        GITHUB_PACKAGES_TOKEN: ${{ inputs.token }}
       shell: bash
-      run: mvn sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
+      run: mvn -s settings.xml sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
