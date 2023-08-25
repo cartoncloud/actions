@@ -16696,7 +16696,7 @@ var issueTypes = {
   "epic": { sort: 1, emoji: ":sparkles:", semanticVersionBump: MINOR },
   "story": { sort: 2, emoji: ":book:", semanticVersionBump: MINOR },
   "customer story": { sort: 3, emoji: ":notebook:", semanticVersionBump: MINOR },
-  "sub task": { sort: 4, emoji: ":nut_and_bolt:", semanticVersionBump: PATCH },
+  "sub task": { sort: 4, emoji: ":nut_and_bolt:", semanticVersionBump: MINOR },
   "qa fix": { sort: 5, emoji: ":adhesive_bandage:", semanticVersionBump: PATCH },
   "bug": { sort: 6, emoji: ":bug:", semanticVersionBump: PATCH },
   "technical": { sort: 7, emoji: ":hammer_and_wrench:", semanticVersionBump: PATCH },

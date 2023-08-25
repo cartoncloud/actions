@@ -78,7 +78,7 @@ jobs:
           refTo: ${{ github.event.pull_request.head.sha  }}
 
       - name: Get incremented version
-        uses: anothrNick/github-tag-action@1.61.0
+        uses: anothrNick/github-tag-action@1.67.0
         id: increment-version
         env:
           WITH_V: true
@@ -182,7 +182,7 @@ jobs:
           dockerTag: ${{ github.event.pull_request.head.sha  }}
           mavenS3AccessKeyId: ${{ secrets.TEMP_MAVEN_S3_ACCESS_KEY_ID }}
           mavenS3SecretAccessKey: ${{ secrets.TEMP_MAVEN_S3_SECRET_ACCESS_KEY }}
-          sonarUrl: ${{ secrets.SONAR_HOST_URL }}
+          sonarUrl: ${{ vars.SONAR_HOST_URL }}
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           jasperBuild: ${{ inputs.jasperBuild }}
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
@@ -328,7 +328,7 @@ jobs:
           refTo: ${{ github.event.pull_request.head.sha  }}
 
       - name: Get version and tag
-        uses: anothrNick/github-tag-action@1.61.0
+        uses: anothrNick/github-tag-action@1.67.0
         id: increment-version
         env:
           WITH_V: true
@@ -442,7 +442,7 @@ jobs:
 
     steps:
       - name: Merge production into main
-        uses: devmasx/merge-branch@8b86512c768bec19827894f0a39a776809668189
+        uses: devmasx/merge-branch@6ec8363d74aad4f1615d1234ae1908b4185c4313
         id: back-merge-production
         with:
           type: now
