@@ -94,10 +94,10 @@ runs:
       if: ${{ inputs.jasperBuild == 'true' }}
       shell: bash
       run: |
-        rm report/jasper/*.jasper
-        rm report/src/main/resources/ratecardreport.properties
-        cp jasper-report/jasper/*.jrxml report/jasper-compile
-        cp jasper-report/ratecardreport.properties report/src/main/resources        
+        rm jasper/*.jasper
+        rm src/main/resources/ratecardreport.properties
+        cp jasper-report/jasper/*.jrxml jasper-compile
+        cp jasper-report/ratecardreport.properties src/main/resources        
 
     - name: Build project
       env:
