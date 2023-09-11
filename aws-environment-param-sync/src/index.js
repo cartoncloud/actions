@@ -48,6 +48,7 @@ async function run() {
 
     core.info('EnvironmentPath: ' + environmentPath);
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
+    core.info('blah');
     const parameters = getParameter({ environmentPath });
 
     parameters.forEach((parameter) => {
