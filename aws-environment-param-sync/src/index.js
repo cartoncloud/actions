@@ -48,7 +48,7 @@ async function run() {
 
     core.info('EnvironmentPath: ' + environmentPath);
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
-    const parameters = await Promise.all(paths.map(path => getParameter({ environmentPath })));
+    const parameters = getParameter({ environmentPath });
 
     parameters.forEach((parameter) => {
       core.info(parameter);
