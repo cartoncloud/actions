@@ -20,6 +20,8 @@ const getParameter = async ({
       })
       .promise();
 
+    core.info('Param: ' + Parameters);
+
     Parameters.forEach((parameter) => {
       core.info('Param: ' + parameter);
       const name = formatParameterName(parameter.Name);
