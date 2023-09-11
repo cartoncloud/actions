@@ -8,6 +8,7 @@ const getParameter = async ({
   const ssm = new SSM();
   const parameters = {};
   let nextToken = undefined;
+  core.info('Getting Params...');
 
   do {
     const { Parameters, NextToken } = await ssm
@@ -20,6 +21,7 @@ const getParameter = async ({
       .promise();
 
     Parameters.forEach((parameter) => {
+      core.info('Param: ' + parameter);
       const name = formatParameterName(parameter.Name);
       const value = parameter.Value.trim();
 
@@ -48,11 +50,10 @@ async function run() {
 
     core.info('EnvironmentPath: ' + environmentPath);
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
-    core.info('blah');
     const parameters = getParameter({ environmentPath });
 
-    parameters.forEach((parameter) => {
-      core.info(parameter);
+    Object.keys(parameters).forEach(key => {
+      core.info('Key: ' + key + ' Value: ' + parameters[key]);
     });
 
   } catch (error) {
