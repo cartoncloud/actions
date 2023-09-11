@@ -3,7 +3,7 @@ const core = require('@actions/core');
 const { SSM } = require('aws-sdk');
 
 const getParameter = async ({
-     environmentPath,
+     path,
   }) => {
   const ssm = new SSM();
   const parameters = {};
@@ -13,7 +13,7 @@ const getParameter = async ({
   do {
     const { Parameters, NextToken } = await ssm
       .getParametersByPath({
-        Path: environmentPath,
+        Path: path,
         Recursive: true,
         WithDecryption: false,
         NextToken: nextToken,
@@ -21,6 +21,10 @@ const getParameter = async ({
       .promise();
 
     core.info('Param: ' + Parameters);
+
+    Object.keys(Parameters).forEach(key => {
+      core.info('Key: ' + key + ' Value: ' + Parameters[key]);
+    });
 
     Parameters.forEach((parameter) => {
       core.info('Param: ' + parameter);
