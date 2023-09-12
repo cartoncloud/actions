@@ -22,12 +22,8 @@ const getParameter = async ({
 
     core.info('Param: ' + Parameters);
 
-    Object.keys(Parameters).forEach(key => {
-      core.info('Key: ' + key + ' Value: ' + Parameters[key]);
-    });
-
     Parameters.forEach((parameter) => {
-      core.info('Param: ' + parameter);
+      core.info('Param: ' + parameter.Name);
       const name = formatParameterName(parameter.Name);
       const value = parameter.Value.trim();
 
@@ -50,7 +46,6 @@ const formatParameterName = (name) => {
 
 async function run() {
   try {
-    core.info('Starting...');
     const environmentPath = core.getInput('environmentPath', { required: true });
     const environmentVariablesPath = core.getInput('environmentVariablesPath', { required: true });
 
