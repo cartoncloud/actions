@@ -19,8 +19,6 @@ const getParameter = async ({
       })
       .promise();
 
-    core.info('Param: ' + Parameters);
-
     Parameters.forEach((parameter) => {
       core.info('Param: ' + parameter.Name);
       const name = formatParameterName(parameter.Name);
@@ -55,9 +53,10 @@ async function run() {
     core.info('Getting Environments..');
     const parameters = await getParameter({ path: environmentPath });
 
-    core.info('Response: ' + parameters);
     Object.keys(parameters).forEach(key => {
-      core.info('Key: ' + key + ' Value: ' + parameters[key]);
+      core.info('Getting params for ' + parameters[key] + '...');
+      const variablesPath = environmentVariablesPath + '/' + parameters[key];
+      const variables = getParameter({ path: variablesPath });
     });
 
   } catch (error) {
