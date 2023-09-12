@@ -56,7 +56,7 @@ async function run() {
 
     core.info('EnvironmentPath: ' + environmentPath);
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
-    const parameters = getParameter({ environmentPath });
+    const parameters = getParameter({ path: environmentPath });
 
     Object.keys(parameters).forEach(key => {
       core.info('Key: ' + key + ' Value: ' + parameters[key]);
