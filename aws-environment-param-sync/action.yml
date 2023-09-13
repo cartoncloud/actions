@@ -14,13 +14,17 @@ inputs:
     required: false
     default: ${{ github.token }}
   owner:
-    description: 'GitHub token'
+    description: 'Repository Owner.'
     required: false
     default: ${{ github.repository_owner }}
   repo:
-    description: 'GitHub token'
+    description: 'Repository Name.'
     required: false
     default: ${{ github.event.repository.name }}
+  repoId:
+    description: 'Repository ID.'
+    required: false
+    default: ${{ github.repository_id }}
 
 runs:
   using: 'node20'

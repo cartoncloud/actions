@@ -48,6 +48,7 @@ async function run() {
     const token = core.getInput('token');
     const owner = core.getInput('owner');
     const repo = core.getInput('repo');
+    const repoId = core.getInput('repoId');
 
     const octokit = new Octokit({
       auth: token
@@ -79,25 +80,29 @@ async function run() {
     const awsEnvironments = await getParameter({ path: environmentPath });
 
     await Object.keys(awsEnvironments).forEach(key => {
-      // core.info('Checking if ' + awsEnvironments[key] + ' already exists...');
-      // if (githubEnvironments.includes(awsEnvironments[key])) {
-      //   core.info('Environment already exists.');
-      // } else {
       core.info('Creating/Updating ' + awsEnvironments[key] + '...')
       octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
         headers: {
           'X-GitHub-Api-Version': '2022-11-28'
         }
       })
-      // }
     });
 
     Object.keys(awsEnvironments).forEach(key => {
       core.info('Getting params for ' + awsEnvironments[key] + '...');
       const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
       const variables = getParameter({ path: variablesPath });
+      Object.keys(variables).forEach(key => {
+        core.info('Creating param with key: ' + key + ' and value: ' + awsEnvironments[key] + '...');
+        octokit.request('POST /repositories/' + repoId + '/environments/' + awsEnvironments[key] + '/variables', {
+          name: key,
+          value: variables[key],
+          headers: {
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        })
+      });
     });
-
   } catch (error) {
     core.setFailed(error.message);
   }
