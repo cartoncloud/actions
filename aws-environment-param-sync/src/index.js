@@ -63,13 +63,14 @@ async function run() {
     })
 
     const str = JSON.stringify(environments, null, 4); // (Optional) beautiful indented output.
-    core.info('Environments');
+    core.info('Response');
     core.info(str);
 
     let githubEnvironments = [];
     if (environments.hasOwnProperty('data') && environments['data'].hasOwnProperty('environments')) {
       environments['data']['environments'].forEach(env => {
-        core.info('Environment name: ' + env['name']);
+        core.info('Github environment name: ' + env['name']);
+        githubEnvironments.push(env['name']);
       });
     }
 
@@ -77,11 +78,27 @@ async function run() {
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
 
     core.info('Getting AWS Environments..');
-    const parameters = await getParameter({ path: environmentPath });
+    const awsEnvironments = await getParameter({ path: environmentPath });
 
-    Object.keys(parameters).forEach(key => {
-      core.info('Getting params for ' + parameters[key] + '...');
-      const variablesPath = environmentVariablesPath + '/' + parameters[key];
+    Object.keys(awsEnvironments).forEach(key => {
+      core.info('Checking if environment already exists...');
+      if (githubEnvironments.includes(awsEnvironments[key])) {
+        core.info('Environment already exists');
+      } else {
+        core.info('Creating environment...')
+
+        octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
+          owner: owner,
+          repo: repo,
+          environment_name: awsEnvironments[key],
+          headers: {
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        })
+      }
+
+      core.info('Getting params for ' + awsEnvironments[key] + '...');
+      const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
       const variables = getParameter({ path: variablesPath });
     });
 
