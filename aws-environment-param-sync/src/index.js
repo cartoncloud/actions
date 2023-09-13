@@ -61,7 +61,10 @@ async function run() {
         'X-GitHub-Api-Version': '2022-11-28'
       }
     })
-    core.info('Environments: ' + environments);
+
+    const str = JSON.stringify(environments, null, 4); // (Optional) beautiful indented output.
+    core.info('Environments');
+    core.info(str);
 
     Object.keys(environments['environments']).forEach(key => {
       core.info('Environment name: ' + environments['name']);
