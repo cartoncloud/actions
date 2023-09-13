@@ -9,6 +9,18 @@ inputs:
     description: 'Base path to environment variables. For each environment, <<environmentVariablePath>>/<<environment>> is used.'
     required: false
     default: '/terraform/cartoncloud-app'
+  token:
+    description: 'GitHub token'
+    required: false
+    default: ${{ github.token }}
+  owner:
+    description: 'GitHub token'
+    required: false
+    default: ${{ github.repository_owner }}
+  repo:
+    description: 'GitHub token'
+    required: false
+    default: ${{ github.event.repository.name }}
 
 runs:
   using: 'node16'

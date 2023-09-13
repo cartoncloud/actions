@@ -1,6 +1,6 @@
-const github = require('@actions/github');
 const core = require('@actions/core');
 const { SSM } = require('aws-sdk');
+const { Octokit } = require("@octokit/core");
 
 const getParameter = async ({
      path,
@@ -20,11 +20,10 @@ const getParameter = async ({
       .promise();
 
     Parameters.forEach((parameter) => {
-      core.info('Param: ' + parameter.Name);
       const name = formatParameterName(parameter.Name);
       const value = parameter.Value.trim();
 
-      core.info('Name: ' + name + ' Value: ' + value);
+      core.info('Param: ' + parameter.Name + ' Name: ' + name + ' Value: ' + value);
       parameters[name] = value;
     });
 
@@ -46,6 +45,26 @@ async function run() {
   try {
     const environmentPath = core.getInput('environmentPath', { required: true });
     const environmentVariablesPath = core.getInput('environmentVariablesPath', { required: true });
+    const token = core.getInput('token');
+    const owner = core.getInput('owner');
+    const repo = core.getInput('repo');
+
+    const octokit = new Octokit({
+      auth: token
+    })
+
+    const environments = await octokit.request('GET /repos/{owner}/{repo}/environments', {
+      owner: owner,
+      repo: repo,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    })
+
+    Object.keys(environments['environments']).forEach(key => {
+      core.info('Environment name: ' + environments['name']);
+    });
+
 
     core.info('EnvironmentPath: ' + environmentPath);
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
