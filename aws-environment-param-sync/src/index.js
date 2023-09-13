@@ -41,7 +41,7 @@ const formatParameterName = (name) => {
   return formattedName;
 }
 
-function run() {
+async function run() {
   try {
     const environmentPath = core.getInput('environmentPath', { required: true });
     const environmentVariablesPath = core.getInput('environmentVariablesPath', { required: true });
@@ -55,7 +55,7 @@ function run() {
     })
 
     core.info('Getting existing GitHub environments..');
-    const environments = octokit.request('GET /repos/' + owner + '/' + repo + '/environments', {
+    const environments = await octokit.request('GET /repos/' + owner + '/' + repo + '/environments', {
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
       }
@@ -77,8 +77,9 @@ function run() {
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
 
     core.info('Getting AWS Environments..');
-    const awsEnvironments = getParameter({ path: environmentPath });
-    Object.keys(awsEnvironments).forEach(key => {
+
+    const awsEnvironments = await getParameter({ path: environmentPath });
+    await Object.keys(awsEnvironments).forEach(key => {
       core.info('Creating/Updating ' + awsEnvironments[key] + '...')
       octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
         headers: {
@@ -87,14 +88,15 @@ function run() {
       })
     });
 
-    let awsEnvironmentVariables = {};
-    Object.keys(awsEnvironments).forEach(key => {
+    let buildAwsEnvironmentVariables = new Promise();
+    await Object.keys(awsEnvironments).forEach(key => {
       core.info('Getting params for ' + awsEnvironments[key] + '...');
       const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
-      awsEnvironmentVariables[awsEnvironments[key]] = getParameter({ path: variablesPath });
+      buildAwsEnvironmentVariables[awsEnvironments[key]] = getParameter({ path: variablesPath });
     });
 
-    Object.keys(awsEnvironmentVariables).forEach(env => {
+    const awsEnvironmentVariables = await Promise.all(buildAwsEnvironmentVariables);
+    await Object.keys(awsEnvironmentVariables).forEach(env => {
       core.info('Creating params for ' + env + '...');
       Object.keys(awsEnvironmentVariables[env]).forEach(name => {
         const value = awsEnvironmentVariables[env][name];
