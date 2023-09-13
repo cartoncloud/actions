@@ -80,7 +80,7 @@ async function run() {
     core.info('Getting AWS Environments..');
     const awsEnvironments = await getParameter({ path: environmentPath });
 
-    Object.keys(awsEnvironments).forEach(key => {
+    await Object.keys(awsEnvironments).forEach(key => {
       core.info('Checking if environment already exists...');
       if (githubEnvironments.includes(awsEnvironments[key])) {
         core.info('Environment already exists');
@@ -88,15 +88,17 @@ async function run() {
         core.info('Creating environment...')
 
         octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
-          owner: owner,
-          repo: repo,
-          environment_name: awsEnvironments[key],
+          // owner: owner,
+          // repo: repo,
+          // environment_name: awsEnvironments[key],
           headers: {
             'X-GitHub-Api-Version': '2022-11-28'
           }
         })
       }
+    });
 
+    Object.keys(awsEnvironments).forEach(key => {
       core.info('Getting params for ' + awsEnvironments[key] + '...');
       const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
       const variables = getParameter({ path: variablesPath });
