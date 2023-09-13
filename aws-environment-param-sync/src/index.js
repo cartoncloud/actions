@@ -53,7 +53,7 @@ async function run() {
       auth: token
     })
 
-    const environments = await octokit.request('GET /repos/{owner}/{repo}/environments', {
+    const environments = await octokit.request('GET /repos/' + owner + '/' + repo + '/environments', {
       owner: owner,
       repo: repo,
       headers: {
