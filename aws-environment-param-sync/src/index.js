@@ -88,28 +88,32 @@ async function run() {
       })
     });
 
-    let buildAwsEnvironmentVariables = new Promise();
-    await Object.keys(awsEnvironments).forEach(key => {
-      core.info('Getting params for ' + awsEnvironments[key] + '...');
-      const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
-      buildAwsEnvironmentVariables[awsEnvironments[key]] = getParameter({ path: variablesPath });
+    let awsEnvironmentVariables = {};
+    let promises = [];
+    Object.keys(awsEnvironments).forEach(key => {
+      promises.push(() => {
+        core.info('Getting params for ' + awsEnvironments[key] + '...');
+        const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
+        awsEnvironmentVariables[awsEnvironments[key]] = getParameter({path: variablesPath});
+      })
     });
 
-    const awsEnvironmentVariables = await Promise.all(buildAwsEnvironmentVariables);
-    await Object.keys(awsEnvironmentVariables).forEach(env => {
-      core.info('Creating params for ' + env + '...');
-      Object.keys(awsEnvironmentVariables[env]).forEach(name => {
-        const value = awsEnvironmentVariables[env][name];
-        core.info('Creating variable with name: ' + name + ' and value: ' + value + '...');
-        octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
-          name: name,
-          value: value,
-          headers: {
-            'X-GitHub-Api-Version': '2022-11-28'
-          }
-        })
+    await Promise.all(promises).then(() => {
+      Object.keys(awsEnvironmentVariables).forEach(env => {
+        core.info('Creating params for ' + env + '...');
+        Object.keys(awsEnvironmentVariables[env]).forEach(name => {
+          const value = awsEnvironmentVariables[env][name];
+          core.info('Creating variable with name: ' + name + ' and value: ' + value + '...');
+          octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
+            name: name,
+            value: value,
+            headers: {
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
+          })
+        });
       });
-    });
+    })
   } catch (error) {
     core.setFailed(error.message);
   }
