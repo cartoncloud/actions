@@ -36,6 +36,7 @@ const getParameter = async ({
 
 const getEnvironmentVariables = async ({
    awsEnvironments,
+   environmentVariablesPath
   }) => {
   const awsEnvironmentVariables = {};
   Object.keys(awsEnvironments).forEach(key => {
@@ -137,7 +138,7 @@ async function run() {
     const successfullyCreated = await createGitHubEnvironments({octokit, awsEnvironments, owner, repo});
     if (successfullyCreated) {
       core.info('Getting AWS Environment Params..');
-      const awsEnvironmentVariables = await getEnvironmentVariables( {awsEnvironments});
+      const awsEnvironmentVariables = await getEnvironmentVariables( {awsEnvironments, environmentVariablesPath});
       core.info('Syncing AWS environment params with GitHub..');
       const successfullyCreatedVariables = await createGitHubEnvironmentVariables({octokit, awsEnvironmentVariables, repoId})
       if (successfullyCreatedVariables) {
