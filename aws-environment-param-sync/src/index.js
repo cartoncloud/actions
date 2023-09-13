@@ -78,7 +78,6 @@ async function run() {
 
     core.info('Getting AWS Environments..');
     const awsEnvironments = await getParameter({ path: environmentPath });
-
     await Object.keys(awsEnvironments).forEach(key => {
       core.info('Creating/Updating ' + awsEnvironments[key] + '...')
       octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
@@ -88,15 +87,21 @@ async function run() {
       })
     });
 
-    Object.keys(awsEnvironments).forEach(key => {
+    let awsEnvironmentVariables = {};
+    await Object.keys(awsEnvironments).forEach(key => {
       core.info('Getting params for ' + awsEnvironments[key] + '...');
       const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
-      const variables = getParameter({ path: variablesPath });
-      Object.keys(variables).forEach(key => {
-        core.info('Creating param with key: ' + key + ' and value: ' + awsEnvironments[key] + '...');
-        octokit.request('POST /repositories/' + repoId + '/environments/' + awsEnvironments[key] + '/variables', {
-          name: key,
-          value: variables[key],
+      awsEnvironmentVariables[awsEnvironments[key]] = getParameter({ path: variablesPath });
+    });
+
+    await Object.keys(awsEnvironmentVariables).forEach(env => {
+      core.info('Creating params for ' + env + '...');
+      Object.keys(awsEnvironmentVariables[env]).forEach(name => {
+        const value = awsEnvironmentVariables[env][name];
+        core.info('Creating variable with name: ' + name + ' and value: ' + value + '...');
+        octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
+          name: name,
+          value: value,
           headers: {
             'X-GitHub-Api-Version': '2022-11-28'
           }
