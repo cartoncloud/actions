@@ -55,8 +55,6 @@ async function run() {
 
     core.info('Getting existing GitHub environments..');
     const environments = await octokit.request('GET /repos/' + owner + '/' + repo + '/environments', {
-      owner: owner,
-      repo: repo,
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
       }
@@ -81,21 +79,17 @@ async function run() {
     const awsEnvironments = await getParameter({ path: environmentPath });
 
     await Object.keys(awsEnvironments).forEach(key => {
-      core.info('Checking if environment already exists...');
-      if (githubEnvironments.includes(awsEnvironments[key])) {
-        core.info('Environment already exists');
-      } else {
-        core.info('Creating environment...')
-
-        octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
-          // owner: owner,
-          // repo: repo,
-          // environment_name: awsEnvironments[key],
-          headers: {
-            'X-GitHub-Api-Version': '2022-11-28'
-          }
-        })
-      }
+      // core.info('Checking if ' + awsEnvironments[key] + ' already exists...');
+      // if (githubEnvironments.includes(awsEnvironments[key])) {
+      //   core.info('Environment already exists.');
+      // } else {
+      core.info('Creating/Updating ' + awsEnvironments[key] + '...')
+      octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      })
+      // }
     });
 
     Object.keys(awsEnvironments).forEach(key => {
