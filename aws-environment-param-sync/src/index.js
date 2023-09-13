@@ -53,6 +53,7 @@ async function run() {
       auth: token
     })
 
+    core.info('Getting existing GitHub environments..');
     const environments = await octokit.request('GET /repos/' + owner + '/' + repo + '/environments', {
       owner: owner,
       repo: repo,
@@ -60,6 +61,7 @@ async function run() {
         'X-GitHub-Api-Version': '2022-11-28'
       }
     })
+    core.info('Environments: ' + environments);
 
     Object.keys(environments['environments']).forEach(key => {
       core.info('Environment name: ' + environments['name']);
@@ -69,7 +71,7 @@ async function run() {
     core.info('EnvironmentPath: ' + environmentPath);
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
 
-    core.info('Getting Environments..');
+    core.info('Getting AWS Environments..');
     const parameters = await getParameter({ path: environmentPath });
 
     Object.keys(parameters).forEach(key => {
