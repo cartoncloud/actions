@@ -49,7 +49,9 @@ const getEnvironmentVariables = async ({
 
 const createGitHubEnvironments = async ({
     octokit,
-    awsEnvironments
+    awsEnvironments,
+    owner,
+    repo
   }) => {
   Object.keys(awsEnvironments).forEach(key => {
     core.info('Creating/Updating ' + awsEnvironments[key] + '...')
@@ -65,7 +67,8 @@ const createGitHubEnvironments = async ({
 
 const createGitHubEnvironmentVariables = async ({
     octokit,
-    awsEnvironmentVariables
+    awsEnvironmentVariables,
+    repoId
   }) => {
   Object.keys(awsEnvironmentVariables).forEach(env => {
     core.info('Creating params for ' + env + '...');
@@ -131,12 +134,12 @@ async function run() {
     core.info('Getting AWS Environments..');
 
     const awsEnvironments = await getParameter({ path: environmentPath });
-    const successfullyCreated = await createGitHubEnvironments({octokit, awsEnvironments});
+    const successfullyCreated = await createGitHubEnvironments({octokit, awsEnvironments, owner, repo});
     if (successfullyCreated) {
       core.info('Getting AWS Environment Params..');
       const awsEnvironmentVariables = await getEnvironmentVariables( {awsEnvironments});
       core.info('Syncing AWS environment params with GitHub..');
-      const successfullyCreatedVariables = await createGitHubEnvironmentVariables({octokit, awsEnvironmentVariables})
+      const successfullyCreatedVariables = await createGitHubEnvironmentVariables({octokit, awsEnvironmentVariables, repoId})
       if (successfullyCreatedVariables) {
         core.info('Success!');
       }
