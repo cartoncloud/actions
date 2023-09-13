@@ -66,10 +66,12 @@ async function run() {
     core.info('Environments');
     core.info(str);
 
-    Object.keys(environments['environments']).forEach(key => {
-      core.info('Environment name: ' + environments['name']);
-    });
-
+    let githubEnvironments = [];
+    if (environments.hasOwnProperty('data') && environments['data'].hasOwnProperty('environments')) {
+      environments['data']['environments'].forEach(env => {
+        core.info('Environment name: ' + env['name']);
+      });
+    }
 
     core.info('EnvironmentPath: ' + environmentPath);
     core.info('environmentVariablesPath: ' + environmentVariablesPath);
