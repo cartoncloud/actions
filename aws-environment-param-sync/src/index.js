@@ -88,6 +88,7 @@ async function run() {
       })
     });
 
+    core.info('Getting AWS Environment Params..');
     let awsEnvironmentVariables = {};
     let promises = [];
     Object.keys(awsEnvironments).forEach(key => {
@@ -98,6 +99,7 @@ async function run() {
       })
     });
 
+    core.info('Syncing AWS environment params with GitHub..');
     await Promise.all(promises).then(() => {
       Object.keys(awsEnvironmentVariables).forEach(env => {
         core.info('Creating params for ' + env + '...');
