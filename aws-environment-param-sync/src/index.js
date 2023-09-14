@@ -152,29 +152,10 @@ async function run() {
       auth: token
     })
 
-    // TODO add delete option for action to remove old environments (after environment migration)
-    // core.info('Getting existing GitHub environments..');
-    // const environments = await octokit.request('GET /repos/' + owner + '/' + repo + '/environments', {
-    //   headers: {
-    //     'X-GitHub-Api-Version': '2022-11-28'
-    //   }
-    // })
-
-    // const str = JSON.stringify(environments, null, 4); // (Optional) beautiful indented output.
-    // core.info('Response');
-    // core.info(str);
-    //
-    // let githubEnvironments = [];
-    // if (environments.hasOwnProperty('data') && environments['data'].hasOwnProperty('environments')) {
-    //   environments['data']['environments'].forEach(env => {
-    //     core.info('Github environment name: ' + env['name']);
-    //     githubEnvironments.push(env['name']);
-    //   });
-    // }
-
     core.info('Getting AWS environments..')
     const awsEnvironments = await getParameter({ path: environmentPath });
 
+    // TODO add delete option for action to remove old environments (after environment migration)
     core.info('Syncing AWS environments to GitHub Environments..')
     await syncEnvironments({octokit, awsEnvironments, owner, repo});
 
