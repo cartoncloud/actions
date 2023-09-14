@@ -76,7 +76,7 @@ const getGitHubEnvironmentVariables = async ({
 };
 
 
-const createGitHubEnvironments = async ({
+const syncEnvironments = async ({
     octokit,
     awsEnvironments,
     owner,
@@ -84,17 +84,15 @@ const createGitHubEnvironments = async ({
   }) => {
   for (const key in awsEnvironments) {
     core.info('Creating/Updating ' + awsEnvironments[key] + '...')
-    octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
+    await octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
       }
     })
   }
-
-  return true
 }
 
-const createGitHubEnvironmentVariables = async ({
+const syncEnvironmentVariables = async ({
       octokit,
       repoId,
       awsEnvironmentParams,
@@ -102,13 +100,25 @@ const createGitHubEnvironmentVariables = async ({
   }) => {
   for (const env in awsEnvironmentParams) {
     core.info('Creating variables for ' + env + '...');
+
     for (const name in awsEnvironmentParams[env]) {
+      const value = awsEnvironmentParams[env][name];
       if (githubEnvironmentVariables.hasOwnProperty(env) && githubEnvironmentVariables[env].hasOwnProperty(name)) {
-        // TODO add update if values are unmatched.
-        core.info('Skipping Variable: ' + name);
+        const githubValue = githubEnvironmentVariables[env][name]
+        if (githubValue !== value) {
+          core.info('Updating Variable: ' + name + ' from ' + githubValue + ' to ' + value);
+          await octokit.request('PATCH /repositories/' + repoId + '/environments/' + env + '/variables/' + name, {
+            name: name,
+            value: value,
+            headers: {
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
+          })
+        } else {
+          core.info('Skipping Variable: ' + name);
+        }
         continue
       }
-      const value = awsEnvironmentParams[env][name];
       core.info('Creating variable with name: ' + name + ' and value: ' + value + '...');
       await octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
         name: name,
@@ -120,6 +130,7 @@ const createGitHubEnvironmentVariables = async ({
     }
   }
 }
+
 
 const formatParameterName = (name) => {
   const splitName = name.split('/');
@@ -143,7 +154,7 @@ async function run() {
     })
 
 
-    // TODO add delete option for action to remove old environments
+    // TODO add delete option for action to remove old environments (after environment migration)
     // core.info('Getting existing GitHub environments..');
     // const environments = await octokit.request('GET /repos/' + owner + '/' + repo + '/environments', {
     //   headers: {
@@ -167,7 +178,7 @@ async function run() {
     const awsEnvironments = await getParameter({ path: environmentPath });
 
     core.info('Syncing AWS environments to GitHub Environments..')
-    await createGitHubEnvironments({octokit, awsEnvironments, owner, repo});
+    await syncEnvironments({octokit, awsEnvironments, owner, repo});
 
     core.info('Getting AWS Environment Params..');
     const awsEnvironmentParams = await getAwsEnvironmentParams( {awsEnvironments, environmentVariablesPath});
@@ -176,7 +187,7 @@ async function run() {
     const githubEnvironmentVariables = await getGitHubEnvironmentVariables( {awsEnvironments, octokit, repoId});
 
     core.info('Syncing AWS environment params with GitHub environment variables..');
-    await createGitHubEnvironmentVariables({octokit, repoId, awsEnvironmentParams, githubEnvironmentVariables})
+    await syncEnvironmentVariables({octokit, repoId, awsEnvironmentParams, githubEnvironmentVariables})
 
     core.info('Finished.');
   } catch (error) {
