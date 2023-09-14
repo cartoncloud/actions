@@ -13,6 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         package:
+          - aws-environment-param-sync
           - github-branch-dispatch
           - github-delete-draft-releases
           - github-global-autolink
@@ -31,10 +32,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Node.js
+      - name: Install Node.js 16
         uses: actions/setup-node@v3
+        if: contains(fromJson('["aws-environment-param-sync"]'), matrix.package) == false
         with:
           node-version: 16.x
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.package }}/package-lock.json
+
+      - name: Install Node.js 20
+        uses: actions/setup-node@v3
+        if: contains(fromJson('["aws-environment-param-sync"]'), matrix.package) == true
+        with:
+          node-version: 20.x
           cache: 'npm'
           cache-dependency-path: ${{ matrix.package }}/package-lock.json
 

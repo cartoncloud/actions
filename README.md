@@ -33,5 +33,6 @@ Re-usable GitHub Actions
 
 ### Javascript Actions
 
+- aws-environment-param-sync
 - launchdarkly-flags-sync
 - launchdarkly-segments-sync
