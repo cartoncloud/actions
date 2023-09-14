@@ -122,11 +122,10 @@ const createGitHubEnvironmentVariables = async ({
         core.info('Skipping Variable: ' + name);
         continue
       }
-      const envName = name.replaceAll('-', '_');
       const value = awsEnvironmentParams[env][name];
-      core.info('Creating variable with name: ' + envName + ' and value: ' + value + '...');
+      core.info('Creating variable with name: ' + name + ' and value: ' + value + '...');
       await octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
-        name: envName,
+        name: name,
         value: value,
         headers: {
           'X-GitHub-Api-Version': '2022-11-28'
@@ -139,7 +138,7 @@ const createGitHubEnvironmentVariables = async ({
 const formatParameterName = (name) => {
   const splitName = name.split('/');
   let formattedName = splitName[splitName.length-1];
-  formattedName = formattedName.toUpperCase();
+  formattedName = formattedName.toUpperCase().replaceAll('-', '_');
 
   return formattedName;
 }
