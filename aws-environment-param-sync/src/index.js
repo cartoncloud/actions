@@ -99,13 +99,12 @@ const createGitHubEnvironmentVariables = async ({
       awsEnvironmentParams,
       githubEnvironmentVariables
   }) => {
-  core.info('awsEnvironmentVariables: ' + awsEnvironmentParams);
   for (const env in awsEnvironmentParams) {
     core.info('Creating variables for ' + env + '...');
     for (const name in awsEnvironmentParams[env]) {
-      if (githubEnvironmentVariables.hasOwnProperty('env') && githubEnvironmentVariables['env'].hasOwnProperty('name')) {
+      if (githubEnvironmentVariables.hasOwnProperty(env) && githubEnvironmentVariables[env].hasOwnProperty(name)) {
         // TODO add update if values are unmatched.
-        core.info('Skipping Variable ' + name);
+        core.info('Skipping Variable: ' + name);
         continue
       }
       const envName = name.replaceAll('-', '_');
