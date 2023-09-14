@@ -49,7 +49,8 @@ const getAwsEnvironmentParams = async ({
 
 const getGitHubEnvironmentVariables = async ({
     awsEnvironments,
-    environmentVariablesPath
+    octokit,
+    repoId
   }) => {
   const githubEnvironmentVariables = {};
   for (const env in awsEnvironments) {
@@ -164,13 +165,13 @@ async function run() {
     await createGitHubEnvironments({octokit, awsEnvironments, owner, repo});
 
     core.info('Getting AWS Environment Params..');
-    const awsEnvironmentVariables = await getAwsEnvironmentParams( {awsEnvironments, environmentVariablesPath});
+    const awsEnvironmentParams = await getAwsEnvironmentParams( {awsEnvironments, environmentVariablesPath});
 
     core.info('Getting GitHub Environment Variables..');
-    const asd = await getGitHubEnvironmentVariables( {awsEnvironments, environmentVariablesPath});
+    const gitHubEnvironmentVars = await getGitHubEnvironmentVariables( {awsEnvironments, octokit, repoId});
 
     core.info('Syncing AWS environment params with GitHub environment variables..');
-    await createGitHubEnvironmentVariables({octokit, awsEnvironmentVariables, repoId})
+    await createGitHubEnvironmentVariables({octokit, awsEnvironmentParams, repoId})
 
     core.info('Finished.');
   } catch (error) {
