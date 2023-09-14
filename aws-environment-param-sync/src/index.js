@@ -53,18 +53,20 @@ const getGitHubEnvironmentVariables = async ({
     repoId
   }) => {
   const githubEnvironmentVariables = {};
-  for (const env in awsEnvironments) {
-    core.info('Getting variables for ' + awsEnvironments[env] + '...');
-    const vars = await octokit.request('GET /repositories/' + repoId + '/environments/' + env + '/variables', {
+  for (const envKey in awsEnvironments) {
+    core.info('Getting variables for ' + awsEnvironments[envKey] + '...');
+    const awsEnvironment = awsEnvironments[envKey];
+    const vars = await octokit.request('GET /repositories/' + repoId + '/environments/' + awsEnvironment + '/variables', {
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
       }
     })
 
+    githubEnvironmentVariables[awsEnvironment] = {};
     if (vars.hasOwnProperty('data') && vars['data'].hasOwnProperty('variables')) {
       for (const key in vars['data']['variables']) {
         const variable =  vars['data']['variables'][key];
-        githubEnvironmentVariables[env][variable['name']] = variable['value']
+        githubEnvironmentVariables[awsEnvironment][variable['name']] = variable['value']
       }
     }
   }
