@@ -33,7 +33,6 @@ const getParameter = async ({
   return parameters;
 };
 
-
 const getEnvironmentVariables = async ({
    awsEnvironments,
    environmentVariablesPath
@@ -42,7 +41,7 @@ const getEnvironmentVariables = async ({
   for (const key in awsEnvironments) {
     core.info('Getting params for ' + awsEnvironments[key] + '...');
     const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
-    awsEnvironmentVariables[awsEnvironments[key]] = getParameter({path: variablesPath});
+    awsEnvironmentVariables[awsEnvironments[key]] = await getParameter({path: variablesPath});
   }
 
   return awsEnvironmentVariables;
@@ -71,6 +70,7 @@ const createGitHubEnvironmentVariables = async ({
     awsEnvironmentVariables,
     repoId
   }) => {
+  core.info('awsEnvironmentVariables: ' + awsEnvironmentVariables);
   for (const env in awsEnvironmentVariables) {
     core.info('Creating params for ' + env + '...');
     for (const name in awsEnvironmentVariables[env]) {
@@ -129,22 +129,19 @@ async function run() {
     //   });
     // }
 
-    core.info('EnvironmentPath: ' + environmentPath);
-    core.info('environmentVariablesPath: ' + environmentVariablesPath);
-
-    core.info('Getting AWS Environments..');
-
+    core.info('Getting AWS environments..')
     const awsEnvironments = await getParameter({ path: environmentPath });
-    const successfullyCreated = await createGitHubEnvironments({octokit, awsEnvironments, owner, repo});
-    if (successfullyCreated) {
-      core.info('Getting AWS Environment Params..');
-      const awsEnvironmentVariables = await getEnvironmentVariables( {awsEnvironments, environmentVariablesPath});
-      core.info('Syncing AWS environment params with GitHub..');
-      const successfullyCreatedVariables = await createGitHubEnvironmentVariables({octokit, awsEnvironmentVariables, repoId})
-      if (successfullyCreatedVariables) {
-        core.info('Success!');
-      }
-    }
+
+    core.info('Syncing AWS environments to GitHub Environments..')
+    await createGitHubEnvironments({octokit, awsEnvironments, owner, repo});
+
+    core.info('Getting AWS Environment Params..');
+    const awsEnvironmentVariables = await getEnvironmentVariables( {awsEnvironments, environmentVariablesPath});
+
+    core.info('Syncing AWS environment params with GitHub environment variables..');
+    await createGitHubEnvironmentVariables({octokit, awsEnvironmentVariables, repoId})
+
+    core.info('Finished.');
   } catch (error) {
     core.setFailed(error.message);
   }
