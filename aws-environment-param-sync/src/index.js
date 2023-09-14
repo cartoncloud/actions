@@ -103,20 +103,6 @@ const createGitHubEnvironmentVariables = async ({
   for (const env in awsEnvironmentParams) {
     core.info('Creating variables for ' + env + '...');
     for (const name in awsEnvironmentParams[env]) {
-
-      core.info('Come onnnnnnnn');
-      if (githubEnvironmentVariables.hasOwnProperty(env)) {
-        core.info('Yayyyyyy');
-        core.info('Name: ' + name);
-
-        const str = JSON.stringify(githubEnvironmentVariables[env], null, 4); // (Optional) beautiful indented output.
-        core.info(str);
-
-        if (githubEnvironmentVariables[env].hasOwnProperty(name)) {
-          core.info('YESSSSS');
-        }
-      }
-
       if (githubEnvironmentVariables.hasOwnProperty(env) && githubEnvironmentVariables[env].hasOwnProperty(name)) {
         // TODO add update if values are unmatched.
         core.info('Skipping Variable: ' + name);
@@ -156,6 +142,8 @@ async function run() {
       auth: token
     })
 
+
+    // TODO add delete option for action to remove old environments
     // core.info('Getting existing GitHub environments..');
     // const environments = await octokit.request('GET /repos/' + owner + '/' + repo + '/environments', {
     //   headers: {
