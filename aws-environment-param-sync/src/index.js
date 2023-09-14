@@ -75,7 +75,6 @@ const getGitHubEnvironmentVariables = async ({
   return githubEnvironmentVariables;
 };
 
-
 const syncEnvironments = async ({
     octokit,
     awsEnvironments,
@@ -83,7 +82,7 @@ const syncEnvironments = async ({
     repo
   }) => {
   for (const key in awsEnvironments) {
-    core.info('Creating/Updating ' + awsEnvironments[key] + '...')
+    core.info('Syncing ' + awsEnvironments[key] + '...')
     await octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
@@ -99,7 +98,7 @@ const syncEnvironmentVariables = async ({
       githubEnvironmentVariables
   }) => {
   for (const env in awsEnvironmentParams) {
-    core.info('Creating variables for ' + env + '...');
+    core.info('Syncing variables for ' + env + '...');
 
     for (const name in awsEnvironmentParams[env]) {
       const value = awsEnvironmentParams[env][name];
@@ -152,7 +151,6 @@ async function run() {
     const octokit = new Octokit({
       auth: token
     })
-
 
     // TODO add delete option for action to remove old environments (after environment migration)
     // core.info('Getting existing GitHub environments..');
