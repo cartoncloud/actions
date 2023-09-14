@@ -32,8 +32,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Node.js
+      - name: Install Node.js 16
         uses: actions/setup-node@v3
+        if: !contains(fromJson('["aws-environment-param-sync"]'), ${{ matrix.package }})
+        with:
+          node-version: 16.x
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.package }}/package-lock.json
+
+      - name: Install Node.js 20
+        uses: actions/setup-node@v3
+        if: contains(fromJson('["aws-environment-param-sync"]'), ${{ matrix.package }})
         with:
           node-version: 16.x
           cache: 'npm'
