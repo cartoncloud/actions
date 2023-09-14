@@ -74,10 +74,11 @@ const createGitHubEnvironmentVariables = async ({
   for (const env in awsEnvironmentVariables) {
     core.info('Creating params for ' + env + '...');
     for (const name in awsEnvironmentVariables[env]) {
+      const envName = name.replace('-', '_');
       const value = awsEnvironmentVariables[env][name];
-      core.info('Creating variable with name: ' + name + ' and value: ' + value + '...');
+      core.info('Creating variable with name: ' + envName + ' and value: ' + value + '...');
       octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
-        name: name,
+        name: envName,
         value: value,
         headers: {
           'X-GitHub-Api-Version': '2022-11-28'
@@ -85,8 +86,6 @@ const createGitHubEnvironmentVariables = async ({
       })
     }
   }
-
-  return true;
 }
 
 const formatParameterName = (name) => {
