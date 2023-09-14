@@ -23,7 +23,7 @@ const getParameter = async ({
       const name = formatParameterName(parameter.Name);
       const value = parameter.Value.trim();
 
-      core.info('Param: ' + parameter.Name + ' Name: ' + name + ' Value: ' + value);
+      core.info(`Param: ${parameter.Name} Name: ${name} + Value: ${value}`);
       parameters[name] = value;
     });
 
@@ -39,7 +39,7 @@ const getAwsEnvironmentParams = async ({
   }) => {
   const awsEnvironmentVariables = {};
   for (const key in awsEnvironments) {
-    core.info('Getting params for ' + awsEnvironments[key] + '...');
+    core.info(`Getting params for ${awsEnvironments[key]}...`);
     const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
     awsEnvironmentVariables[awsEnvironments[key]] = await getParameter({path: variablesPath});
   }
@@ -54,9 +54,9 @@ const getGitHubEnvironmentVariables = async ({
   }) => {
   const githubEnvironmentVariables = {};
   for (const envKey in awsEnvironments) {
-    core.info('Getting variables for ' + awsEnvironments[envKey] + '...');
+    core.info(`Getting variables for ${awsEnvironments[envKey]}...`);
     const awsEnvironment = awsEnvironments[envKey];
-    const vars = await octokit.request('GET /repositories/' + repoId + '/environments/' + awsEnvironment + '/variables', {
+    const vars = await octokit.request(`GET /repositories/${repoId}/environments/${awsEnvironment}/variables`, {
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
       }
@@ -66,7 +66,7 @@ const getGitHubEnvironmentVariables = async ({
     if (vars.hasOwnProperty('data') && vars['data'].hasOwnProperty('variables')) {
       for (const key in vars['data']['variables']) {
         const variable =  vars['data']['variables'][key];
-        core.info('Found variable ' + variable['name'] + ' with value ' + variable['value']);
+        core.info(`Found variable ${variable['name']} with value ${variable['value']}`);
         githubEnvironmentVariables[awsEnvironment][variable['name']] = variable['value']
       }
     }
@@ -82,8 +82,8 @@ const syncEnvironments = async ({
     repo
   }) => {
   for (const key in awsEnvironments) {
-    core.info('Syncing ' + awsEnvironments[key] + '...')
-    await octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
+    core.info(`Syncing ${awsEnvironments[key]}...`)
+    await octokit.request(`PUT /repos/${owner}/${repo}/environments/${awsEnvironments[key]}`, {
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
       }
@@ -98,15 +98,15 @@ const syncEnvironmentVariables = async ({
       githubEnvironmentVariables
   }) => {
   for (const env in awsEnvironmentParams) {
-    core.info('Syncing variables for ' + env + '...');
+    core.info(`Syncing variables for ${env}...`);
 
     for (const name in awsEnvironmentParams[env]) {
       const value = awsEnvironmentParams[env][name];
       if (githubEnvironmentVariables.hasOwnProperty(env) && githubEnvironmentVariables[env].hasOwnProperty(name)) {
         const githubValue = githubEnvironmentVariables[env][name]
         if (githubValue !== value) {
-          core.info('Updating Variable: ' + name + ' from ' + githubValue + ' to ' + value);
-          await octokit.request('PATCH /repositories/' + repoId + '/environments/' + env + '/variables/' + name, {
+          core.info(`Updating Variable: ${name} from ${githubValue} to ${value}`);
+          await octokit.request(`PATCH /repositories/${repoId}/environments/${env}/variables/${name}`, {
             name: name,
             value: value,
             headers: {
@@ -114,12 +114,12 @@ const syncEnvironmentVariables = async ({
             }
           })
         } else {
-          core.info('Skipping Variable: ' + name);
+          core.info(`Skipping Variable: ${name}`);
         }
         continue
       }
-      core.info('Creating variable with name: ' + name + ' and value: ' + value + '...');
-      await octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
+      core.info(`Creating variable with name: ${name} and value: ${value}...`);
+      await octokit.request(`POST /repositories/${repoId}/environments/${env}/variables`, {
         name: name,
         value: value,
         headers: {

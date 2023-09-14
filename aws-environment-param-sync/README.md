@@ -18,5 +18,5 @@ Repository Owner.
 ### repo (optional)
 Repository Name.
 
-### repId (optional)
+### repoId (optional)
 Repository ID.
