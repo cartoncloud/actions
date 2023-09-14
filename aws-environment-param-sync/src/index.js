@@ -62,7 +62,8 @@ const getGitHubEnvironmentVariables = async ({
     })
 
     if (vars.hasOwnProperty('data') && vars['data'].hasOwnProperty('variables')) {
-      for (const variable in vars['data']['variables']) {
+      for (const key in vars['data']['variables']) {
+        const variable =  vars['data']['variables'][key];
         const str = JSON.stringify(variable, null, 4); // (Optional) beautiful indented output.
         core.info(str);
         githubEnvironmentVariables[variable['name']] = variable['value']
