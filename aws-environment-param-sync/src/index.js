@@ -74,7 +74,7 @@ const createGitHubEnvironmentVariables = async ({
   for (const env in awsEnvironmentVariables) {
     core.info('Creating params for ' + env + '...');
     for (const name in awsEnvironmentVariables[env]) {
-      const envName = name.replace('-', '_');
+      const envName = name.replaceAll('-', '_');
       const value = awsEnvironmentVariables[env][name];
       core.info('Creating variable with name: ' + envName + ' and value: ' + value + '...');
       octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
