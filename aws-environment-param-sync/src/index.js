@@ -39,11 +39,11 @@ const getEnvironmentVariables = async ({
    environmentVariablesPath
   }) => {
   const awsEnvironmentVariables = {};
-  await Object.keys(awsEnvironments).forEach(key => {
+  for (const key in awsEnvironments) {
     core.info('Getting params for ' + awsEnvironments[key] + '...');
     const variablesPath = environmentVariablesPath + '/' + awsEnvironments[key];
     awsEnvironmentVariables[awsEnvironments[key]] = getParameter({path: variablesPath});
-  });
+  }
 
   return awsEnvironmentVariables;
 };
@@ -54,16 +54,16 @@ const createGitHubEnvironments = async ({
     owner,
     repo
   }) => {
-  await Object.keys(awsEnvironments).forEach(key => {
+  for (const key in awsEnvironments) {
     core.info('Creating/Updating ' + awsEnvironments[key] + '...')
     octokit.request('PUT /repos/' + owner + '/' + repo + '/environments/' + awsEnvironments[key], {
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
       }
     })
-  });
+  }
 
-  return true;
+  return true
 }
 
 const createGitHubEnvironmentVariables = async ({
@@ -71,9 +71,9 @@ const createGitHubEnvironmentVariables = async ({
     awsEnvironmentVariables,
     repoId
   }) => {
-  await Object.keys(awsEnvironmentVariables).forEach(env => {
+  for (const env in awsEnvironmentVariables) {
     core.info('Creating params for ' + env + '...');
-    Object.keys(awsEnvironmentVariables[env]).forEach(name => {
+    for (const name in awsEnvironmentVariables[env]) {
       const value = awsEnvironmentVariables[env][name];
       core.info('Creating variable with name: ' + name + ' and value: ' + value + '...');
       octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
@@ -83,8 +83,8 @@ const createGitHubEnvironmentVariables = async ({
           'X-GitHub-Api-Version': '2022-11-28'
         }
       })
-    });
-  });
+    }
+  }
 
   return true;
 }
