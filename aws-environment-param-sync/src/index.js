@@ -109,8 +109,7 @@ const createGitHubEnvironmentVariables = async ({
         core.info('Yayyyyyy');
         core.info('Name: ' + name);
 
-        const str = JSON.stringify(githubEnvironmentVariables.hasOwnProperty(env), null, 4); // (Optional) beautiful indented output.
-        core.info('Response');
+        const str = JSON.stringify(githubEnvironmentVariables[env], null, 4); // (Optional) beautiful indented output.
         core.info(str);
 
         if (githubEnvironmentVariables[env].hasOwnProperty(name)) {
