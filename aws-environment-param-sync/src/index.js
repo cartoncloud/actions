@@ -61,19 +61,15 @@ const getGitHubEnvironmentVariables = async ({
       }
     })
 
-    const str = JSON.stringify(vars, null, 4); // (Optional) beautiful indented output.
-    core.info('Response');
-    core.info(str);
-
-    // if (vars.hasOwnProperty('data') && vars['data'].hasOwnProperty('environments')) {
-    //   vars['data']['environments'].forEach(env => {
-    //     core.info('Github environment name: ' + env['name']);
-    //     vars.push(env['name']);
-    //   });
-    // }
+    if (vars.hasOwnProperty('data') && vars['data'].hasOwnProperty('variables')) {
+      for (const variable in vars['data']['variables']) {
+        core.info('Variable Name: ' + variable['name']);
+        githubEnvironmentVariables[variable['name']] = variable['value']
+      }
+    }
   }
 
-  return awsEnvironmentVariables;
+  return githubEnvironmentVariables;
 };
 
 
@@ -96,16 +92,17 @@ const createGitHubEnvironments = async ({
 }
 
 const createGitHubEnvironmentVariables = async ({
-    octokit,
-    awsEnvironmentVariables,
-    repoId
+      octokit,
+      repoId,
+      awsEnvironmentParams,
+      githubEnvironmentVariables
   }) => {
-  core.info('awsEnvironmentVariables: ' + awsEnvironmentVariables);
-  for (const env in awsEnvironmentVariables) {
-    core.info('Creating params for ' + env + '...');
-    for (const name in awsEnvironmentVariables[env]) {
+  core.info('awsEnvironmentVariables: ' + awsEnvironmentParams);
+  for (const env in awsEnvironmentParams) {
+    core.info('Creating variables for ' + env + '...');
+    for (const name in awsEnvironmentParams[env]) {
       const envName = name.replaceAll('-', '_');
-      const value = awsEnvironmentVariables[env][name];
+      const value = awsEnvironmentParams[env][name];
       core.info('Creating variable with name: ' + envName + ' and value: ' + value + '...');
       await octokit.request('POST /repositories/' + repoId + '/environments/' + env + '/variables', {
         name: envName,
@@ -168,10 +165,10 @@ async function run() {
     const awsEnvironmentParams = await getAwsEnvironmentParams( {awsEnvironments, environmentVariablesPath});
 
     core.info('Getting GitHub Environment Variables..');
-    const gitHubEnvironmentVars = await getGitHubEnvironmentVariables( {awsEnvironments, octokit, repoId});
+    const githubEnvironmentVariables = await getGitHubEnvironmentVariables( {awsEnvironments, octokit, repoId});
 
     core.info('Syncing AWS environment params with GitHub environment variables..');
-    await createGitHubEnvironmentVariables({octokit, awsEnvironmentParams, repoId})
+    await createGitHubEnvironmentVariables({octokit, repoId, awsEnvironmentParams, githubEnvironmentVariables})
 
     core.info('Finished.');
   } catch (error) {
