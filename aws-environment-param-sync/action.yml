@@ -1,0 +1,31 @@
+name: 'AWS Environment Param Sync'
+description: 'Syncs AWS params to environments and environment variables within repository.'
+inputs:
+  environmentPath:
+    description: 'Path to the environment params containing environment names.'
+    required: false
+    default: '/terraform/cartoncloud-app/environments'
+  environmentVariablesPath:
+    description: 'Base path to environment variables. For each environment, <<environmentVariablePath>>/<<environment>> is used.'
+    required: false
+    default: '/terraform/cartoncloud-app'
+  token:
+    description: 'GitHub token.'
+    required: false
+    default: ${{ github.token }}
+  owner:
+    description: 'Repository Owner.'
+    required: false
+    default: ${{ github.repository_owner }}
+  repo:
+    description: 'Repository Name.'
+    required: false
+    default: ${{ github.event.repository.name }}
+  repoId:
+    description: 'Repository ID.'
+    required: false
+    default: ${{ github.repository_id }}
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
