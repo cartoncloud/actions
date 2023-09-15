@@ -23,7 +23,7 @@ const getParameter = async ({
       const name = formatParameterName(parameter.Name);
       const value = parameter.Value.trim();
 
-      core.info(`Param: ${parameter.Name} Name: ${name} + Value: ${value}`);
+      core.info(`Param: ${parameter.Name} Name: ${name} Value: ${value}`);
       parameters[name] = value;
     });
 
