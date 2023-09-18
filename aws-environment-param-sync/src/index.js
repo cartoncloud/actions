@@ -56,20 +56,33 @@ const getGitHubEnvironmentVariables = async ({
   for (const envKey in awsEnvironments) {
     core.info(`Getting variables for ${awsEnvironments[envKey]}...`);
     const awsEnvironment = awsEnvironments[envKey];
-    const vars = await octokit.request(`GET /repositories/${repoId}/environments/${awsEnvironment}/variables`, {
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
-    })
-
     githubEnvironmentVariables[awsEnvironment] = {};
-    if (vars.hasOwnProperty('data') && vars['data'].hasOwnProperty('variables')) {
-      for (const key in vars['data']['variables']) {
-        const variable =  vars['data']['variables'][key];
-        core.info(`Found variable ${variable['name']} with value ${variable['value']}`);
-        githubEnvironmentVariables[awsEnvironment][variable['name']] = variable['value']
+    let furtherResults = true;
+    const perPage = 10;
+    let page = 1;
+    do {
+      const vars = await octokit.request(`GET /repositories/${repoId}/environments/${awsEnvironment}/variables`, {
+        per_page: perPage,
+        page: page,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      })
+
+      let count = 0;
+      if (vars.hasOwnProperty('data') && vars['data'].hasOwnProperty('variables')) {
+        for (const key in vars['data']['variables']) {
+          count++;
+          const variable =  vars['data']['variables'][key];
+          core.info(`Found variable ${variable['name']} with value ${variable['value']}`);
+          githubEnvironmentVariables[awsEnvironment][variable['name']] = variable['value']
+        }
       }
-    }
+      if (count < perPage) {
+        furtherResults = false
+      }
+      page++;
+    } while (furtherResults)
   }
 
   return githubEnvironmentVariables;
