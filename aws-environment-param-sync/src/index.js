@@ -61,6 +61,7 @@ const getGitHubEnvironmentVariables = async ({
     const perPage = 10;
     let page = 1;
     do {
+      core.info(`Page ${page}...`);
       const vars = await octokit.request(`GET /repositories/${repoId}/environments/${awsEnvironment}/variables`, {
         per_page: perPage,
         page: page,
@@ -79,9 +80,11 @@ const getGitHubEnvironmentVariables = async ({
         }
       }
       if (count < perPage) {
+        core.info(`No more variables.`);
         furtherResults = false
+      } else {
+        page++;
       }
-      page++;
     } while (furtherResults)
   }
 
