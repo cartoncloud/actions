@@ -58,7 +58,7 @@ const getGitHubEnvironmentVariables = async ({
     const awsEnvironment = awsEnvironments[envKey];
     githubEnvironmentVariables[awsEnvironment] = {};
     let furtherResults = true;
-    const perPage = 10;
+    const perPage = 30;
     let page = 1;
     do {
       core.info(`Page ${page}...`);
