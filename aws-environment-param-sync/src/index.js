@@ -15,6 +15,11 @@ const getParameter = async ({
         Path: path,
         Recursive: true,
         WithDecryption: false,
+        ParameterFilters: [{
+            Key: 'Type',
+            Option: 'Equals',
+            Values: ['String'],
+        }],
         NextToken: nextToken,
       })
       .promise();
