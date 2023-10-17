@@ -1,0 +1,25 @@
+name: 'Download Multi Run Artifacts'
+description: 'Download multiple artifacts from multiple runs of a given workflow and save them to a directory'
+inputs:
+  token:
+    description: 'Github personal access token'
+    required: true
+  path:
+    description: "Path to which the artifact should be downloaded"
+    required: true
+  workflowName:
+    description: 'Name of the workflow'
+    required: true
+  repo:
+    description: 'Repository name'
+    required: false
+  owner:
+    description: 'Owner name'
+    required: false
+  workflowLimit:
+    description: 'How many past runs should be downloaded'
+    required: false
+    default: 5
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
