@@ -106,7 +106,7 @@ runs:
       uses: aws-actions/configure-aws-credentials@v2
       with:
         role-to-assume: ${{ inputs.roleToAssumeForEcr }}
-        aws-region: ${{ inputs.roleToAssumeForCluster }}
+        aws-region: ${{ inputs.awsRegion }}
 
     - name: Docker login
       id: login-ecr
@@ -138,7 +138,7 @@ runs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
-        role-to-assume: ${{ inputs.roleToAssumeForEcr }}
+        role-to-assume: ${{ inputs.roleToAssumeForCluster }}
         aws-region: ${{ inputs.awsRegion }}
 
     - name: Deploy to ECS
