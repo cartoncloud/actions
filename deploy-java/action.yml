@@ -33,8 +33,7 @@ inputs:
     required: true
   clusterName:
     description: 'Name of ECS cluster'
-    required: false
-    default: ''
+    required: true
   versionTag:
     description: 'Version tag to apply to docker image'
     required: false
