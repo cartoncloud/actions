@@ -104,7 +104,7 @@ runs:
         jiraPassword: ${{ inputs.jiraPassword }}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.roleToAssumeForEcr }}
         aws-region: ${{ inputs.awsRegion }}
@@ -137,7 +137,7 @@ runs:
         echo "restart=true" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.roleToAssumeForCluster }}
         aws-region: ${{ inputs.awsRegion }}
