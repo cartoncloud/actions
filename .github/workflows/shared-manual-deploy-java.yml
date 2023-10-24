@@ -76,6 +76,7 @@ jobs:
           environment: ${{ inputs.environmentName }}
           environmentUrl: ${{ inputs.repositoryUrl }}/deployments
           environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
+          clusterName: ${{ vars.CLUSTER_NAME || '' }}
           existingImageTag: ${{ inputs.githubSha }}
           awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
