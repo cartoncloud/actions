@@ -31,6 +31,9 @@ inputs:
   environmentTag:
     description: 'Docker environment tag to apply to docker image'
     required: true
+  clusterName:
+    description: 'Name of ECS cluster'
+    required: true
   versionTag:
     description: 'Version tag to apply to docker image'
     required: false
@@ -51,6 +54,12 @@ inputs:
     required: true
   gitHubPAT:
     description: 'PAT for GitHub API calls'
+    required: false
+  roleToAssumeForEcr:
+    description: 'AWS Role to Assume for access to ECR'
+    required: false
+  roleToAssumeForCluster:
+    description: 'AWS Role to Assume for access to Cluster'
     required: false
 
 runs:
@@ -95,9 +104,9 @@ runs:
         jiraPassword: ${{ inputs.jiraPassword }}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::026388519853:role/GithubToAwsOpenIdConnect
+        role-to-assume: ${{ inputs.roleToAssumeForEcr }}
         aws-region: ${{ inputs.awsRegion }}
 
     - name: Docker login
@@ -127,15 +136,22 @@ runs:
         aws ecr put-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-tag ${{ inputs.versionTag }} --image-manifest "$manifest"
         echo "restart=true" >> $GITHUB_OUTPUT
 
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.roleToAssumeForCluster }}
+        aws-region: ${{ inputs.awsRegion }}
+
     - name: Deploy to ECS
       if: ${{ steps.deploy-check.outputs.existing == '' }} || ${{ steps.version-tag.outputs.restart == 'true' }}
       shell: bash
+      env:
+        CLUSTER_NAME: ${{ inputs.clusterName || format('services-{0}', inputs.environmentTag) }}
       run: |
-        aws ecs update-service --cluster services-${{ inputs.environmentTag }} --service ${{ inputs.appName }} --force-new-deployment
+        aws ecs update-service --cluster $CLUSTER_NAME --service ${{ inputs.appName }} --force-new-deployment
         # wait for success
         # based on https://github.com/silinternational/ecs-deploy/ however their action doesn't use session credentials and builds a new docker each run
         SERVICE=${{ inputs.appName }}
-        CLUSTER=services-${{ inputs.environmentTag }}
         TIMEOUT="20 minute"
         END_TIME=$(date -ud "$TIMEOUT" +%s)
         DEPLOYMENT_SUCCESS="false"
@@ -143,7 +159,7 @@ runs:
         echo "Waiting for service deployment to complete..."
         while [[ $(date -u +%s) -le $END_TIME ]]
         do
-          NUM_DEPLOYMENTS=$(aws ecs describe-services --services $SERVICE --cluster $CLUSTER | jq "[.services[].deployments[]] | length")
+          NUM_DEPLOYMENTS=$(aws ecs describe-services --services $SERVICE --cluster $CLUSTER_NAME | jq "[.services[].deployments[]] | length")
           # Wait until 1 deployment stays running
           # If the wait time has passed, we need to give up
           if [ $NUM_DEPLOYMENTS -eq 1 ]; then
