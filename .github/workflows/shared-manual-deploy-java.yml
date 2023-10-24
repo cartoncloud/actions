@@ -53,6 +53,7 @@ jobs:
           gitHubPAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           roleToAssumeForEcr: ${{ vars.AWS_ROLE_TO_ASSUME_FOR_ECR }}
           roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          clusterName: ${{ vars.CLUSTER_NAME || '' }}
 
   deploy-branch:
     runs-on: ubuntu-latest

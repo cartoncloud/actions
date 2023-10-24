@@ -57,10 +57,10 @@ inputs:
     required: false
   roleToAssumeForEcr:
     description: 'AWS Role to Assume for access to ECR'
-    required: false
+    required: true
   roleToAssumeForCluster:
     description: 'AWS Role to Assume for access to Cluster'
-    required: false
+    required: true
 
 runs:
   using: "composite"
