@@ -259,7 +259,7 @@ jobs:
           clusterName: ${{ vars.CLUSTER_NAME || '' }}
 
   deploy-to-primary-test-environment:
-    name: Deploy to Primary Test Environment
+    name: Deploy to ${{ vars.PRIMARY_TEST_ENVIRONMENT }}
     runs-on: ubuntu-latest
     needs: [ determine-version, build, create-draft-release ]
     if: ${{ github.event.pull_request.head.ref == 'release/production' }}
