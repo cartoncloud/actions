@@ -25797,6 +25797,18 @@ async function run() {
     const owner = inputOwner || github.context.repo.owner;
     const repo = inputRepo || github.context.repo.repo;
     const octokit = github.getOctokit(token);
+    const workflows = await octokit.request("GET /repos/{owner}/{repo}/actions/workflows", {
+      owner,
+      repo,
+      headers: {
+        "X-GitHub-Api-Version": "2022-11-28"
+      }
+    });
+    const workflowMatchigTheName = workflows.data.workflows.filter((workflow) => workflow.name === workflowName);
+    if (!workflowMatchigTheName.length) {
+      throw new Error("No workflow found for repository");
+    }
+    const workflowId = workflowMatchigTheName[0].id;
     const response = await octokit.request("GET /repos/{owner}/{repo}/actions/runs", {
       owner,
       repo,
@@ -25804,7 +25816,7 @@ async function run() {
         "X-GitHub-Api-Version": "2022-11-28"
       }
     });
-    const filteredRunIdsList = response.data.workflow_runs.filter((workflow) => workflow.name === workflowName).sort((a, b) => {
+    const filteredRunIdsList = response.data.workflow_runs.filter((workflow) => workflow.workflow_id === workflowId).sort((a, b) => {
       return b.run_number - a.run_number;
     }).slice(0, workflowLimit).map((workflow) => workflow.id);
     if (!filteredRunIdsList.length) {
