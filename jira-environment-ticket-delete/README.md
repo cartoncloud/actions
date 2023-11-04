@@ -1,5 +1,5 @@
 # Jira Delete Environment Ticket
-Deletes a environment Jira ticket
+Deletes an environment Jira ticket
 
 ## Inputs
 
