@@ -1,0 +1,26 @@
+name: 'Jira Set Environment Revision'
+description: 'Updates the labels for a Jira issue to a given revision'
+inputs:
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+  environmentName:
+    description: 'Environment name to delete'
+    required: true
+  projectKey:
+    description: 'Jira project key for ticket to delete'
+    required: true
+  nameField:
+    description: 'JSON field for the environment name'
+    required: true
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+
