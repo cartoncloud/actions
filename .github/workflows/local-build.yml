@@ -22,6 +22,7 @@ jobs:
           - jira-environment-revision-search
           - jira-environment-revision-set
           - jira-environment-ticket-create
+          - jira-environment-ticket-delete
           - jira-issues-from-commits
           - jira-issues-update-fix-version
           - jira-project-version-create
