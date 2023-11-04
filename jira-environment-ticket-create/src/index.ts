@@ -45,7 +45,7 @@ async function run() {
       core.setFailed(`Failed to create environment ticket.`);
     }
 
-    core.info('Successfully created: ' + createResponseJson.self);
+    core.info('Successfully created environment ticket: ' + createResponseJson.self);
     core.setOutput('issueLink', createResponseJson.self);
   } catch (error: any) {
     core.setFailed(error.message);
