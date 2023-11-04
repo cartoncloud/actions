@@ -13,19 +13,10 @@ Jira username to use to call the API
 Jira password to use to call the API
 
 ### environmentName (required)
-Environment name
+Environment name to delete
 
-### environmentUrl (required)
-Environment url
+### projectKey (required)
+Jira project key for ticket to delete
 
-### projectId (required)
-Jira project id to create ticket in
-
-### issueTypeId (required)
-Issue type id of ticket to create
-
-### nameField (required)
-JSON field for the environment name
-
-### urlField (required)
-JSON field for the environment URL
+### jiraEnvironmentField (required)
+JQL field used to find the given environment to delete
