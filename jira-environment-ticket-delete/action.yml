@@ -16,9 +16,10 @@ inputs:
   projectKey:
     description: 'Jira project key for ticket to delete'
     required: true
-  nameField:
-    description: 'JSON field for the environment name'
-    required: true
+  jiraEnvironmentField:
+    description: 'JQL field used to find the given environment to delete'
+    required: false
+    default: 'Environment Key[Short text]'
 
 runs:
   using: 'node16'
