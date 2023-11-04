@@ -36,6 +36,8 @@ async function run() {
     });
 
     if (!createResponse.ok) {
+      core.error('response Code: ' + createResponse.status);
+      core.error('response: ' + JSON.stringify(createResponse.json()));
       core.setFailed(`Failed to create environment ticket.`);
     }
 
