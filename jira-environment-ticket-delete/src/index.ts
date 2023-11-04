@@ -37,9 +37,23 @@ async function run() {
       return;
     }
 
-    const environment = matchingIssues.issues[0];
-    core.info(environment);
+    const issue = matchingIssues.issues[0];
+    core.info('Deleting ticket: ' + issue.key);
 
+    const deleteResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue/${issue.key}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Basic ${jiraBase64Credentials}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!deleteResponse.ok) {
+      core.error('response Code: ' + deleteResponse.status);
+      core.error('response: ' + JSON.stringify(deleteResponse.json()));
+      core.setFailed(`Failed to delete environment ticket.`);
+    }
+    core.info('Successfully deleted ticket.')
   } catch (error: any) {
     core.setFailed(error.message);
   }
