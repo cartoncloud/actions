@@ -23146,9 +23146,9 @@ async function run() {
     const jiraPassword = core.getInput("jiraPassword", { required: true });
     const environmentName = core.getInput("environmentName", { required: true });
     const projectKey = core.getInput("projectKey", { required: true });
-    const nameField = core.getInput("nameField", { required: true });
+    const jiraEnvironmentField = core.getInput("jiraEnvironmentField", { required: true });
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString("base64");
-    const environmentJql = `project = ${projectKey} AND "${nameField}" ~ "${environmentName}"`;
+    const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
     const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}&fields=labels`);
     core.info(`GET ${existingUrl}`);
     const existingResponse = await fetch(existingUrl, {
