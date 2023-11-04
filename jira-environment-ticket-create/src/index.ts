@@ -39,7 +39,9 @@ async function run() {
       core.setFailed(`Failed to create environment ticket.`);
     }
 
-    core.setOutput('issueLink', createResponse.self);
+    const createResponseJson: any = await createResponse.json();
+
+    core.setOutput('issueLink', createResponseJson.self);
   } catch (error: any) {
     core.setFailed(error.message);
   }
