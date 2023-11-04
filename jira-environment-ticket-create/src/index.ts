@@ -40,13 +40,14 @@ async function run() {
     const createResponseJson: any = await createResponse.json();
 
     if (!createResponse.ok) {
-      core.error('response Code: ' + createResponse.status);
+      core.error(`response code: ${createResponse.status}`);
       core.error('response: ' + JSON.stringify(createResponseJson));
       core.setFailed(`Failed to create environment ticket.`);
     }
 
-    core.info('Successfully created environment ticket: ' + createResponseJson.self);
-    core.setOutput('issueLink', createResponseJson.self);
+    const issueLink = `https://${jiraServer}/browse/${createResponseJson.key}`
+    core.info(`Successfully created environment ticket ${issueLink}`);
+    core.setOutput('issueLink', issueLink);
   } catch (error: any) {
     core.setFailed(error.message);
   }
