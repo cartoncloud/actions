@@ -15,6 +15,7 @@ async function run() {
 
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
 
+    core.info('Creating issue.');
     const createResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue`, {
       method: 'POST',
       headers: {
@@ -44,6 +45,7 @@ async function run() {
       core.setFailed(`Failed to create environment ticket.`);
     }
 
+    core.info('Successfully created: ' + createResponseJson.self);
     core.setOutput('issueLink', createResponseJson.self);
   } catch (error: any) {
     core.setFailed(error.message);
