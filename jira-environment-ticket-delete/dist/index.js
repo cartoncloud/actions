@@ -23179,7 +23179,7 @@ async function run() {
       }
     });
     if (!deleteResponse.ok) {
-      core.error("response Code: " + deleteResponse.status);
+      core.error(`response code: ${deleteResponse.status}`);
       core.error("response: " + JSON.stringify(deleteResponse.json()));
       core.setFailed(`Failed to delete environment ticket.`);
     }
