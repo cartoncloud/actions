@@ -1,5 +1,5 @@
 {
-  "name": "jira-environment-revision-set-action",
+  "name": "jira-environment-ticket-create",
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",
