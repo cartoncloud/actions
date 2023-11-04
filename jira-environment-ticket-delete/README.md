@@ -1,5 +1,5 @@
-# Jira Create Environment Ticket
-Creates a environment Jira ticket
+# Jira Delete Environment Ticket
+Deletes a environment Jira ticket
 
 ## Inputs
 
