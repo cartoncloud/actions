@@ -29,19 +29,20 @@ async function run() {
           issuetype: {
             id: issueTypeId
           },
+          summary: environmentName,
           [nameField]: environmentName,
           [urlField]: environmentUrl
         }
       }),
     });
 
+    const createResponseJson: any = await createResponse.json();
+
     if (!createResponse.ok) {
       core.error('response Code: ' + createResponse.status);
-      core.error('response: ' + JSON.stringify(createResponse.json()));
+      core.error('response: ' + JSON.stringify(createResponseJson));
       core.setFailed(`Failed to create environment ticket.`);
     }
-
-    const createResponseJson: any = await createResponse.json();
 
     core.setOutput('issueLink', createResponseJson.self);
   } catch (error: any) {
