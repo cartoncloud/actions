@@ -6,7 +6,7 @@ async function run() {
     const jiraServer = core.getInput('jiraServer', { required: true });
     const jiraUsername = core.getInput('jiraUsername', { required: true });
     const jiraPassword = core.getInput('jiraPassword', { required: true });
-    const environment = core.getInput('environment', { required: true });
+    const environmentName = core.getInput('environmentName', { required: true });
     const environmentUrl = core.getInput('environmentUrl', { required: true });
     const projectId = core.getInput('projectId', { required: true });
     const issueTypeId = core.getInput('issueTypeId', { required: true });
@@ -29,7 +29,7 @@ async function run() {
           issuetype: {
             id: issueTypeId
           },
-          [nameField]: environment,
+          [nameField]: environmentName,
           [urlField]: environmentUrl
         }
       }),
