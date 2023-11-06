@@ -23177,6 +23177,7 @@ async function run() {
       core.error(`response code: ${createResponse.status}`);
       core.error("response: " + JSON.stringify(createResponseJson));
       core.setFailed(`Failed to create environment ticket.`);
+      return;
     }
     const issueLink = `https://${jiraServer}/browse/${createResponseJson.key}`;
     core.info(`Successfully created environment ticket ${issueLink}`);

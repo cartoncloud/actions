@@ -23182,6 +23182,7 @@ async function run() {
       core.error(`response code: ${deleteResponse.status}`);
       core.error("response: " + JSON.stringify(deleteResponse.json()));
       core.setFailed(`Failed to delete environment ticket.`);
+      return;
     }
     core.info("Successfully deleted ticket.");
   } catch (error2) {
