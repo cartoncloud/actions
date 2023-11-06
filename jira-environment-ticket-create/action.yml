@@ -1,0 +1,38 @@
+name: 'Jira Set Environment Revision'
+description: 'Updates the labels for a Jira issue to a given revision'
+inputs:
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+  environmentName:
+    description: 'Environment name'
+    required: true
+  environmentUrl:
+    description: 'Environment url'
+    required: true
+  projectId:
+    description: 'Jira project id to create ticket in'
+    required: true
+  issueTypeId:
+    description: 'Issue type id of ticket to create'
+    required: true
+  nameField:
+    description: 'JSON field for the environment name'
+    required: true
+  urlField:
+    description: 'JSON field for the environment URL'
+    required: true
+
+outputs:
+  issueLink:
+    description: 'Link to issue created.'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
