@@ -23148,6 +23148,7 @@ async function run() {
     const environmentUrl = core.getInput("environmentUrl", { required: true });
     const projectId = core.getInput("projectId", { required: true });
     const issueTypeId = core.getInput("issueTypeId", { required: true });
+    const keyField = core.getInput("keyField", { required: true });
     const nameField = core.getInput("nameField", { required: true });
     const urlField = core.getInput("urlField", { required: true });
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString("base64");
@@ -23167,6 +23168,7 @@ async function run() {
             id: issueTypeId
           },
           summary: environmentName,
+          [keyField]: environmentName,
           [nameField]: environmentName,
           [urlField]: environmentUrl
         }
