@@ -19,6 +19,9 @@ inputs:
   revision:
     description: 'Git branch or tag'
     required: true
+  keyField:
+    description: 'JSON field for the environment key'
+    required: false
   nameField:
     description: 'JSON field for the environment name'
     required: false
