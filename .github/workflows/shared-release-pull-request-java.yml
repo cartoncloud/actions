@@ -336,6 +336,42 @@ jobs:
           roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
           clusterName: ${{ vars.CLUSTER_NAME || '' }}
 
+  deploy-to-primary-staging-environment:
+    name: Deploy to ${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
+    runs-on: ubuntu-latest
+    needs: [determine-version, build, create-draft-release]
+    if: github.event.pull_request.head.ref == 'release/production' && contains(github.event.pull_request.labels.*.name, 'API Functional Pass') == true && contains(github.event.pull_request.labels.*.name, 'End-to-end Pass') == true
+    concurrency: deploy-${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
+
+    environment:
+      name: ${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
+      url: ${{ vars.APP_URL }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Deploy
+        uses: cartoncloud/actions/deploy-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          revision: ${{ needs.determine-version.outputs.draftVersion }}
+          revisionUrl: ${{ needs.create-draft-release.outputs.htmlUrl }}
+          environment: ${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
+          environmentUrl: ${{ vars.APP_URL }}
+          environmentTag: ${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
+          existingImageTag: ${{ github.event.pull_request.head.sha }}
+          awsRegion: ${{ vars.AWS_REGION }}
+          slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          gitHubPAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          roleToAssumeForEcr: ${{ vars.AWS_ROLE_TO_ASSUME_FOR_ECR }}
+          roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          clusterName: ${{ vars.CLUSTER_NAME || '' }}
+
   create-releases:
     name: Create Releases
     runs-on: ubuntu-latest
