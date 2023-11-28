@@ -92,7 +92,7 @@ jobs:
           projectKey: ${{ vars.JIRA_ENVIRONMENT_PROJECT_KEY }}
           appName: ${{ inputs.appName }}
           revision: ${{ github.ref_name }}
-          nameField: ${{ vars.JIRA_ENVIRONMENT_NAME_FIELD }}
+          nameField: ${{ vars.JIRA_ENVIRONMENT_KEY_FIELD }}
           urlField: ${{ vars.JIRA_ENVIRONMENT_URL_FIELD }}
 
   deploy:
