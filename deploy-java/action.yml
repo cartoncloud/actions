@@ -52,6 +52,12 @@ inputs:
   jiraPassword:
     description: 'Jira password to use to call the API'
     required: true
+  newrelicAPIKey:
+    description: 'Newrelic api key to use to set the deployment version'
+    required: false
+  newrelicEntityGUID:
+    description: 'Newrelic GUID of the deployed entity'
+    required: false
   gitHubPAT:
     description: 'PAT for GitHub API calls'
     required: false
@@ -210,6 +216,14 @@ runs:
       run: gh workflow run run-tests.yml --repo cartoncloud/api-functional-tests --ref main --field environment=${{ inputs.environment }}
       env:
         GITHUB_TOKEN: ${{ inputs.gitHubPAT }}
+
+    - name: Change New Relic Application Deployment Marker
+      uses: newrelic/deployment-marker-action@v2.3.0
+      if: inputs.environment == 'prod'
+      with:
+        apiKey: ${{ inputs.newrelicAPIKey }}
+        guid: ${{ inputs.newrelicEntityGUID }}
+        version: ${{ inputs.revision }}
 
     - name: Slack deployment status (failed)
       uses: cartoncloud/actions/slack-deployment-status@v3

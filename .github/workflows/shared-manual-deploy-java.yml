@@ -50,6 +50,8 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          newrelicAPIKey: ${{ secrets.NEW_RELIC_API_KEY }}
+          newrelicEntityGUID: ${{ vars.NEW_RELIC_DEPLOYMENT_ENTITY_GUID }}
           gitHubPAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           roleToAssumeForEcr: ${{ vars.AWS_ROLE_TO_ASSUME_FOR_ECR }}
           roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
