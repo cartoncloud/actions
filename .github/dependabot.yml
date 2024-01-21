@@ -3,33 +3,7 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    assignees:
-      - "@cartoncloud/code-owners-platform"
-    reviewers:
-      - "@cartoncloud/code-owners-platform"
-
-  - package-ecosystem: "github-actions"
-    directory: "/deployment-status"
-    schedule:
-      interval: "weekly"
-    assignees:
-      - "@cartoncloud/code-owners-platform"
-    reviewers:
-      - "@cartoncloud/code-owners-platform"
-
-  - package-ecosystem: "github-actions"
-    directory: "/jira-deployment-status"
-    schedule:
-      interval: "weekly"
-    assignees:
-      - "@cartoncloud/code-owners-platform"
-    reviewers:
-      - "@cartoncloud/code-owners-platform"
-
-  - package-ecosystem: "github-actions"
-    directory: "/slack-deployment-status"
+    open-pull-requests-limit: 1 # Limit PR's to 1 to avoid overwhelming
     schedule:
       interval: "weekly"
     assignees:
