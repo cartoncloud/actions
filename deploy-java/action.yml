@@ -124,7 +124,7 @@ runs:
       shell: bash
       run: |
         image_meta=$( aws ecr describe-images --region us-west-2 --repository-name ${{ inputs.appName }} --image-ids imageTag=${{ inputs.existingImageTag }} )
-        echo "existing=$(echo ${image_meta} | jq -c '.imageDetails[0] | select(.imageTags[] | contains("${{ inputs.environmentTag }}"))')" >> $GITHUB_OUTPUT
+        echo "existing=$(echo ${image_meta} | jq -c '.imageDetails[0] | select(.imageTags[] == "${{ inputs.environmentTag }}")')" >> $GITHUB_OUTPUT
 
     - name: Tag image with environment tag
       if: ${{ steps.deploy-check.outputs.existing == '' }}
