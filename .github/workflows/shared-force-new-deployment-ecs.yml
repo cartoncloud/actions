@@ -25,7 +25,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
-          aws-region: $${{ vars.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Forcing new deployment for ${{ vars.CLUSTER_NAME }} - ${{ inputs.serviceName }}
         run: |
