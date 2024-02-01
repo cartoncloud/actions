@@ -9,12 +9,6 @@ on:
       serviceName:
         type: string
         required: true
-      roleToAssume:
-        type: string
-        required: true
-      awsRegion:
-        type: string
-        required: true
 
 jobs:
   force-new-deployment:
@@ -30,8 +24,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.roleToAssume }}
-          aws-region: ${{ inputs.awsRegion }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: $${{ vars.AWS_REGION }}
 
       - name: Forcing new deployment for ${{ vars.CLUSTER_NAME }} - ${{ inputs.serviceName }}
         run: |
