@@ -215,51 +215,8 @@ jobs:
           draft: true
           tag: ${{ needs.determine-version.outputs.draftVersion }}
 
-  deploy-test:
-    name: Deploy to Test 01
-    runs-on: ubuntu-latest
-    needs: [ determine-version, build, create-draft-release ]
-    if: ${{ github.event.pull_request.head.ref == 'release/production' }}
-    concurrency: deploy-Test 01
-
-    environment:
-      name: test01
-      url: http://app.test01/
-
-    env:
-      environmentName: test01
-      environmentTag: test01
-      environmentUrl: http://app.test01/
-
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Deploy
-        uses: cartoncloud/actions/deploy-java@v3
-        with:
-          appName: ${{ inputs.appName }}
-          slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
-          revision: ${{ needs.determine-version.outputs.draftVersion }}
-          revisionUrl: ${{ needs.create-draft-release.outputs.htmlUrl }}
-          reason: ':zap: <${{ github.event.repository.html_url }}|Next Release>'
-          environment: ${{ env.environmentName }}
-          environmentUrl: ${{ env.environmentUrl }}
-          environmentTag: ${{ env.environmentTag }}
-          existingImageTag: ${{ github.event.pull_request.head.sha  }}
-          awsRegion: ${{ vars.AWS_REGION }}
-          slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          jiraServer: ${{ vars.JIRA_SERVER }}
-          jiraUsername: ${{ secrets.JIRA_USERNAME }}
-          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          gitHubPAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          roleToAssumeForEcr: ${{ vars.AWS_ROLE_TO_ASSUME_FOR_ECR }}
-          roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
-          clusterName: ${{ vars.CLUSTER_NAME || '' }}
-
   deploy-to-primary-test-environment:
-    name: Deploy to ${{ vars.PRIMARY_TEST_ENVIRONMENT }}
+    name: Deploy to primary test environment
     runs-on: ubuntu-latest
     needs: [ determine-version, build, create-draft-release ]
     if: ${{ github.event.pull_request.head.ref == 'release/production' }}
@@ -295,21 +252,16 @@ jobs:
           roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
           clusterName: ${{ vars.CLUSTER_NAME || '' }}
 
-  deploy-staging:
-    name: Deploy to Staging
+  deploy-to-primary-staging-environment:
+    name: Deploy to primary staging environment
     runs-on: ubuntu-latest
     needs: [determine-version, build, create-draft-release]
     if: github.event.pull_request.head.ref == 'release/production' && contains(github.event.pull_request.labels.*.name, 'API Functional Pass') == true && contains(github.event.pull_request.labels.*.name, 'End-to-end Pass') == true
-    concurrency: deploy-staging01
+    concurrency: deploy-${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
 
     environment:
-      name: staging01
-      url: http://app.staging01/
-
-    env:
-      environmentName: staging01
-      environmentTag: staging01
-      environmentUrl: http://app.staging01/
+      name: ${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
+      url: ${{ vars.APP_URL }}
 
     permissions:
       id-token: write
@@ -322,10 +274,10 @@ jobs:
           appName: ${{ inputs.appName }}
           revision: ${{ needs.determine-version.outputs.draftVersion }}
           revisionUrl: ${{ needs.create-draft-release.outputs.htmlUrl }}
-          environment: ${{ env.environmentName }}
-          environmentUrl: ${{ env.environmentUrl }}
-          environmentTag: ${{ env.environmentTag }}
-          existingImageTag: ${{ github.event.pull_request.head.sha  }}
+          environment: ${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
+          environmentUrl: ${{ vars.APP_URL }}
+          environmentTag: ${{ vars.PRIMARY_STAGING_ENVIRONMENT }}
+          existingImageTag: ${{ github.event.pull_request.head.sha }}
           awsRegion: ${{ vars.AWS_REGION }}
           slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
           jiraServer: ${{ vars.JIRA_SERVER }}
@@ -463,6 +415,8 @@ jobs:
           jiraServer: ${{ vars.JIRA_SERVER }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          newrelicAPIKey: ${{ secrets.NEW_RELIC_API_KEY }}
+          newrelicEntityGUID: ${{ vars.NEW_RELIC_DEPLOYMENT_ENTITY_GUID }}
           gitHubPAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           roleToAssumeForEcr: ${{ vars.AWS_ROLE_TO_ASSUME_FOR_ECR }}
           roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
@@ -499,7 +453,7 @@ jobs:
 
       - name: Merge conflict Slack notification
         if: ${{ failure() && steps.back-merge-production.conclusion == 'failure' }}
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v1.25.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         with:
