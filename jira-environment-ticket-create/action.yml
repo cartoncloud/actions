@@ -34,5 +34,5 @@ outputs:
     description: 'Link to issue created.'
 
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'

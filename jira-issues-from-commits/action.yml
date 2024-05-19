@@ -35,5 +35,5 @@ outputs:
     description: 'Suggested semantic version bump (major, minor or patch) based on the type of Jira issues found'
 
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
