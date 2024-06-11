@@ -12,10 +12,10 @@ Re-usable GitHub Actions
 
 ### Composite Actions
 
-- copy-image-between-ecrs
 - deployment-status
 - jira-deployment-status
 - slack-deployment-status
+- sync-image-between-ecrs
 
 ### Typescript Actions
 

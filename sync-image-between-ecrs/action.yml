@@ -1,32 +1,32 @@
-name: 'Copy Image Between ECRs'
-description: 'Action to copy an image between ECRs, used when deploying an image from SDLC to prod.'
+name: 'Sync Image Between ECRs'
+description: 'Action to sync an image from one ECR to another, used when deploying an image from SDLC to prod.'
 inputs:
   fromEcrAwsRegion:
-    description: 'Copy from ECR aws region'
+    description: 'Sync from ECR aws region'
     required: true
   fromEcrRoleToAssume:
-    description: 'Copy from ECR role to assume'
+    description: 'Sync from ECR role to assume'
     required: true
   fromEcrRegistry:
-    description: 'Copy from ECR Registry'
+    description: 'Sync from ECR Registry'
     required: true
   fromEcrRepo:
-    description: 'Copy from ECR Repo'
+    description: 'Sync from ECR Repo'
     required: true
   fromImageTag:
-    description: 'Copy image with tag'
+    description: 'Sync image with tag'
     required: true
   toEcrAwsRegion:
-    description: 'Copy to ECR aws region'
+    description: 'Sync to ECR aws region'
     required: true
   toEcrRoleToAssume:
-    description: 'Copy to ECR role to assume'
+    description: 'Sync to ECR role to assume'
     required: true
   toEcrRegistry:
-    description: 'Copy to ECR Registry'
+    description: 'Sync to ECR Registry'
     required: true
   toEcrRepo:
-    description: 'Copy to ECR Repo'
+    description: 'Sync to ECR Repo'
     required: true
   toImageTag:
     description: 'Environment tag for image (e.g. prod)'
