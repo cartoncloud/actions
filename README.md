@@ -15,6 +15,7 @@ Re-usable GitHub Actions
 - deployment-status
 - jira-deployment-status
 - slack-deployment-status
+- sync-image-between-ecrs
 
 ### Typescript Actions
 
