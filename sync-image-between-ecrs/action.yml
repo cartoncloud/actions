@@ -1,11 +1,11 @@
 name: 'Sync Image Between ECRs'
 description: 'Action to sync an image from one ECR to another, used when deploying an image from SDLC to prod.'
 inputs:
-  fromEcrAwsRegion:
-    description: 'Sync from ECR aws region'
-    required: true
   fromEcrRoleToAssume:
     description: 'Sync from ECR role to assume'
+    required: true
+  fromEcrAwsRegion:
+    description: 'Sync from ECR aws region'
     required: true
   fromEcrRegistry:
     description: 'Sync from ECR Registry'
@@ -16,11 +16,11 @@ inputs:
   fromImageTag:
     description: 'Sync image with tag'
     required: true
-  toEcrAwsRegion:
-    description: 'Sync to ECR aws region'
-    required: true
   toEcrRoleToAssume:
     description: 'Sync to ECR role to assume'
+    required: true
+  toEcrAwsRegion:
+    description: 'Sync to ECR aws region'
     required: true
   toEcrRegistry:
     description: 'Sync to ECR Registry'

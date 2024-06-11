@@ -3,11 +3,11 @@ Action to sync an image from one ECR to another, used when deploying an image fr
 
 ## Inputs
 
-### fromEcrAwsRegion
-Sync from ECR aws region
-
 ### fromEcrRoleToAssume
 Sync from ECR role to assume
+
+### fromEcrAwsRegion
+Sync from ECR aws region
 
 ### fromEcrRegistry
 Sync from ECR Registry
@@ -18,11 +18,12 @@ Sync from ECR Repo
 ### fromImageTag
 Sync image with tag
 
-### toEcrAwsRegion
-Sync to ECR aws region
-
 ### toEcrRoleToAssume
 Sync to ECR role to assume
+
+
+### toEcrAwsRegion
+Sync to ECR aws region
 
 ### toEcrRegistry
 Sync to ECR Registry
