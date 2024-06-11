@@ -21,7 +21,6 @@ Sync image with tag
 ### toEcrRoleToAssume
 Sync to ECR role to assume
 
-
 ### toEcrAwsRegion
 Sync to ECR aws region
 
