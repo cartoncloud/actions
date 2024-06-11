@@ -31,7 +31,4 @@ Sync to ECR Registry
 Sync to ECR Repo
 
 ### toImageTag
-Environment tag for image (e.g. prod)
-
-### versionTag
-Version tag to apply to docker image (e.g. v1.0.0)
+Version tag to apply to image (e.g. v1.0.0)

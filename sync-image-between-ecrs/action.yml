@@ -29,11 +29,7 @@ inputs:
     description: 'Sync to ECR Repo'
     required: true
   toImageTag:
-    description: 'Environment tag for image (e.g. prod)'
-    required: false
-    default: prod
-  versionTag:
-    description: 'Version tag to apply to docker image (e.g. v1.0.0)'
+    description: 'Version tag to apply to image (e.g. v1.0.0)'
     required: true
 
 runs:
@@ -72,9 +68,8 @@ runs:
         TO_REGISTRY: ${{ inputs.toEcrRegistry }}
         TO_REPOSITORY: ${{ inputs.toEcrRepo }}
         TO_IMAGE_TAG: ${{ inputs.toImageTag }}
-        VERSION_TAG: ${{ inputs.versionTag }}
       run: |
+        # Copy the from image tag (usually a git ref) to identify where the image came from as well as the to image tag
         docker tag $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG $TO_REGISTRY/$TO_REPOSITORY:$FROM_IMAGE_TAG
         docker tag $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG $TO_REGISTRY/$TO_REPOSITORY:$TO_IMAGE_TAG
-        docker tag $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG $TO_REGISTRY/$TO_REPOSITORY:$VERSION_TAG
         docker push --all-tags $TO_REGISTRY/$TO_REPOSITORY
