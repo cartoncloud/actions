@@ -72,7 +72,9 @@ runs:
         TO_REGISTRY: ${{ inputs.toEcrRegistry }}
         TO_REPOSITORY: ${{ inputs.toEcrRepo }}
         TO_IMAGE_TAG: ${{ inputs.toImageTag }}
-        VERSION_TAGE: ${{ inputs.versionTag }}
+        VERSION_TAG: ${{ inputs.versionTag }}
       run: |
         docker tag $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG $TO_REGISTRY/$TO_REPOSITORY:$FROM_IMAGE_TAG
-        docker push $TO_REGISTRY/$TO_REPOSITORY:$FROM_IMAGE_TAG
+        docker tag $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG $TO_REGISTRY/$TO_REPOSITORY:$TO_IMAGE_TAG
+        docker tag $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG $TO_REGISTRY/$TO_REPOSITORY:$VERSION_TAG
+        docker push --all-tags $TO_REGISTRY/$TO_REPOSITORY
