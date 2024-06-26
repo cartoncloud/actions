@@ -2,34 +2,15 @@ version: 2
 updates:
 
   - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    assignees:
-      - "@cartoncloud/code-owners-platform"
-    reviewers:
-      - "@cartoncloud/code-owners-platform"
-
-  - package-ecosystem: "github-actions"
-    directory: "/deployment-status"
-    schedule:
-      interval: "weekly"
-    assignees:
-      - "@cartoncloud/code-owners-platform"
-    reviewers:
-      - "@cartoncloud/code-owners-platform"
-
-  - package-ecosystem: "github-actions"
-    directory: "/jira-deployment-status"
-    schedule:
-      interval: "weekly"
-    assignees:
-      - "@cartoncloud/code-owners-platform"
-    reviewers:
-      - "@cartoncloud/code-owners-platform"
-
-  - package-ecosystem: "github-actions"
-    directory: "/slack-deployment-status"
+    directories:
+      - "/"
+      - "/build-java"
+      - "/deploy-java"
+      - "/deployment-status"
+      - "/jira-deployment-status"
+      - "/open-vpn-connect"
+      - "/slack-deployment-status"
+      - "/sync-image-between-ecrs"
     schedule:
       interval: "weekly"
     assignees:
