@@ -75,8 +75,6 @@ jobs:
         run: find . -type d -name dist -prune -exec rm -rf {} \;
 
       - uses: actions/download-artifact@v4
-        with:
-          name: compiled-packages-*
 
       - name: Changed files
         run: git diff --name-only
