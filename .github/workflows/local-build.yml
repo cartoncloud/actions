@@ -29,6 +29,7 @@ jobs:
           - jira-project-version-update
           - jira-release-notes-markdown
           - jira-release-notes-slack
+          - jira-ticket-assign
           - launchdarkly-flags-sync
           - launchdarkly-segments-sync
 
