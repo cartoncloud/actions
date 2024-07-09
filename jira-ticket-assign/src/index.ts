@@ -7,11 +7,12 @@ async function run() {
     const jiraUsername = core.getInput('jiraUsername', { required: true });
     const jiraPassword = core.getInput('jiraPassword', { required: true });
     const jiraAssignedUser = core.getInput('jiraAssignedUser', { required: true });
-    
+    const jiraIssueKey = core.getInput('jiraIssueKey', { required: true });
+
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
 
     core.info('Creating issue.');
-    const createResponse = await fetch(`https://${jiraServer}/jira/rest/api/2/issue/{issueIdOrKey}/assignee`, {
+    const createResponse = await fetch(`https://${jiraServer}/jira/rest/api/2/issue/${jiraIssueKey}/assignee`, {
       method: 'PUT',
       headers: {
         'Authorization': `Basic ${jiraBase64Credentials}`,
