@@ -32,6 +32,8 @@ inputs:
 outputs:
   issueLink:
     description: 'Link to issue created.'
+  issueKey:
+    description: 'Key of the issue created.'
 
 runs:
   using: 'node20'
