@@ -12,7 +12,7 @@ async function run() {
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
 
     core.info('Creating issue.');
-    const createResponse = await fetch(`https://${jiraServer}/jira/rest/api/2/issue/${jiraIssueKey}/assignee`, {
+    const assignResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue/${jiraIssueKey}/assignee`, {
       method: 'PUT',
       headers: {
         'Authorization': `Basic ${jiraBase64Credentials}`,
@@ -23,11 +23,11 @@ async function run() {
       }),
     });
 
-    const createResponseJson: any = await createResponse.json();
+    const assignResponseJson: any = await assignResponse.json();
 
-    if (!createResponse.ok) {
-      core.error(`response code: ${createResponse.status}`);
-      core.error('response: ' + JSON.stringify(createResponseJson));
+    if (!assignResponse.ok) {
+      core.error(`response code: ${assignResponse.status}`);
+      core.error('response: ' + JSON.stringify(assignResponseJson));
       core.setFailed(`Failed to assign ticket to user ${jiraAssignedUser}`);
       return;
     }
