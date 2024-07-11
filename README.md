@@ -32,7 +32,6 @@ Re-usable GitHub Actions
 - jira-project-version-update
 - jira-release-notes-markdown
 - jira-release-notes-slack
-- jira-ticket-assign
 
 ### Javascript Actions
 
