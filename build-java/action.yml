@@ -49,7 +49,7 @@ runs:
       with:
         go-version: '^1.19.4'
 
-    - uses: imjasonh/setup-crane@v0.2
+    - uses: imjasonh/setup-crane@v0.4
       with:
         version: v0.12.1
 
