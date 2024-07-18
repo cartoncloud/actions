@@ -72,7 +72,7 @@ runs:
   using: "composite"
 
   steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Slack notification (release notes)
       uses: slackapi/slack-github-action@v1.23.0
