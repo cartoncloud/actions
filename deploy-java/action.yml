@@ -75,7 +75,7 @@ runs:
     - uses: actions/checkout@v4
 
     - name: Slack notification (release notes)
-      uses: slackapi/slack-github-action@v1.23.0
+      uses: slackapi/slack-github-action@v1.26.0
       if: inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.releaseNotes != ''
       env:
         SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
