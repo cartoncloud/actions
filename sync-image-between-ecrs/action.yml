@@ -1,0 +1,75 @@
+name: 'Sync Image Between ECRs'
+description: 'Action to sync an image from one ECR to another, used when deploying an image from SDLC to prod.'
+inputs:
+  fromEcrRoleToAssume:
+    description: 'Sync from ECR role to assume'
+    required: true
+  fromEcrAwsRegion:
+    description: 'Sync from ECR aws region'
+    required: true
+  fromEcrRegistry:
+    description: 'Sync from ECR Registry'
+    required: true
+  fromEcrRepo:
+    description: 'Sync from ECR Repo'
+    required: true
+  fromImageTag:
+    description: 'Sync image with tag'
+    required: true
+  toEcrRoleToAssume:
+    description: 'Sync to ECR role to assume'
+    required: true
+  toEcrAwsRegion:
+    description: 'Sync to ECR aws region'
+    required: true
+  toEcrRegistry:
+    description: 'Sync to ECR Registry'
+    required: true
+  toEcrRepo:
+    description: 'Sync to ECR Repo'
+    required: true
+  toImageTag:
+    description: 'Version tag to apply to image (e.g. v1.0.0)'
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.fromEcrRoleToAssume }}
+        aws-region: ${{ inputs.fromEcrAwsRegion }}
+
+    - uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Pull image from repository
+      shell: bash
+      env:
+        FROM_REGISTRY: ${{ inputs.fromEcrRegistry }}
+        FROM_REPOSITORY: ${{ inputs.fromEcrRepo }}
+        FROM_IMAGE_TAG: ${{ inputs.fromImageTag }}
+      run: |
+        docker image pull $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG 
+
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.toEcrRoleToAssume }}
+        aws-region: ${{ inputs.toEcrAwsRegion }}
+
+    - uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Tag & Push image to new repository
+      shell: bash
+      env:
+        FROM_REGISTRY: ${{ inputs.fromEcrRegistry }}
+        FROM_REPOSITORY: ${{ inputs.fromEcrRepo }}
+        FROM_IMAGE_TAG: ${{ inputs.fromImageTag }}
+        TO_REGISTRY: ${{ inputs.toEcrRegistry }}
+        TO_REPOSITORY: ${{ inputs.toEcrRepo }}
+        TO_IMAGE_TAG: ${{ inputs.toImageTag }}
+      run: |
+        # Copy the from image tag (usually a git ref) to identify where the image came from as well as the to image tag
+        docker tag $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG $TO_REGISTRY/$TO_REPOSITORY:$FROM_IMAGE_TAG
+        docker tag $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG $TO_REGISTRY/$TO_REPOSITORY:$TO_IMAGE_TAG
+        docker push --all-tags $TO_REGISTRY/$TO_REPOSITORY

@@ -10,15 +10,28 @@ inputs:
   jiraPassword:
     description: 'Jira password to use to call the API'
     required: true
-  environmentJql:
-    description: 'JQL statement to find the issue to label i.e. project = ENV AND "GitHub Environment[Short text]" ~ "QA 02"'
+  environmentName:
+    description: 'Environment name'
     required: true
-  appName:
-    description: 'App/project name i.e. React'
+  environmentUrl:
+    description: 'Environment url'
     required: true
-  revision:
-    description: 'Git branch or tag'
+  projectId:
+    description: 'Jira project id to create ticket in'
     required: true
+  issueTypeId:
+    description: 'Issue type id of ticket to create'
+    required: true
+  nameField:
+    description: 'JSON field for the environment name'
+    required: true
+  urlField:
+    description: 'JSON field for the environment URL'
+    required: true
+
+outputs:
+  issueLink:
+    description: 'Link to issue created.'
 
 runs:
   using: 'node20'

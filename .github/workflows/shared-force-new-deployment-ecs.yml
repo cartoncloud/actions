@@ -6,16 +6,7 @@ on:
       environmentName:
         type: string
         required: true
-      clusterName:
-        type: string
-        required: true
       serviceName:
-        type: string
-        required: true
-      roleToAssume:
-        type: string
-        required: true
-      awsRegion:
         type: string
         required: true
 
@@ -27,13 +18,15 @@ jobs:
       id-token: write
       contents: read
     concurrency: deploy-${{ inputs.environmentName }}
+    environment:
+      name: ${{ github.event.inputs.environment }}
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.roleToAssume }}
-          aws-region: ${{ inputs.awsRegion }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Forcing new deployment for ${{ inputs.clusterName }} - ${{ inputs.serviceName }}
+      - name: Forcing new deployment for ${{ vars.CLUSTER_NAME }} - ${{ inputs.serviceName }}
         run: |
-          aws ecs update-service --cluster ${{ inputs.clusterName }} --service ${{ inputs.serviceName }} --force-new-deployment
+          aws ecs update-service --cluster ${{ vars.CLUSTER_NAME }} --service ${{ inputs.serviceName }} --force-new-deployment

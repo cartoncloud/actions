@@ -41,11 +41,11 @@ runs:
   using: composite
 
   steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v5
       with:
         go-version: '^1.19.4'
 
@@ -54,19 +54,19 @@ runs:
         version: v0.12.1
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
+      uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
     - name: Set up JDK 11
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '11'
         distribution: 'temurin'
 
     - name: Cache local Maven repository
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -82,7 +82,7 @@ runs:
       shell: bash
       run: mvn -s settings.xml versions:set -DnewVersion="${{ inputs.pomVersion }}"
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       if: ${{ inputs.jasperBuild == 'true' }}
       with:
         repository: cartoncloud/jasper-report
@@ -118,14 +118,14 @@ runs:
       run: mvn -s settings.xml sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: arn:aws:iam::026388519853:role/GithubToAwsOpenIdConnect
         aws-region: ${{ inputs.awsRegion }}
 
     - name: Docker login
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build and tag docker image
       shell: bash

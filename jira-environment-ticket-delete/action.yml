@@ -10,16 +10,18 @@ inputs:
   jiraPassword:
     description: 'Jira password to use to call the API'
     required: true
-  environmentJql:
-    description: 'JQL statement to find the issue to label i.e. project = ENV AND "GitHub Environment[Short text]" ~ "QA 02"'
+  environmentName:
+    description: 'Environment name to delete'
     required: true
-  appName:
-    description: 'App/project name i.e. React'
+  projectKey:
+    description: 'Jira project key for ticket to delete'
     required: true
-  revision:
-    description: 'Git branch or tag'
-    required: true
+  jiraEnvironmentField:
+    description: 'JQL field used to find the given environment to delete'
+    required: false
+    default: 'Environment Key[Short text]'
 
 runs:
   using: 'node20'
   main: 'dist/index.js'
+

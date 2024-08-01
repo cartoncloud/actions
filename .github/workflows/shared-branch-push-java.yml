@@ -92,7 +92,7 @@ jobs:
           projectKey: ${{ vars.JIRA_ENVIRONMENT_PROJECT_KEY }}
           appName: ${{ inputs.appName }}
           revision: ${{ github.ref_name }}
-          nameField: ${{ vars.JIRA_ENVIRONMENT_NAME_FIELD }}
+          nameField: ${{ vars.JIRA_ENVIRONMENT_KEY_FIELD }}
           urlField: ${{ vars.JIRA_ENVIRONMENT_URL_FIELD }}
 
   deploy:
@@ -131,3 +131,6 @@ jobs:
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           gitHubPAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          roleToAssumeForEcr: ${{ vars.AWS_ROLE_TO_ASSUME_FOR_ECR }}
+          roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          clusterName: ${{ vars.CLUSTER_NAME || '' }}

@@ -15,6 +15,7 @@ Re-usable GitHub Actions
 - deployment-status
 - jira-deployment-status
 - slack-deployment-status
+- sync-image-between-ecrs
 
 ### Typescript Actions
 
@@ -22,6 +23,7 @@ Re-usable GitHub Actions
 - github-delete-draft-releases
 - github-global-autolink
 - github-release-find-by-name
+- github-download-multi-run-artifacts
 - jira-environment-revision-search
 - jira-environment-revision-set
 - jira-issues-from-commits

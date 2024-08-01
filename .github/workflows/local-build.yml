@@ -18,8 +18,11 @@ jobs:
           - github-delete-draft-releases
           - github-global-autolink
           - github-release-find-by-name
+          - github-download-multi-run-artifacts
           - jira-environment-revision-search
           - jira-environment-revision-set
+          - jira-environment-ticket-create
+          - jira-environment-ticket-delete
           - jira-issues-from-commits
           - jira-issues-update-fix-version
           - jira-project-version-create
@@ -32,17 +35,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Node.js 16
-        uses: actions/setup-node@v3
-        if: contains(fromJson('["aws-environment-param-sync"]'), matrix.package) == false
-        with:
-          node-version: 16.x
-          cache: 'npm'
-          cache-dependency-path: ${{ matrix.package }}/package-lock.json
-
       - name: Install Node.js 20
-        uses: actions/setup-node@v3
-        if: contains(fromJson('["aws-environment-param-sync"]'), matrix.package) == true
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
@@ -61,9 +55,9 @@ jobs:
           mkdir -p upload/${{ matrix.package }}/dist
           cp -a ${{ matrix.package }}/dist/. upload/${{ matrix.package }}/dist/
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: compiled-packages
+          name: compiled-packages-${{ matrix.package }}
           path: upload
           retention-days: 1
 
@@ -80,9 +74,9 @@ jobs:
       - name: Remove existing compiled actions
         run: find . -type d -name dist -prune -exec rm -rf {} \;
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: compiled-packages
+          merge-multiple: true
 
       - name: Changed files
         run: git diff --name-only
