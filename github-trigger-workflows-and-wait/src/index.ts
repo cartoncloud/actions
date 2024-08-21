@@ -36,7 +36,7 @@ async function run() {
       const repoList = await Promise.all(unprocessedRepos.map(async (repoRecord) => {
         const splitedRepo = repoRecord.repo.split("/");
         if (splitedRepo.length != 2) {
-          throw new Error("Invalid repos format for: " + repoRecord.repo);
+          throw new Error("🔴 Invalid repos format for: " + repoRecord.repo);
         }
         const owner = splitedRepo[0]
         const repo = splitedRepo[1]
@@ -44,25 +44,25 @@ async function run() {
         const response = await octokit.rest.actions.listRepoWorkflows({owner,repo});
         const workflowMatchigTheName = response.data.workflows.filter(workflow=>workflow.name === workflowName)
         if(!workflowMatchigTheName.length){
-          throw new Error(`No workflow found for repository ${owner}/${repo}`);
+          throw new Error(`🔴 No workflow found for repository ${owner}/${repo}`);
         }
         const workflow_id = workflowMatchigTheName[0].id;
         return { owner, repo, workflow_id }
       }));
 
-      core.info(`:white_check_mark: Successfully parsed repo list: ${JSON.stringify(repoList)}`);
+      core.info(`✅ Successfully parsed repo list: ${JSON.stringify(repoList)}`);
       return repoList;
     }
 
     async function triggerRepoWorkflows(repos:ParsedRepo[]) {
       let success = true
-      core.info(":hourglass_flowing_sand: Triggering workflows list: ");
+      core.info("⏳⏳⏳ Triggering workflows list: ");
       await Promise.all(repos.map(async ({owner,repo, workflow_id})=>{
         core.info(`Triggering workflow for :${owner}/${repo} ...`);
 
         const response = await octokit.rest.actions.createWorkflowDispatch({owner ,repo ,workflow_id, ref:"main", inputs: {environment}});
         if (response.status !== 204) {
-          core.error(`Failed to trigger workflow dispatch for :${owner}/${repo}`);
+          core.error(`🔴 Failed to trigger workflow dispatch for :${owner}/${repo}`);
           success = false;
         }
         else {
@@ -71,10 +71,10 @@ async function run() {
       }));
 
       if(success) {
-        core.info(":white_check_mark: Successfully triggered all workflows")
+        core.info("✅ Successfully triggered all workflows")
       }
       else {
-        throw new Error('There were failures triggering some of the workflow dispatches. Look for above workflow dispatch failures');
+        throw new Error('🔴 There were failures triggering some of the workflow dispatches. Look for above workflow dispatch failures');
       }
       return success;
     };
@@ -85,7 +85,7 @@ async function run() {
       const maxAttempts = Math.ceil(waitTimeout/checkInterval);
       const remainingWorkflowsMap = new Map(repos.map(repo => [`${repo.owner}/${repo.repo}`, true]));
 
-      core.info(':hourglass_flowing_sand: Waiting for workflows to report status ...');
+      core.info('⏳⏳⏳ Waiting for workflows to report status ...');
       while(remainingWorkflowsMap.size > 0 && oneWorkflowFailed === false && attemptNumber<=maxAttempts) {
         await sleep(checkInterval);
         await Promise.all(repos.map(async ({owner, repo, workflow_id}) => {
@@ -98,29 +98,29 @@ async function run() {
           const response = await octokit.rest.actions.listWorkflowRuns({owner, repo, workflow_id, per_page:10, created: `>${workflowStartISOTimestamp}`});
           const desiredRun = response.data.workflow_runs.filter((run)=>run.name?.includes(environment))[0];
           if(!desiredRun){
-            core.info(`Attempt number: ${attemptNumber}, Workflow has not yet started for ${owner}/${repo} ...`);
+            core.info(`⏳ Attempt number: ${attemptNumber}, Workflow has not yet started for ${owner}/${repo} ...`);
           }
           else if (desiredRun.status != 'completed') {
-            core.info(`Attempt number: ${attemptNumber}, Workflow in progress with status: ${desiredRun.status} for ${owner}/${repo}`);
+            core.info(`⏳ Attempt number: ${attemptNumber}, Workflow in progress with status: ${desiredRun.status} for ${owner}/${repo}`);
           }
           else if (desiredRun.conclusion != 'success') {
-            core.info(`Attempt number: ${attemptNumber}, Workflow finished with conclusion: ${desiredRun.conclusion} for ${owner}/${repo}`);
+            core.info(`🔴 Attempt number: ${attemptNumber}, Workflow finished with conclusion: ${desiredRun.conclusion} for ${owner}/${repo}`);
             oneWorkflowFailed = true;
           }
           else {
-            core.info(`Attempt number: ${attemptNumber}, Workflow status: ${desiredRun.status} for ${owner}/${repo} :white_check_mark:`);
+            core.info(`✅ Attempt number: ${attemptNumber}, Workflow status: ${desiredRun.status} for ${owner}/${repo}`);
             remainingWorkflowsMap.delete(`${owner}/${repo}`);
           }
         }));
         attemptNumber+=1;
       }
       if(oneWorkflowFailed){
-        throw new Error(':x::x::x: There were problems in some triggered workflows :x::x::x:');
+        throw new Error('🔴🔴🔴 There were problems in some triggered workflows 🔴🔴🔴');
       } 
       else if(attemptNumber > maxAttempts) {
-        throw new Error(':x::x::x: Some of the triggered workflow dispatches didnt finish in time or were not found :x::x::x:');
+        throw new Error('🔴🔴🔴 Some of the triggered workflow dispatches didnt finish in time or were not found 🔴🔴🔴');
       }
-      core.info(`:white_check_mark::white_check_mark::white_check_mark: All triggered jobs finished successfully :white_check_mark::white_check_mark::white_check_mark:`);
+      core.info(`✅✅✅ All triggered jobs finished successfully ✅✅✅`);
     }
     
     const repos = await parseRepos(inputRepos);
