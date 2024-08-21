@@ -1,0 +1,28 @@
+{
+  "name": "github-trigger-workflows-and-wait",
+  "version": "1.0.0",
+  "description": "Trigger a list of workflows and wait for their result",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc && esbuild src/index.ts --bundle --platform=node --outdir=dist"
+  },
+  "keywords": [
+    "GitHub",
+    "Actions",
+    "TypeScript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "@actions/github": "^5.1.1",
+    "@octokit/rest": "^21.0.2",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.3",
+    "@types/uuid": "^10.0.0",
+    "esbuild": "^0.19.4",
+    "typescript": "^5.2.2"
+  }
+}

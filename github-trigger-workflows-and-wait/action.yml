@@ -1,0 +1,28 @@
+name: 'Trigger Workflows and Wait'
+description: 'Trigger a list of workflows and wait for their result'
+inputs:
+  environment:
+    description: 'Environment getting destroyd/created'
+    type: string
+    required: true
+  token:
+    description: 'Github personal access token'
+    required: true
+  workflowName:
+    description: 'Name of the workflow'
+    type: string
+    required: true
+  waitTimeout:
+    description: Time in seconds to wait for triggered actions to complete before concluding timeout error
+    type: numnber
+    default: 1200
+  checkInterval:
+    description: Time in seconds to wait between triggered workflow status updates
+    type: numnber
+    default: 60
+  repos:
+    description: 'Repositories json object'
+    required: true
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

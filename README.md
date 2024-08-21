@@ -21,9 +21,10 @@ Re-usable GitHub Actions
 
 - github-branch-dispatch
 - github-delete-draft-releases
+- github-download-multi-run-artifacts
 - github-global-autolink
 - github-release-find-by-name
-- github-download-multi-run-artifacts
+- github-trigger-workflows-and-wait
 - jira-environment-revision-search
 - jira-environment-revision-set
 - jira-issues-from-commits
