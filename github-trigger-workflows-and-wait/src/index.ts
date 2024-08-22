@@ -92,7 +92,6 @@ async function run() {
           // Skip checking for workflow status check if it already reported successfull
           const noSuccessReportYet = remainingWorkflowsMap.get(`${owner}/${repo}`);
           if(!noSuccessReportYet) {
-            attemptNumber+=1;
             return;
           }
           const response = await octokit.rest.actions.listWorkflowRuns({owner, repo, workflow_id, per_page:10, created: `>${workflowStartISOTimestamp}`});
