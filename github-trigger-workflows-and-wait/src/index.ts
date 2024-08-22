@@ -62,7 +62,7 @@ async function run() {
 
         const response = await octokit.rest.actions.createWorkflowDispatch({owner ,repo ,workflow_id, ref:"main", inputs: {environment}});
         if (response.status !== 204) {
-          core.error(`🔴 Failed to trigger workflow dispatch for :${owner}/${repo}`);
+          core.error(`Failed to trigger workflow dispatch for :${owner}/${repo}`);
           success = false;
         }
         else {
@@ -101,14 +101,14 @@ async function run() {
             core.info(`⏳ Attempt number: ${attemptNumber}, Workflow has not yet started for ${owner}/${repo} ...`);
           }
           else if (desiredRun.status != 'completed') {
-            core.info(`⏳ Attempt number: ${attemptNumber}, Workflow in progress with status: ${desiredRun.status} for ${owner}/${repo}`);
+            core.info(`⏳ Attempt number: ${attemptNumber}, Workflow in progress with status: "${desiredRun.status}" for ${owner}/${repo}`);
           }
           else if (desiredRun.conclusion != 'success') {
-            core.info(`🔴 Attempt number: ${attemptNumber}, Workflow finished with conclusion: ${desiredRun.conclusion} for ${owner}/${repo}`);
+            core.info(`🔴 Attempt number: ${attemptNumber}, Workflow finished with conclusion: "${desiredRun.conclusion}" for ${owner}/${repo}`);
             oneWorkflowFailed = true;
           }
           else {
-            core.info(`✅ Attempt number: ${attemptNumber}, Workflow status: ${desiredRun.status} for ${owner}/${repo}`);
+            core.info(`✅ Attempt number: ${attemptNumber}, Workflow status: "${desiredRun.status}" conclussion: "${desiredRun.conclusion}" for ${owner}/${repo}`);
             remainingWorkflowsMap.delete(`${owner}/${repo}`);
           }
         }));
