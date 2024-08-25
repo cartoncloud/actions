@@ -6440,7 +6440,7 @@ var require_core = __commonJS({
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
     exports.getBooleanInput = getBooleanInput;
-    function setOutput(name, value) {
+    function setOutput2(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
         return file_command_1.issueFileCommand("OUTPUT", file_command_1.prepareKeyValueMessage(name, value));
@@ -6448,7 +6448,7 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       process.stdout.write(os.EOL);
       command_1.issueCommand("set-output", { name }, utils_1.toCommandValue(value));
     }
-    exports.setOutput = setOutput;
+    exports.setOutput = setOutput2;
     function setCommandEcho(enabled) {
       command_1.issue("echo", enabled ? "on" : "off");
     }
@@ -7773,7 +7773,11 @@ async function run() {
       return;
     }
     const environment = matchingIssues.issues[0];
-    const labelsToRemove = environment.fields.labels.filter((it) => it.startsWith(labelPrefix));
+    const revisionLabels = environment.fields.labels.filter((it) => it.startsWith(labelPrefix));
+    const existingRevision = revisionLabels.length > 0 ? revisionLabels[0].replace(labelPrefix, "") : null;
+    if (existingRevision) {
+      core.setOutput("existingRevision", existingRevision);
+    }
     const updateResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue/${environment.key}`, {
       method: "PUT",
       headers: {
@@ -7783,7 +7787,7 @@ async function run() {
       body: JSON.stringify({
         update: {
           labels: [
-            ...labelsToRemove.map((it) => ({ remove: it })),
+            ...revisionLabels.map((it) => ({ remove: it })),
             { add: labelToAdd }
           ]
         }
