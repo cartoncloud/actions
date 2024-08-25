@@ -7775,7 +7775,7 @@ async function run() {
     const environment = matchingIssues.issues[0];
     const revisionLabels = environment.fields.labels.filter((it) => it.startsWith(labelPrefix));
     const existingRevision = revisionLabels.length > 0 ? revisionLabels[0].replace(labelPrefix, "") : null;
-    if (existingRevision) {
+    if (existingRevision && existingRevision !== "Deploying\u2026") {
       core.setOutput("existingRevision", existingRevision);
     }
     const updateResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue/${environment.key}`, {

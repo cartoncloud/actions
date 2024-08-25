@@ -42,7 +42,7 @@ async function run() {
     const revisionLabels: string[] = environment.fields.labels.filter((it: string) => it.startsWith(labelPrefix));
 
     const existingRevision = revisionLabels.length > 0 ? revisionLabels[0].replace(labelPrefix, '') : null;
-    if (existingRevision) {
+    if (existingRevision && existingRevision !== 'Deploying…') {
       core.setOutput('existingRevision', existingRevision);
     }
 
