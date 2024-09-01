@@ -24658,7 +24658,6 @@ async function run() {
         await Promise.all(repos2.map(async ({ owner, repo, workflow_id }) => {
           const noSuccessReportYet = remainingWorkflowsMap.get(`${owner}/${repo}`);
           if (!noSuccessReportYet) {
-            attemptNumber += 1;
             return;
           }
           const response = await octokit.rest.actions.listWorkflowRuns({ owner, repo, workflow_id, per_page: 10, created: `>${workflowStartISOTimestamp}` });
