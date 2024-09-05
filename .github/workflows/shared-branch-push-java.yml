@@ -73,6 +73,7 @@ jobs:
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           jasperBuild: ${{ inputs.jasperBuild }}
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          javaVersion: ${{ inputs.javaVersion }}
 
   auto-update-list:
     name: Environment Updates

@@ -29,3 +29,6 @@ URL to Sonar Server
 
 ### sonarToken (optional)
 Sonar token to use in sonar step
+
+### javaVersion (optional)
+Java version used in the build. Defaults to 11
