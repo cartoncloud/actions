@@ -12,6 +12,9 @@ on:
       jasperBuild:
         type: boolean
         required: false
+      javaVersion:
+        type: string
+        required: false
 
 jobs:
   build:
