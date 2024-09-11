@@ -15,6 +15,7 @@ on:
       javaVersion:
         type: string
         required: false
+        default: 11
 
 jobs:
   build:
