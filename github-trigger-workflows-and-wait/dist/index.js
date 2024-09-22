@@ -24678,7 +24678,7 @@ async function run() {
       }
       if (oneWorkflowFailed) {
         throw new Error("\u{1F534}\u{1F534}\u{1F534} There were problems in some triggered workflows \u{1F534}\u{1F534}\u{1F534}");
-      } else if (attemptNumber > maxAttempts) {
+      } else if (remainingWorkflowsMap.size > 0) {
         throw new Error("\u{1F534}\u{1F534}\u{1F534} Some of the triggered workflow dispatches didnt finish in time or were not found \u{1F534}\u{1F534}\u{1F534}");
       }
       core.info(`\u2705\u2705\u2705 All triggered jobs finished successfully \u2705\u2705\u2705`);
