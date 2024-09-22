@@ -116,7 +116,7 @@ async function run() {
       if(oneWorkflowFailed){
         throw new Error('🔴🔴🔴 There were problems in some triggered workflows 🔴🔴🔴');
       } 
-      else if(attemptNumber > maxAttempts) {
+      else if(remainingWorkflowsMap.size > 0) {
         throw new Error('🔴🔴🔴 Some of the triggered workflow dispatches didnt finish in time or were not found 🔴🔴🔴');
       }
       core.info(`✅✅✅ All triggered jobs finished successfully ✅✅✅`);

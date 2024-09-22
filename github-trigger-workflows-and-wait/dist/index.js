@@ -24658,7 +24658,6 @@ async function run() {
         await Promise.all(repos2.map(async ({ owner, repo, workflow_id }) => {
           const noSuccessReportYet = remainingWorkflowsMap.get(`${owner}/${repo}`);
           if (!noSuccessReportYet) {
-            attemptNumber += 1;
             return;
           }
           const response = await octokit.rest.actions.listWorkflowRuns({ owner, repo, workflow_id, per_page: 10, created: `>${workflowStartISOTimestamp}` });
@@ -24679,7 +24678,7 @@ async function run() {
       }
       if (oneWorkflowFailed) {
         throw new Error("\u{1F534}\u{1F534}\u{1F534} There were problems in some triggered workflows \u{1F534}\u{1F534}\u{1F534}");
-      } else if (attemptNumber > maxAttempts) {
+      } else if (remainingWorkflowsMap.size > 0) {
         throw new Error("\u{1F534}\u{1F534}\u{1F534} Some of the triggered workflow dispatches didnt finish in time or were not found \u{1F534}\u{1F534}\u{1F534}");
       }
       core.info(`\u2705\u2705\u2705 All triggered jobs finished successfully \u2705\u2705\u2705`);
