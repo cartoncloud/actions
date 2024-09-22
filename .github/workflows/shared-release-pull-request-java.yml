@@ -38,6 +38,10 @@ on:
       jasperBuild:
         type: boolean
         required: false
+      javaVersion:
+        type: string
+        required: false
+        default: 11
 
 jobs:
   determine-version:
@@ -186,6 +190,7 @@ jobs:
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           jasperBuild: ${{ inputs.jasperBuild }}
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          javaVersion: ${{ inputs.javaVersion }}
 
   create-draft-release:
     name: Create Draft Release
