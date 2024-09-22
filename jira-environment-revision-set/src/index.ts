@@ -39,7 +39,13 @@ async function run() {
     }
 
     const environment = matchingIssues.issues[0];
-    const labelsToRemove: string[] = environment.fields.labels.filter((it: string) => it.startsWith(labelPrefix));
+    const revisionLabels: string[] = environment.fields.labels.filter((it: string) => it.startsWith(labelPrefix));
+
+    const existingRevision = revisionLabels.length > 0 ? revisionLabels[0].replace(labelPrefix, '') : null;
+    if (existingRevision && existingRevision !== 'Deploying…') {
+      core.setOutput('existingRevision', existingRevision);
+    }
+
     const updateResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue/${environment.key}`, {
       method: 'PUT',
       headers: {
@@ -49,7 +55,7 @@ async function run() {
       body: JSON.stringify({
         update: {
           labels: [
-            ...labelsToRemove.map((it) => ({ remove: it })),
+            ...revisionLabels.map((it) => ({ remove: it })),
             { add: labelToAdd },
           ],
         },

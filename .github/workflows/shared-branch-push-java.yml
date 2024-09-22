@@ -12,6 +12,10 @@ on:
       jasperBuild:
         type: boolean
         required: false
+      javaVersion:
+        type: string
+        required: false
+        default: 11
 
 jobs:
   build:
@@ -73,6 +77,7 @@ jobs:
           sonarToken: ${{ secrets.SONAR_TOKEN }}
           jasperBuild: ${{ inputs.jasperBuild }}
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          javaVersion: ${{ inputs.javaVersion }}
 
   auto-update-list:
     name: Environment Updates

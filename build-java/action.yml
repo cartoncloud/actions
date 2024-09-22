@@ -36,6 +36,10 @@ inputs:
     description: 'Personal access token owner username'
     default: cartoncloud-robot
     required: false
+  javaVersion:
+    description: "Version of JDK to use to build project"
+    default: 11
+    required: false
 
 runs:
   using: composite
@@ -57,12 +61,12 @@ runs:
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
+    - name: Set up JDK
+      uses: actions/setup-java@v4
       with:
-        java-version: '11'
+        java-version: '${{ inputs.javaVersion }}'
         distribution: 'temurin'
 
     - name: Cache local Maven repository
@@ -106,7 +110,7 @@ runs:
         GITHUB_PACKAGES_USERNAME: ${{ inputs.tokenUsername }}
         GITHUB_PACKAGES_TOKEN: ${{ inputs.token }}
       shell: bash
-      run: mvn -Dmaven.wagon.http.pool=false -s settings.xml -B clean verify
+      run: mvn -Dmaven.wagon.http.pool=false -DargLine="--add-opens=java.base/java.lang=ALL-UNNAMED" -s settings.xml -B clean verify
 
     - name: Run Sonar
       env:
@@ -115,10 +119,10 @@ runs:
         GITHUB_PACKAGES_USERNAME: ${{ inputs.tokenUsername }}
         GITHUB_PACKAGES_TOKEN: ${{ inputs.token }}
       shell: bash
-      run: mvn -s settings.xml sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
+      run: mvn -s settings.xml -DargLine="--add-opens=java.base/java.lang=ALL-UNNAMED" sonar:sonar -Dsonar.host.url=${{ inputs.sonarUrl }} -Dsonar.login=${{ inputs.sonarToken }}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: arn:aws:iam::026388519853:role/GithubToAwsOpenIdConnect
         aws-region: ${{ inputs.awsRegion }}
