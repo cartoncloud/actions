@@ -12,8 +12,29 @@ async function run() {
     const issueTypeId = core.getInput('issueTypeId', { required: true });
     const nameField = core.getInput('nameField', { required: true });
     const urlField = core.getInput('urlField', { required: true });
+    const projectKey = core.getInput('projectKey', { required: true });
+    const jiraEnvironmentField = core.getInput('jiraEnvironmentField', { required: true });
 
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
+    const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
+
+    core.info('Checking if issue already exists');
+    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}&fields=labels`);
+    core.info(`GET ${existingUrl}`);
+    const existingResponse = await fetch(existingUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${jiraBase64Credentials}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const matchingIssues: any = await existingResponse.json();
+
+    if (matchingIssues.total !== 0) {
+      core.warning(`A ticket for environment ${environmentName} already exists.`);
+      return;
+    }
 
     core.info('Creating issue.');
     const createResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue`, {
