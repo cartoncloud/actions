@@ -23155,7 +23155,7 @@ async function run() {
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString("base64");
     const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
     core.info("Checking if issue already exists");
-    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}&fields=labels`);
+    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}`);
     core.info(`GET ${existingUrl}`);
     const existingResponse = await fetch(existingUrl, {
       method: "GET",
