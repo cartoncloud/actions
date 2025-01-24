@@ -69,7 +69,7 @@ runs:
           text: "Deployment Started :hourglass_flowing_sand:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}"
           blocks:
             - type: "context"
-              text:
+              elements:
                 type: "mrkdwn"
                 text: "${{ inputs.reason }}"  
             - type: "section"
@@ -105,7 +105,7 @@ runs:
           text: "Deployment Complete :rocket:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}"
           blocks:
             - type: "context"
-              text:
+              elements:
                 type: "mrkdwn"
                 text: "${{ inputs.reason }}"
             - type: "section"
@@ -141,7 +141,7 @@ runs:
           text: "Deployment Failed :rotating_light:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}"
           blocks:
             - type: "context"
-              text:
+              elements:
                 type: "mrkdwn"
                 text: "${{ inputs.reason }}"
             - type: "section"
