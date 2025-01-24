@@ -47,7 +47,7 @@ runs:
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
       with:
         method: chat.postMessage
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        token: ${{ inputs.slackBotToken }}
         payload: |
           channel: ${{ inputs.slackChannel }}
           text: "Deployment Started :hourglass_flowing_sand:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}"
@@ -63,7 +63,7 @@ runs:
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
       with:
         method: chat.postMessage
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        token: ${{ inputs.slackBotToken }}
         payload: |
           channel: ${{ inputs.slackChannel }}
           text: "Deployment Started :hourglass_flowing_sand:\n${{ inputs.appName }} ${{ inputs.revision }} → ${{ inputs.environment }}"
@@ -82,7 +82,7 @@ runs:
       if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
       with:
         method: chat.update
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        token: ${{ inputs.slackBotToken }}
         payload: |
           channel: ${{ inputs.slackChannel }}
           ts: ${{ inputs.slackUpdateTimestamp }}
@@ -98,7 +98,7 @@ runs:
       if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
       with:
         method: chat.update
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        token: ${{ inputs.slackBotToken }}
         payload: |
           channel: ${{ inputs.slackChannel }}
           ts: ${{ inputs.slackUpdateTimestamp }}
@@ -118,7 +118,7 @@ runs:
       if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
       with:
         method: chat.update
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        token: ${{ inputs.slackBotToken }}
         payload: |
           channel: ${{ inputs.slackChannel }}
           ts: ${{ inputs.slackUpdateTimestamp }}
@@ -134,7 +134,7 @@ runs:
       if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
       with:
         method: chat.update
-        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        token: ${{ inputs.slackBotToken }}
         payload: |
           channel: ${{ inputs.slackChannel }}
           ts: ${{ inputs.slackUpdateTimestamp }}
