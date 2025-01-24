@@ -70,8 +70,8 @@ runs:
           blocks:
             - type: "context"
               elements:
-                type: "mrkdwn"
-                text: "${{ inputs.reason }}"  
+                - type: "mrkdwn"
+                  text: "${{ inputs.reason }}"  
             - type: "section"
               text:
                 type: "mrkdwn"
@@ -106,8 +106,8 @@ runs:
           blocks:
             - type: "context"
               elements:
-                type: "mrkdwn"
-                text: "${{ inputs.reason }}"
+                - type: "mrkdwn"
+                  text: "${{ inputs.reason }}"
             - type: "section"
               text:
                 type: "mrkdwn"
@@ -142,8 +142,8 @@ runs:
           blocks:
             - type: "context"
               elements:
-                type: "mrkdwn"
-                text: "${{ inputs.reason }}"
+                - type: "mrkdwn"
+                  text: "${{ inputs.reason }}"
             - type: "section"
               text:
                 type: "mrkdwn"
