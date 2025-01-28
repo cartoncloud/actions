@@ -1,0 +1,45 @@
+name: Sync Environment Variables
+
+on:
+  workflow_call:
+    secrets:
+      PERSONAL_ACCESS_TOKEN:
+        required: true
+
+jobs:
+  sync-sdlc:
+    name: Sync SDLC Environment Variables
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_CARTONCLOUD_APP_SDLC }}
+          aws-region: ${{ vars.SERVICES_SDLC_REGION }}
+
+      - name: Sync Param Store with Environment Variables
+        uses: cartoncloud/actions/aws-environment-param-sync@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+
+  sync-prod-2:
+    name: Sync NA Prod Environment Variables
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_CARTONCLOUD_APP_PROD }}
+          aws-region: ${{ vars.SERVICES_PROD_2_REGION }}
+
+      - name: Sync Param Store with Environment Variables
+        uses: cartoncloud/actions/aws-environment-param-sync@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
