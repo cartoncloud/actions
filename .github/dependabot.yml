@@ -6,7 +6,6 @@ updates:
       - "/"
       - "/build-java"
       - "/deploy-java"
-      - "/deployment-status"
       - "/jira-deployment-status"
       - "/open-vpn-connect"
       - "/slack-deployment-status"
