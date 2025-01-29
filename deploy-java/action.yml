@@ -139,7 +139,7 @@ runs:
       shell: bash
       run: |
         manifest=$(aws ecr batch-get-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-ids imageTag=${{ inputs.existingImageTag }} --output json | jq --raw-output --join-output '.images[0].imageManifest')
-        aws ecr put-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-tag ${{ inputs.versionTag }} --image-manifest "$manifest"
+        aws ecr put-image --region us-west-2 --repository-name ${{ inputs.appName }} --image-tag ${{ inputs.versionTag }} --image-manifest "$manifest" || echo "Tag already exists"
         echo "restart=true" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
