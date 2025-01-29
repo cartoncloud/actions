@@ -74,15 +74,6 @@ runs:
   steps:
     - uses: actions/checkout@v4
 
-    - name: Slack notification (release notes)
-      uses: slackapi/slack-github-action@v1.23.0
-      if: inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.releaseNotes != ''
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.slackBotToken }}
-      with:
-        channel-id: ${{ inputs.slackChannel }}
-        payload: ${{ inputs.releaseNotes }}
-
     - name: Slack deployment status (started)
       uses: cartoncloud/actions/slack-deployment-status@v3
       id: slack-deploy-status-started
