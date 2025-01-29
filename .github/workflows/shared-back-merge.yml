@@ -4,11 +4,11 @@ on:
       fromBranch:
         type: string
         required: false
-        default: production
+        default: "production"
       toBranch:
         type: string
         required: false
-        default: main
+        default: "main"
     secrets:
       PERSONAL_ACCESS_TOKEN:
         required: true
