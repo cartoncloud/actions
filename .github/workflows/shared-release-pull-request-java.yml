@@ -383,10 +383,26 @@ jobs:
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
 
+  release-notes:
+    name: Release Notes
+    runs-on: ubuntu-latest
+    needs: create-releases
+    environment: prod
+    steps:
+      - name: Slack notification
+        uses: slackapi/slack-github-action@v1.23.0
+        if: vars.DEPLOY_SLACK_CHANNEL_ID != '' && needs.create-releases.outputs.slackReleaseNotes != ''
+        continue-on-error: true
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        with:
+          channel-id: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
+          payload: ${{ needs.create-releases.outputs.slackReleaseNotes }}
+
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: create-releases
+    needs: [ create-releases, release-notes ]
     strategy:
       matrix:
         environment: [ prod, prod2 ]
