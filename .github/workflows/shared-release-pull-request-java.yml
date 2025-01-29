@@ -438,49 +438,8 @@ jobs:
 
   back-merge:
     name: Back-merge
-    runs-on: ubuntu-latest
+    uses: cartoncloud/actions/.github/workflows/shared-back-merge.yml@v3
     needs: deploy-production
-
-    env:
-      PIPELINES_CHANNEL: C02P64WUT2T
-
-    steps:
-      - name: Merge production into main
-        uses: devmasx/merge-branch@6ec8363d74aad4f1615d1234ae1908b4185c4313
-        id: back-merge-production
-        with:
-          type: now
-          from_branch: production
-          target_branch: main
-          message: Back-merge from production
-          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Used to bypass required PRs
-
-      - name: Merge conflict Slack notification
-        if: ${{ failure() && steps.back-merge-production.conclusion == 'failure' }}
-        uses: slackapi/slack-github-action@v1.26.0
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        with:
-          channel-id: ${{ env.PIPELINES_CHANNEL }}
-          payload: |
-            {
-              "text": "${{ github.event.repository.name }} has merge conflicts",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*⚠️ <${{ github.event.repository.html_url }}|${{ github.event.repository.name }}>* has merge conflicts between `production` and `main`"
-                  }
-                },
-                {
-                  "type": "context",
-                  "elements": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "Please resolve *manually*"
-                    }
-                  ]
-                }
-              ]
-            }
+    secrets:
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

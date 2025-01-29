@@ -1,0 +1,55 @@
+on:
+  workflow_call:
+    inputs:
+      fromBranch:
+        type: string
+        required: false
+        default: "production"
+      toBranch:
+        type: string
+        required: false
+        default: "main"
+    secrets:
+      PERSONAL_ACCESS_TOKEN:
+        required: true
+      SLACK_BOT_TOKEN:
+        required: true
+
+permissions:
+  pull-requests: write
+
+jobs:
+  back-merge:
+    name: Back-merge
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Merge production into main
+        uses: devmasx/merge-branch@6ec8363d74aad4f1615d1234ae1908b4185c4313
+        id: back-merge-production
+        with:
+          type: now
+          from_branch: ${{ inputs.fromBranch }}
+          target_branch: ${{ inputs.toBranch }}
+          message: Back-merge from ${{ inputs.fromBranch }}
+          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Used to bypass required PRs
+
+      - name: Merge conflict Slack notification
+        if: ${{ failure() && steps.back-merge-production.conclusion == 'failure' }}
+        uses: slackapi/slack-github-action@v2
+
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: ${{ vars.SLACK_PIPELINES_CHANNEL_ID }}
+            text: "${{ github.event.repository.name }} has merge conflicts"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "<${{ github.event.repository.html_url }}|${{ github.event.repository.name }}>* has merge conflicts between `production` and `main`"
+              - type: "context"
+                elements:
+                  - type: "mrkdwn"
+                    text: "Please resolve *manually*"
