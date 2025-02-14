@@ -42,7 +42,7 @@ jobs:
           slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
           revision: ${{ inputs.githubRefName }}
           revisionUrl: ${{ inputs.repositoryUrl }}/tree/${{ inputs.githubRefName }}
-          reason: ':technologist::skin-tone-4: Manual deploy by *${{ github.actor }}*'
+          reason: ':technologist::skin-tone-4: Rollback triggered by *${{ github.actor }}*'
           environment: ${{ matrix.environment }}
           environmentUrl: ${{ inputs.repositoryUrl }}/deployments
           environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
