@@ -1,0 +1,60 @@
+name: Rollback Prod Environments
+
+on:
+  workflow_call:
+    inputs:
+      appName:
+        type: string
+        required: true
+      githubSha:
+        type: string
+        required: true
+      githubRefType:
+        type: string
+        required: true
+      githubRefName:
+        type: string
+        required: true
+      repositoryUrl:
+        type: string
+        required: true
+
+jobs:
+  deploy-existing:
+    name: Rolling back ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    if: ${{ inputs.githubRefType == 'tag' && startsWith(inputs.githubRefName, 'v') }}
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        environment: [ prod, prod2 ]
+      fail-fast: false
+    environment:
+      name: ${{ matrix.environment }}
+      url: ${{ vars.APP_URL }}
+    steps:
+      - name: Deploy
+        uses: cartoncloud/actions/deploy-java@v3
+        with:
+          appName: ${{ inputs.appName }}
+          slackChannel: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
+          revision: ${{ inputs.githubRefName }}
+          revisionUrl: ${{ inputs.repositoryUrl }}/tree/${{ inputs.githubRefName }}
+          reason: ':technologist::skin-tone-4: Rollback triggered by *${{ github.actor }}*'
+          environment: ${{ matrix.environment }}
+          environmentUrl: ${{ inputs.repositoryUrl }}/deployments
+          environmentTag: ${{ vars.DOCKER_ENVIRONMENT_TAG }}
+          existingImageTag: ${{ inputs.githubRefName }}
+          awsRegion: ${{ vars.AWS_REGION }}
+          slackBotToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          jiraServer: ${{ vars.JIRA_SERVER }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          newrelicAPIKey: ${{ secrets.NEW_RELIC_API_KEY }}
+          newrelicEntityGUID: ${{ vars.NEW_RELIC_DEPLOYMENT_ENTITY_GUID }}
+          gitHubPAT: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          roleToAssumeForEcr: ${{ vars.AWS_ROLE_TO_ASSUME_FOR_ECR }}
+          roleToAssumeForCluster: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          clusterName: ${{ vars.CLUSTER_NAME || '' }}
