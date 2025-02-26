@@ -23,6 +23,18 @@ on:
         required: true
 
 jobs:
+  extract-environment-type:
+    name: Extract Environment Type
+    runs-on: ubuntu-latest
+    outputs:
+      env-type: ${{ steps.get-env-type.outputs.env-type }}
+    steps:
+      - name: Get Environment Type
+        id: get-env-type
+        run: |
+          ENV_TYPE=$(echo "${{ inputs.environment }}" | sed -E 's/([a-zA-Z]+)[0-9]*/\1/')
+          echo "env-type=$ENV_TYPE" >> $GITHUB_OUTPUT
+
   deploy-from-tag:
     runs-on: ubuntu-latest
     name: Deploy tag
@@ -60,7 +72,8 @@ jobs:
   deploy-branch:
     runs-on: ubuntu-latest
     name: Deploy branch
-    if: ${{ inputs.githubRefType == 'branch' && inputs.environmentName != 'prod' }}
+    if: ${{ inputs.githubRefType == 'branch' }}
+    needs: extract-environment-type
     permissions:
       id-token: write
       contents: read
@@ -68,6 +81,12 @@ jobs:
     environment:
       name: ${{ inputs.environmentName }}
     steps:
+      - name: Fail if environment is production
+        if: needs.extract-environment-type.outputs.env-type == 'prod'
+        run: |
+          echo "This workflow should not be triggered for production from a branch, please use a git tag."
+          exit 1
+
       - name: Deploy
         uses: cartoncloud/actions/deploy-java@v3
         with:
