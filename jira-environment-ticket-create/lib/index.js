@@ -33,12 +33,17 @@ async function run() {
         const jiraServer = core.getInput('jiraServer', { required: true });
         const jiraUsername = core.getInput('jiraUsername', { required: true });
         const jiraPassword = core.getInput('jiraPassword', { required: true });
-        const environmentJql = core.getInput('environmentJql', { required: true });
-        const appName = core.getInput('appName', { required: true });
-        const revision = core.getInput('revision', { required: true });
+        const environmentName = core.getInput('environmentName', { required: true });
+        const environmentUrl = core.getInput('environmentUrl', { required: true });
+        const projectId = core.getInput('projectId', { required: true });
+        const issueTypeId = core.getInput('issueTypeId', { required: true });
+        const nameField = core.getInput('nameField', { required: true });
+        const urlField = core.getInput('urlField', { required: true });
+        const projectKey = core.getInput('projectKey', { required: true });
+        const jiraEnvironmentField = core.getInput('jiraEnvironmentField', { required: true });
         const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
-        const labelPrefix = `${appName.toLowerCase().replaceAll(' ', '-')}-`;
-        const labelToAdd = `${labelPrefix}${revision}`;
+        const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
+        core.info('Checking if issue already exists');
         const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}&fields=labels`);
         core.info(`GET ${existingUrl}`);
         const existingResponse = await (0, node_fetch_1.default)(existingUrl, {
@@ -48,41 +53,42 @@ async function run() {
                 'Content-Type': 'application/json',
             },
         });
-        if (!existingResponse.ok) {
-            core.warning(`Failed to get environment issue.`);
-            const body = await existingResponse.text();
-            core.warning(body);
-            return;
-        }
         const matchingIssues = await existingResponse.json();
-        if (matchingIssues.total === 0) {
-            core.warning(`No matching environment issue found.`);
+        if (matchingIssues.total !== 0) {
+            core.warning(`A ticket for environment ${environmentName} already exists.`);
             return;
         }
-        const environment = matchingIssues.issues[0];
-        const revisionLabels = environment.fields.labels.filter((it) => it.startsWith(labelPrefix));
-        const existingRevision = revisionLabels.length > 0 ? revisionLabels[0].replace(labelPrefix, '') : null;
-        if (existingRevision && existingRevision !== 'Deploying…') {
-            core.setOutput('existingRevision', existingRevision);
-        }
-        const updateResponse = await (0, node_fetch_1.default)(`https://${jiraServer}/rest/api/latest/issue/${environment.key}`, {
-            method: 'PUT',
+        core.info('Creating issue.');
+        const createResponse = await (0, node_fetch_1.default)(`https://${jiraServer}/rest/api/latest/issue`, {
+            method: 'POST',
             headers: {
                 'Authorization': `Basic ${jiraBase64Credentials}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                update: {
-                    labels: [
-                        ...revisionLabels.map((it) => ({ remove: it })),
-                        { add: labelToAdd },
-                    ],
-                },
+                fields: {
+                    project: {
+                        id: projectId
+                    },
+                    issuetype: {
+                        id: issueTypeId
+                    },
+                    summary: environmentName,
+                    [nameField]: environmentName,
+                    [urlField]: environmentUrl
+                }
             }),
         });
-        if (!updateResponse.ok) {
-            core.warning(`Failed to update ${environment.key} labels.`);
+        const createResponseJson = await createResponse.json();
+        if (!createResponse.ok) {
+            core.error(`response code: ${createResponse.status}`);
+            core.error('response: ' + JSON.stringify(createResponseJson));
+            core.setFailed(`Failed to create environment ticket.`);
+            return;
         }
+        const issueLink = `https://${jiraServer}/browse/${createResponseJson.key}`;
+        core.info(`Successfully created environment ticket ${issueLink}`);
+        core.setOutput('issueLink', issueLink);
     }
     catch (error) {
         core.setFailed(error.message);

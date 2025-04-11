@@ -19,6 +19,9 @@ inputs:
   projectId:
     description: 'Jira project id to create ticket in'
     required: true
+  projectKey:
+    description: 'Jira project key for checking if issue with same name does not exist'
+    required: true
   issueTypeId:
     description: 'Issue type id of ticket to create'
     required: true
@@ -28,6 +31,10 @@ inputs:
   urlField:
     description: 'JSON field for the environment URL'
     required: true
+  jiraEnvironmentField:
+    description: 'JQL field used to find the given environment'
+    required: false
+    default: 'Environment Key[Short text]'
 
 outputs:
   issueLink:
