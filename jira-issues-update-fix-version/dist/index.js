@@ -24,16 +24,21 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // node_modules/web-streams-polyfill/dist/ponyfill.es2018.js
 var require_ponyfill_es2018 = __commonJS({
-  "node_modules/web-streams-polyfill/dist/ponyfill.es2018.js"(exports, module2) {
+  "node_modules/web-streams-polyfill/dist/ponyfill.es2018.js"(exports2, module2) {
     (function(global2, factory) {
-      typeof exports === "object" && typeof module2 !== "undefined" ? factory(exports) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global2 = typeof globalThis !== "undefined" ? globalThis : global2 || self, factory(global2.WebStreamsPolyfill = {}));
-    })(exports, function(exports2) {
+      typeof exports2 === "object" && typeof module2 !== "undefined" ? factory(exports2) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global2 = typeof globalThis !== "undefined" ? globalThis : global2 || self, factory(global2.WebStreamsPolyfill = {}));
+    })(exports2, function(exports3) {
       "use strict";
       const SymbolPolyfill = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? Symbol : (description) => `Symbol(${description})`;
       function noop2() {
@@ -122,6 +127,10 @@ var require_ponyfill_es2018 = __commonJS({
         get length() {
           return this._size;
         }
+        // For exception safety, this method is structured in order:
+        // 1. Read state
+        // 2. Calculate required state mutations
+        // 3. Perform state mutations
         push(element) {
           const oldBack = this._back;
           let newBack = oldBack;
@@ -138,6 +147,8 @@ var require_ponyfill_es2018 = __commonJS({
           }
           ++this._size;
         }
+        // Like push(), shift() follows the read -> calculate -> mutate pattern for
+        // exception safety.
         shift() {
           const oldFront = this._front;
           let newFront = oldFront;
@@ -157,6 +168,14 @@ var require_ponyfill_es2018 = __commonJS({
           elements[oldCursor] = void 0;
           return element;
         }
+        // The tricky thing about forEach() is that it can be called
+        // re-entrantly. The queue may be mutated inside the callback. It is easy to
+        // see that push() within the callback has no negative effects since the end
+        // of the queue is checked for on every iteration. If shift() is called
+        // repeatedly within the callback then the next iteration may return an
+        // element that has been removed. In this case the callback will be called
+        // with undefined values until we either "catch up" with elements that still
+        // exist or reach the back of the queue.
         forEach(callback) {
           let i2 = this._cursor;
           let node = this._front;
@@ -174,6 +193,8 @@ var require_ponyfill_es2018 = __commonJS({
             ++i2;
           }
         }
+        // Return the element that would be returned if shift() was called now,
+        // without modifying the queue.
         peek() {
           const front = this._front;
           const cursor = this._cursor;
@@ -351,12 +372,19 @@ var require_ponyfill_es2018 = __commonJS({
           ReadableStreamReaderGenericInitialize(this, stream);
           this._readRequests = new SimpleQueue();
         }
+        /**
+         * Returns a promise that will be fulfilled when the stream becomes closed,
+         * or rejected if the stream ever errors or the reader's lock is released before the stream finishes closing.
+         */
         get closed() {
           if (!IsReadableStreamDefaultReader(this)) {
             return promiseRejectedWith(defaultReaderBrandCheckException("closed"));
           }
           return this._closedPromise;
         }
+        /**
+         * If the reader is active, behaves the same as {@link ReadableStream.cancel | stream.cancel(reason)}.
+         */
         cancel(reason = void 0) {
           if (!IsReadableStreamDefaultReader(this)) {
             return promiseRejectedWith(defaultReaderBrandCheckException("cancel"));
@@ -366,6 +394,11 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return ReadableStreamReaderGenericCancel(this, reason);
         }
+        /**
+         * Returns a promise that allows access to the next chunk from the stream's internal queue, if available.
+         *
+         * If reading a chunk causes the queue to become empty, more data will be pulled from the underlying source.
+         */
         read() {
           if (!IsReadableStreamDefaultReader(this)) {
             return promiseRejectedWith(defaultReaderBrandCheckException("read"));
@@ -387,6 +420,15 @@ var require_ponyfill_es2018 = __commonJS({
           ReadableStreamDefaultReaderRead(this, readRequest);
           return promise;
         }
+        /**
+         * Releases the reader's lock on the corresponding stream. After the lock is released, the reader is no longer active.
+         * If the associated stream is errored when the lock is released, the reader will appear errored in the same way
+         * from now on; otherwise, the reader will appear closed.
+         *
+         * A reader's lock cannot be released while it still has a pending read request, i.e., if a promise returned by
+         * the reader's {@link ReadableStreamDefaultReader.read | read()} method has not yet been settled. Attempting to
+         * do so will throw a `TypeError` and leave the reader locked to the stream.
+         */
         releaseLock() {
           if (!IsReadableStreamDefaultReader(this)) {
             throw defaultReaderBrandCheckException("releaseLock");
@@ -613,6 +655,9 @@ var require_ponyfill_es2018 = __commonJS({
         constructor() {
           throw new TypeError("Illegal constructor");
         }
+        /**
+         * Returns the view for writing in to, or `null` if the BYOB request has already been responded to.
+         */
         get view() {
           if (!IsReadableStreamBYOBRequest(this)) {
             throw byobRequestBrandCheckException("view");
@@ -628,8 +673,7 @@ var require_ponyfill_es2018 = __commonJS({
           if (this._associatedReadableByteStreamController === void 0) {
             throw new TypeError("This BYOB request has been invalidated");
           }
-          if (IsDetachedBuffer(this._view.buffer))
-            ;
+          if (IsDetachedBuffer(this._view.buffer)) ;
           ReadableByteStreamControllerRespond(this._associatedReadableByteStreamController, bytesWritten);
         }
         respondWithNewView(view) {
@@ -643,8 +687,7 @@ var require_ponyfill_es2018 = __commonJS({
           if (this._associatedReadableByteStreamController === void 0) {
             throw new TypeError("This BYOB request has been invalidated");
           }
-          if (IsDetachedBuffer(view.buffer))
-            ;
+          if (IsDetachedBuffer(view.buffer)) ;
           ReadableByteStreamControllerRespondWithNewView(this._associatedReadableByteStreamController, view);
         }
       }
@@ -663,18 +706,29 @@ var require_ponyfill_es2018 = __commonJS({
         constructor() {
           throw new TypeError("Illegal constructor");
         }
+        /**
+         * Returns the current BYOB pull request, or `null` if there isn't one.
+         */
         get byobRequest() {
           if (!IsReadableByteStreamController(this)) {
             throw byteStreamControllerBrandCheckException("byobRequest");
           }
           return ReadableByteStreamControllerGetBYOBRequest(this);
         }
+        /**
+         * Returns the desired size to fill the controlled stream's internal queue. It can be negative, if the queue is
+         * over-full. An underlying byte source ought to use this information to determine when and how to apply backpressure.
+         */
         get desiredSize() {
           if (!IsReadableByteStreamController(this)) {
             throw byteStreamControllerBrandCheckException("desiredSize");
           }
           return ReadableByteStreamControllerGetDesiredSize(this);
         }
+        /**
+         * Closes the controlled readable stream. Consumers will still be able to read any previously-enqueued chunks from
+         * the stream, but once those are read, the stream will become closed.
+         */
         close() {
           if (!IsReadableByteStreamController(this)) {
             throw byteStreamControllerBrandCheckException("close");
@@ -711,12 +765,16 @@ var require_ponyfill_es2018 = __commonJS({
           }
           ReadableByteStreamControllerEnqueue(this, chunk);
         }
+        /**
+         * Errors the controlled readable stream, making all future interactions with it fail with the given error `e`.
+         */
         error(e2 = void 0) {
           if (!IsReadableByteStreamController(this)) {
             throw byteStreamControllerBrandCheckException("error");
           }
           ReadableByteStreamControllerError(this, e2);
         }
+        /** @internal */
         [CancelSteps](reason) {
           ReadableByteStreamControllerClearPendingPullIntos(this);
           ResetQueue(this);
@@ -724,6 +782,7 @@ var require_ponyfill_es2018 = __commonJS({
           ReadableByteStreamControllerClearAlgorithms(this);
           return result;
         }
+        /** @internal */
         [PullSteps](readRequest) {
           const stream = this._controlledReadableByteStream;
           if (this._queueTotalSize > 0) {
@@ -1041,8 +1100,7 @@ var require_ponyfill_es2018 = __commonJS({
         const transferredBuffer = TransferArrayBuffer(buffer);
         if (controller._pendingPullIntos.length > 0) {
           const firstPendingPullInto = controller._pendingPullIntos.peek();
-          if (IsDetachedBuffer(firstPendingPullInto.buffer))
-            ;
+          if (IsDetachedBuffer(firstPendingPullInto.buffer)) ;
           firstPendingPullInto.buffer = TransferArrayBuffer(firstPendingPullInto.buffer);
         }
         ReadableByteStreamControllerInvalidateBYOBRequest(controller);
@@ -1231,12 +1289,19 @@ var require_ponyfill_es2018 = __commonJS({
           ReadableStreamReaderGenericInitialize(this, stream);
           this._readIntoRequests = new SimpleQueue();
         }
+        /**
+         * Returns a promise that will be fulfilled when the stream becomes closed, or rejected if the stream ever errors or
+         * the reader's lock is released before the stream finishes closing.
+         */
         get closed() {
           if (!IsReadableStreamBYOBReader(this)) {
             return promiseRejectedWith(byobReaderBrandCheckException("closed"));
           }
           return this._closedPromise;
         }
+        /**
+         * If the reader is active, behaves the same as {@link ReadableStream.cancel | stream.cancel(reason)}.
+         */
         cancel(reason = void 0) {
           if (!IsReadableStreamBYOBReader(this)) {
             return promiseRejectedWith(byobReaderBrandCheckException("cancel"));
@@ -1246,6 +1311,11 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return ReadableStreamReaderGenericCancel(this, reason);
         }
+        /**
+         * Attempts to reads bytes into view, and returns a promise resolved with the result.
+         *
+         * If reading a chunk causes the queue to become empty, more data will be pulled from the underlying source.
+         */
         read(view) {
           if (!IsReadableStreamBYOBReader(this)) {
             return promiseRejectedWith(byobReaderBrandCheckException("read"));
@@ -1259,8 +1329,7 @@ var require_ponyfill_es2018 = __commonJS({
           if (view.buffer.byteLength === 0) {
             return promiseRejectedWith(new TypeError(`view's buffer must have non-zero byteLength`));
           }
-          if (IsDetachedBuffer(view.buffer))
-            ;
+          if (IsDetachedBuffer(view.buffer)) ;
           if (this._ownerReadableStream === void 0) {
             return promiseRejectedWith(readerLockException("read from"));
           }
@@ -1278,6 +1347,15 @@ var require_ponyfill_es2018 = __commonJS({
           ReadableStreamBYOBReaderRead(this, view, readIntoRequest);
           return promise;
         }
+        /**
+         * Releases the reader's lock on the corresponding stream. After the lock is released, the reader is no longer active.
+         * If the associated stream is errored when the lock is released, the reader will appear errored in the same way
+         * from now on; otherwise, the reader will appear closed.
+         *
+         * A reader's lock cannot be released while it still has a pending read request, i.e., if a promise returned by
+         * the reader's {@link ReadableStreamBYOBReader.read | read()} method has not yet been settled. Attempting to
+         * do so will throw a `TypeError` and leave the reader locked to the stream.
+         */
         releaseLock() {
           if (!IsReadableStreamBYOBReader(this)) {
             throw byobReaderBrandCheckException("releaseLock");
@@ -1425,12 +1503,24 @@ var require_ponyfill_es2018 = __commonJS({
           const highWaterMark = ExtractHighWaterMark(strategy, 1);
           SetUpWritableStreamDefaultControllerFromUnderlyingSink(this, underlyingSink, highWaterMark, sizeAlgorithm);
         }
+        /**
+         * Returns whether or not the writable stream is locked to a writer.
+         */
         get locked() {
           if (!IsWritableStream(this)) {
             throw streamBrandCheckException$2("locked");
           }
           return IsWritableStreamLocked(this);
         }
+        /**
+         * Aborts the stream, signaling that the producer can no longer successfully write to the stream and it is to be
+         * immediately moved to an errored state, with any queued-up writes discarded. This will also execute any abort
+         * mechanism of the underlying sink.
+         *
+         * The returned promise will fulfill if the stream shuts down successfully, or reject if the underlying sink signaled
+         * that there was an error doing so. Additionally, it will reject with a `TypeError` (without attempting to cancel
+         * the stream) if the stream is currently locked.
+         */
         abort(reason = void 0) {
           if (!IsWritableStream(this)) {
             return promiseRejectedWith(streamBrandCheckException$2("abort"));
@@ -1440,6 +1530,14 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return WritableStreamAbort(this, reason);
         }
+        /**
+         * Closes the stream. The underlying sink will finish processing any previously-written chunks, before invoking its
+         * close behavior. During this time any further attempts to write will fail (without erroring the stream).
+         *
+         * The method returns a promise that will fulfill if all remaining chunks are successfully written and the stream
+         * successfully closes, or rejects if an error is encountered during this process. Additionally, it will reject with
+         * a `TypeError` (without attempting to cancel the stream) if the stream is currently locked.
+         */
         close() {
           if (!IsWritableStream(this)) {
             return promiseRejectedWith(streamBrandCheckException$2("close"));
@@ -1452,6 +1550,14 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return WritableStreamClose(this);
         }
+        /**
+         * Creates a {@link WritableStreamDefaultWriter | writer} and locks the stream to the new writer. While the stream
+         * is locked, no other writer can be acquired until this one is released.
+         *
+         * This functionality is especially useful for creating abstractions that desire the ability to write to a stream
+         * without interruption or interleaving. By getting a writer for the stream, you can ensure nobody else can write at
+         * the same time, which would cause the resulting written data to be unpredictable and probably useless.
+         */
         getWriter() {
           if (!IsWritableStream(this)) {
             throw streamBrandCheckException$2("getWriter");
@@ -1723,12 +1829,24 @@ var require_ponyfill_es2018 = __commonJS({
             defaultWriterClosedPromiseInitializeAsRejected(this, storedError);
           }
         }
+        /**
+         * Returns a promise that will be fulfilled when the stream becomes closed, or rejected if the stream ever errors or
+         * the writer’s lock is released before the stream finishes closing.
+         */
         get closed() {
           if (!IsWritableStreamDefaultWriter(this)) {
             return promiseRejectedWith(defaultWriterBrandCheckException("closed"));
           }
           return this._closedPromise;
         }
+        /**
+         * Returns the desired size to fill the stream’s internal queue. It can be negative, if the queue is over-full.
+         * A producer can use this information to determine the right amount of data to write.
+         *
+         * It will be `null` if the stream cannot be successfully written to (due to either being errored, or having an abort
+         * queued up). It will return zero if the stream is closed. And the getter will throw an exception if invoked when
+         * the writer’s lock is released.
+         */
         get desiredSize() {
           if (!IsWritableStreamDefaultWriter(this)) {
             throw defaultWriterBrandCheckException("desiredSize");
@@ -1738,12 +1856,23 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return WritableStreamDefaultWriterGetDesiredSize(this);
         }
+        /**
+         * Returns a promise that will be fulfilled when the desired size to fill the stream’s internal queue transitions
+         * from non-positive to positive, signaling that it is no longer applying backpressure. Once the desired size dips
+         * back to zero or below, the getter will return a new promise that stays pending until the next transition.
+         *
+         * If the stream becomes errored or aborted, or the writer’s lock is released, the returned promise will become
+         * rejected.
+         */
         get ready() {
           if (!IsWritableStreamDefaultWriter(this)) {
             return promiseRejectedWith(defaultWriterBrandCheckException("ready"));
           }
           return this._readyPromise;
         }
+        /**
+         * If the reader is active, behaves the same as {@link WritableStream.abort | stream.abort(reason)}.
+         */
         abort(reason = void 0) {
           if (!IsWritableStreamDefaultWriter(this)) {
             return promiseRejectedWith(defaultWriterBrandCheckException("abort"));
@@ -1753,6 +1882,9 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return WritableStreamDefaultWriterAbort(this, reason);
         }
+        /**
+         * If the reader is active, behaves the same as {@link WritableStream.close | stream.close()}.
+         */
         close() {
           if (!IsWritableStreamDefaultWriter(this)) {
             return promiseRejectedWith(defaultWriterBrandCheckException("close"));
@@ -1766,6 +1898,16 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return WritableStreamDefaultWriterClose(this);
         }
+        /**
+         * Releases the writer’s lock on the corresponding stream. After the lock is released, the writer is no longer active.
+         * If the associated stream is errored when the lock is released, the writer will appear errored in the same way from
+         * now on; otherwise, the writer will appear closed.
+         *
+         * Note that the lock can still be released even if some ongoing writes have not yet finished (i.e. even if the
+         * promises returned from previous calls to {@link WritableStreamDefaultWriter.write | write()} have not yet settled).
+         * It’s not necessary to hold the lock on the writer for the duration of the write; the lock instead simply prevents
+         * other producers from writing in an interleaved manner.
+         */
         releaseLock() {
           if (!IsWritableStreamDefaultWriter(this)) {
             throw defaultWriterBrandCheckException("releaseLock");
@@ -1888,12 +2030,22 @@ var require_ponyfill_es2018 = __commonJS({
         constructor() {
           throw new TypeError("Illegal constructor");
         }
+        /**
+         * The reason which was passed to `WritableStream.abort(reason)` when the stream was aborted.
+         *
+         * @deprecated
+         *  This property has been removed from the specification, see https://github.com/whatwg/streams/pull/1177.
+         *  Use {@link WritableStreamDefaultController.signal}'s `reason` instead.
+         */
         get abortReason() {
           if (!IsWritableStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException$2("abortReason");
           }
           return this._abortReason;
         }
+        /**
+         * An `AbortSignal` that can be used to abort the pending write or close operation when the stream is aborted.
+         */
         get signal() {
           if (!IsWritableStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException$2("signal");
@@ -1903,6 +2055,13 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return this._abortController.signal;
         }
+        /**
+         * Closes the controlled writable stream, making all future interactions with it fail with the given error `e`.
+         *
+         * This method is rarely used, since usually it suffices to return a rejected promise from one of the underlying
+         * sink's methods. However, it can be useful for suddenly shutting down a stream in response to an event outside the
+         * normal lifecycle of interactions with the underlying sink.
+         */
         error(e2 = void 0) {
           if (!IsWritableStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException$2("error");
@@ -1913,11 +2072,13 @@ var require_ponyfill_es2018 = __commonJS({
           }
           WritableStreamDefaultControllerError(this, e2);
         }
+        /** @internal */
         [AbortSteps](reason) {
           const result = this._abortAlgorithm(reason);
           WritableStreamDefaultControllerClearAlgorithms(this);
           return result;
         }
+        /** @internal */
         [ErrorSteps]() {
           ResetQueue(this);
         }
@@ -2362,12 +2523,20 @@ var require_ponyfill_es2018 = __commonJS({
         constructor() {
           throw new TypeError("Illegal constructor");
         }
+        /**
+         * Returns the desired size to fill the controlled stream's internal queue. It can be negative, if the queue is
+         * over-full. An underlying source ought to use this information to determine when and how to apply backpressure.
+         */
         get desiredSize() {
           if (!IsReadableStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException$1("desiredSize");
           }
           return ReadableStreamDefaultControllerGetDesiredSize(this);
         }
+        /**
+         * Closes the controlled readable stream. Consumers will still be able to read any previously-enqueued chunks from
+         * the stream, but once those are read, the stream will become closed.
+         */
         close() {
           if (!IsReadableStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException$1("close");
@@ -2386,18 +2555,23 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return ReadableStreamDefaultControllerEnqueue(this, chunk);
         }
+        /**
+         * Errors the controlled readable stream, making all future interactions with it fail with the given error `e`.
+         */
         error(e2 = void 0) {
           if (!IsReadableStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException$1("error");
           }
           ReadableStreamDefaultControllerError(this, e2);
         }
+        /** @internal */
         [CancelSteps](reason) {
           ResetQueue(this);
           const result = this._cancelAlgorithm(reason);
           ReadableStreamDefaultControllerClearAlgorithms(this);
           return result;
         }
+        /** @internal */
         [PullSteps](readRequest) {
           const stream = this._controlledReadableStream;
           if (this._queue.length > 0) {
@@ -3002,12 +3176,21 @@ var require_ponyfill_es2018 = __commonJS({
             SetUpReadableStreamDefaultControllerFromUnderlyingSource(this, underlyingSource, highWaterMark, sizeAlgorithm);
           }
         }
+        /**
+         * Whether or not the readable stream is locked to a {@link ReadableStreamDefaultReader | reader}.
+         */
         get locked() {
           if (!IsReadableStream(this)) {
             throw streamBrandCheckException$1("locked");
           }
           return IsReadableStreamLocked(this);
         }
+        /**
+         * Cancels the stream, signaling a loss of interest in the stream by a consumer.
+         *
+         * The supplied `reason` argument will be given to the underlying source's {@link UnderlyingSource.cancel | cancel()}
+         * method, which might or might not use it.
+         */
         cancel(reason = void 0) {
           if (!IsReadableStream(this)) {
             return promiseRejectedWith(streamBrandCheckException$1("cancel"));
@@ -3068,6 +3251,17 @@ var require_ponyfill_es2018 = __commonJS({
           }
           return ReadableStreamPipeTo(this, destination, options.preventClose, options.preventAbort, options.preventCancel, options.signal);
         }
+        /**
+         * Tees this readable stream, returning a two-element array containing the two resulting branches as
+         * new {@link ReadableStream} instances.
+         *
+         * Teeing a stream will lock it, preventing any other consumer from acquiring a reader.
+         * To cancel the stream, cancel both of the resulting branches; a composite cancellation reason will then be
+         * propagated to the stream's underlying source.
+         *
+         * Note that the chunks seen in each branch will be the same object. If the chunks are not immutable,
+         * this could allow interference between the two branches.
+         */
         tee() {
           if (!IsReadableStream(this)) {
             throw streamBrandCheckException$1("tee");
@@ -3220,12 +3414,18 @@ var require_ponyfill_es2018 = __commonJS({
           options = convertQueuingStrategyInit(options, "First parameter");
           this._byteLengthQueuingStrategyHighWaterMark = options.highWaterMark;
         }
+        /**
+         * Returns the high water mark provided to the constructor.
+         */
         get highWaterMark() {
           if (!IsByteLengthQueuingStrategy(this)) {
             throw byteLengthBrandCheckException("highWaterMark");
           }
           return this._byteLengthQueuingStrategyHighWaterMark;
         }
+        /**
+         * Measures the size of `chunk` by returning the value of its `byteLength` property.
+         */
         get size() {
           if (!IsByteLengthQueuingStrategy(this)) {
             throw byteLengthBrandCheckException("size");
@@ -3271,12 +3471,19 @@ var require_ponyfill_es2018 = __commonJS({
           options = convertQueuingStrategyInit(options, "First parameter");
           this._countQueuingStrategyHighWaterMark = options.highWaterMark;
         }
+        /**
+         * Returns the high water mark provided to the constructor.
+         */
         get highWaterMark() {
           if (!IsCountQueuingStrategy(this)) {
             throw countBrandCheckException("highWaterMark");
           }
           return this._countQueuingStrategyHighWaterMark;
         }
+        /**
+         * Measures the size of `chunk` by always returning 1.
+         * This ensures that the total queue size is a count of the number of chunks in the queue.
+         */
         get size() {
           if (!IsCountQueuingStrategy(this)) {
             throw countBrandCheckException("size");
@@ -3363,12 +3570,18 @@ var require_ponyfill_es2018 = __commonJS({
             startPromise_resolve(void 0);
           }
         }
+        /**
+         * The readable side of the transform stream.
+         */
         get readable() {
           if (!IsTransformStream(this)) {
             throw streamBrandCheckException("readable");
           }
           return this._readable;
         }
+        /**
+         * The writable side of the transform stream.
+         */
         get writable() {
           if (!IsTransformStream(this)) {
             throw streamBrandCheckException("writable");
@@ -3447,6 +3660,9 @@ var require_ponyfill_es2018 = __commonJS({
         constructor() {
           throw new TypeError("Illegal constructor");
         }
+        /**
+         * Returns the desired size to fill the readable side’s internal queue. It can be negative, if the queue is over-full.
+         */
         get desiredSize() {
           if (!IsTransformStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException("desiredSize");
@@ -3460,12 +3676,20 @@ var require_ponyfill_es2018 = __commonJS({
           }
           TransformStreamDefaultControllerEnqueue(this, chunk);
         }
+        /**
+         * Errors both the readable side and the writable side of the controlled transform stream, making all future
+         * interactions with it fail with the given error `e`. Any chunks queued for transformation will be discarded.
+         */
         error(reason = void 0) {
           if (!IsTransformStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException("error");
           }
           TransformStreamDefaultControllerError(this, reason);
         }
+        /**
+         * Closes the readable side and errors the writable side of the controlled transform stream. This is useful when the
+         * transformer only needs to consume a portion of the chunks written to the writable side.
+         */
         terminate() {
           if (!IsTransformStreamDefaultController(this)) {
             throw defaultControllerBrandCheckException("terminate");
@@ -3601,20 +3825,20 @@ var require_ponyfill_es2018 = __commonJS({
       function streamBrandCheckException(name) {
         return new TypeError(`TransformStream.prototype.${name} can only be used on a TransformStream`);
       }
-      exports2.ByteLengthQueuingStrategy = ByteLengthQueuingStrategy;
-      exports2.CountQueuingStrategy = CountQueuingStrategy;
-      exports2.ReadableByteStreamController = ReadableByteStreamController;
-      exports2.ReadableStream = ReadableStream2;
-      exports2.ReadableStreamBYOBReader = ReadableStreamBYOBReader;
-      exports2.ReadableStreamBYOBRequest = ReadableStreamBYOBRequest;
-      exports2.ReadableStreamDefaultController = ReadableStreamDefaultController;
-      exports2.ReadableStreamDefaultReader = ReadableStreamDefaultReader;
-      exports2.TransformStream = TransformStream;
-      exports2.TransformStreamDefaultController = TransformStreamDefaultController;
-      exports2.WritableStream = WritableStream;
-      exports2.WritableStreamDefaultController = WritableStreamDefaultController;
-      exports2.WritableStreamDefaultWriter = WritableStreamDefaultWriter;
-      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports3.ByteLengthQueuingStrategy = ByteLengthQueuingStrategy;
+      exports3.CountQueuingStrategy = CountQueuingStrategy;
+      exports3.ReadableByteStreamController = ReadableByteStreamController;
+      exports3.ReadableStream = ReadableStream2;
+      exports3.ReadableStreamBYOBReader = ReadableStreamBYOBReader;
+      exports3.ReadableStreamBYOBRequest = ReadableStreamBYOBRequest;
+      exports3.ReadableStreamDefaultController = ReadableStreamDefaultController;
+      exports3.ReadableStreamDefaultReader = ReadableStreamDefaultReader;
+      exports3.TransformStream = TransformStream;
+      exports3.TransformStreamDefaultController = TransformStreamDefaultController;
+      exports3.WritableStream = WritableStream;
+      exports3.WritableStreamDefaultController = WritableStreamDefaultController;
+      exports3.WritableStreamDefaultWriter = WritableStreamDefaultWriter;
+      Object.defineProperty(exports3, "__esModule", { value: true });
     });
   }
 });
@@ -3669,7 +3893,10 @@ var require_streams = __commonJS({
 async function* toIterator(parts, clone2 = true) {
   for (const part of parts) {
     if ("stream" in part) {
-      yield* part.stream();
+      yield* (
+        /** @type {AsyncIterableIterator<Uint8Array>} */
+        part.stream()
+      );
     } else if (ArrayBuffer.isView(part)) {
       if (clone2) {
         let position = part.byteOffset;
@@ -3684,7 +3911,10 @@ async function* toIterator(parts, clone2 = true) {
         yield part;
       }
     } else {
-      let position = 0, b = part;
+      let position = 0, b = (
+        /** @type {Blob} */
+        part
+      );
       while (position !== b.size) {
         const chunk = b.slice(position, Math.min(b.size, position + POOL_SIZE));
         const buffer = await chunk.arrayBuffer();
@@ -3700,10 +3930,19 @@ var init_fetch_blob = __esm({
     import_streams = __toESM(require_streams(), 1);
     POOL_SIZE = 65536;
     _Blob = class Blob {
+      /** @type {Array.<(Blob|Uint8Array)>} */
       #parts = [];
       #type = "";
       #size = 0;
       #endings = "transparent";
+      /**
+       * The Blob() constructor returns a new Blob object. The content
+       * of the blob consists of the concatenation of the values given
+       * in the parameter array.
+       *
+       * @param {*} blobParts
+       * @param {{ type?: string, endings?: string }} [options]
+       */
       constructor(blobParts = [], options = {}) {
         if (typeof blobParts !== "object" || blobParts === null) {
           throw new TypeError("Failed to construct 'Blob': The provided value cannot be converted to a sequence.");
@@ -3714,8 +3953,7 @@ var init_fetch_blob = __esm({
         if (typeof options !== "object" && typeof options !== "function") {
           throw new TypeError("Failed to construct 'Blob': parameter 2 cannot convert to dictionary.");
         }
-        if (options === null)
-          options = {};
+        if (options === null) options = {};
         const encoder = new TextEncoder();
         for (const element of blobParts) {
           let part;
@@ -3738,12 +3976,26 @@ var init_fetch_blob = __esm({
         const type = options.type === void 0 ? "" : String(options.type);
         this.#type = /^[\x20-\x7E]*$/.test(type) ? type : "";
       }
+      /**
+       * The Blob interface's size property returns the
+       * size of the Blob in bytes.
+       */
       get size() {
         return this.#size;
       }
+      /**
+       * The type property of a Blob object returns the MIME type of the file.
+       */
       get type() {
         return this.#type;
       }
+      /**
+       * The text() method in the Blob interface returns a Promise
+       * that resolves with a string containing the contents of
+       * the blob, interpreted as UTF-8.
+       *
+       * @return {Promise<string>}
+       */
       async text() {
         const decoder = new TextDecoder();
         let str = "";
@@ -3753,6 +4005,13 @@ var init_fetch_blob = __esm({
         str += decoder.decode();
         return str;
       }
+      /**
+       * The arrayBuffer() method in the Blob interface returns a
+       * Promise that resolves with the contents of the blob as
+       * binary data contained in an ArrayBuffer.
+       *
+       * @return {Promise<ArrayBuffer>}
+       */
       async arrayBuffer() {
         const data = new Uint8Array(this.size);
         let offset = 0;
@@ -3765,6 +4024,7 @@ var init_fetch_blob = __esm({
       stream() {
         const it = toIterator(this.#parts, true);
         return new globalThis.ReadableStream({
+          // @ts-ignore
           type: "bytes",
           async pull(ctrl) {
             const chunk = await it.next();
@@ -3775,6 +4035,15 @@ var init_fetch_blob = __esm({
           }
         });
       }
+      /**
+       * The Blob interface's slice() method creates and returns a
+       * new Blob object which contains data from a subset of the
+       * blob on which it's called.
+       *
+       * @param {number} [start]
+       * @param {number} [end]
+       * @param {string} [type]
+       */
       slice(start = 0, end = this.size, type = "") {
         const { size } = this;
         let relativeStart = start < 0 ? Math.max(size + start, 0) : Math.min(start, size);
@@ -3835,13 +4104,18 @@ var init_file = __esm({
     _File = class File extends fetch_blob_default {
       #lastModified = 0;
       #name = "";
+      /**
+       * @param {*[]} fileBits
+       * @param {string} fileName
+       * @param {{lastModified?: number, type?: string}} options
+       */
+      // @ts-ignore
       constructor(fileBits, fileName, options = {}) {
         if (arguments.length < 2) {
           throw new TypeError(`Failed to construct 'File': 2 arguments required, but only ${arguments.length} present.`);
         }
         super(fileBits, options);
-        if (options === null)
-          options = {};
+        if (options === null) options = {};
         const lastModified = options.lastModified === void 0 ? Date.now() : Number(options.lastModified);
         if (!Number.isNaN(lastModified)) {
           this.#lastModified = lastModified;
@@ -3898,8 +4172,7 @@ var init_esm_min = __esm({
     FormData = class FormData2 {
       #d = [];
       constructor(...a) {
-        if (a.length)
-          throw new TypeError(`Failed to construct 'FormData': parameter 1 is not of type 'HTMLFormElement'.`);
+        if (a.length) throw new TypeError(`Failed to construct 'FormData': parameter 1 is not of type 'HTMLFormElement'.`);
       }
       get [t]() {
         return "FormData";
@@ -3922,9 +4195,7 @@ var init_esm_min = __esm({
       get(a) {
         x("get", arguments, 1);
         a += "";
-        for (var b = this.#d, l = b.length, c = 0; c < l; c++)
-          if (b[c][0] === a)
-            return b[c][1];
+        for (var b = this.#d, l = b.length, c = 0; c < l; c++) if (b[c][0] === a) return b[c][1];
         return null;
       }
       getAll(a, b) {
@@ -3941,8 +4212,7 @@ var init_esm_min = __esm({
       }
       forEach(a, b) {
         x("forEach", arguments, 1);
-        for (var [c, d] of this)
-          a.call(b, d, c, this);
+        for (var [c, d] of this) a.call(b, d, c, this);
       }
       set(...a) {
         x("set", arguments, 2);
@@ -3958,12 +4228,10 @@ var init_esm_min = __esm({
         yield* this.#d;
       }
       *keys() {
-        for (var [a] of this)
-          yield a;
+        for (var [a] of this) yield a;
       }
       *values() {
-        for (var [, a] of this)
-          yield a;
+        for (var [, a] of this) yield a;
       }
     };
   }
@@ -3971,7 +4239,7 @@ var init_esm_min = __esm({
 
 // node_modules/node-domexception/index.js
 var require_node_domexception = __commonJS({
-  "node_modules/node-domexception/index.js"(exports, module2) {
+  "node_modules/node-domexception/index.js"(exports2, module2) {
     if (!globalThis.DOMException) {
       try {
         const { MessageChannel } = require("worker_threads"), port = new MessageChannel().port1, ab = new ArrayBuffer();
@@ -3985,7 +4253,7 @@ var require_node_domexception = __commonJS({
 });
 
 // node_modules/fetch-blob/from.js
-var import_node_fs, import_node_domexception, stat, BlobDataItem;
+var import_node_fs, import_node_domexception, stat;
 var init_from = __esm({
   "node_modules/fetch-blob/from.js"() {
     import_node_fs = require("node:fs");
@@ -3993,39 +4261,6 @@ var init_from = __esm({
     init_file();
     init_fetch_blob();
     ({ stat } = import_node_fs.promises);
-    BlobDataItem = class {
-      #path;
-      #start;
-      constructor(options) {
-        this.#path = options.path;
-        this.#start = options.start;
-        this.size = options.size;
-        this.lastModified = options.lastModified;
-        this.originalSize = options.originalSize === void 0 ? options.size : options.originalSize;
-      }
-      slice(start, end) {
-        return new BlobDataItem({
-          path: this.#path,
-          lastModified: this.lastModified,
-          originalSize: this.originalSize,
-          size: end - start,
-          start: this.#start + start
-        });
-      }
-      async *stream() {
-        const { mtimeMs, size } = await stat(this.#path);
-        if (mtimeMs > this.lastModified || this.originalSize !== size) {
-          throw new import_node_domexception.default("The requested file could not be read, typically due to permission problems that have occurred after a reference to a file was acquired.", "NotReadableError");
-        }
-        yield* (0, import_node_fs.createReadStream)(this.#path, {
-          start: this.#start,
-          end: this.#start + this.size - 1
-        });
-      }
-      get [Symbol.toStringTag]() {
-        return "Blob";
-      }
-    };
   }
 });
 
@@ -4155,6 +4390,9 @@ var init_multipart_parser = __esm({
     noop = () => {
     };
     MultipartParser = class {
+      /**
+       * @param {string} boundary
+       */
       constructor(boundary) {
         this.index = 0;
         this.flags = 0;
@@ -4176,6 +4414,9 @@ var init_multipart_parser = __esm({
         this.lookbehind = new Uint8Array(this.boundary.length + 8);
         this.state = S.START_BOUNDARY;
       }
+      /**
+       * @param {Uint8Array} data
+       */
       write(data) {
         let i2 = 0;
         const length_ = data.length;
@@ -4246,6 +4487,7 @@ var init_multipart_parser = __esm({
               state = S.HEADER_FIELD;
               mark("onHeaderField");
               index = 0;
+            // falls through
             case S.HEADER_FIELD:
               if (c === CR) {
                 clear("onHeaderField");
@@ -4275,6 +4517,7 @@ var init_multipart_parser = __esm({
               }
               mark("onHeaderValue");
               state = S.HEADER_VALUE;
+            // falls through
             case S.HEADER_VALUE:
               if (c === CR) {
                 dataCallback("onHeaderValue", true);
@@ -4298,6 +4541,7 @@ var init_multipart_parser = __esm({
             case S.PART_DATA_START:
               state = S.PART_DATA;
               mark("onPartData");
+            // falls through
             case S.PART_DATA:
               previousIndex = index;
               if (index === 0) {
@@ -4384,10 +4628,10 @@ var init_multipart_parser = __esm({
 
 // node_modules/@actions/core/lib/utils.js
 var require_utils = __commonJS({
-  "node_modules/@actions/core/lib/utils.js"(exports) {
+  "node_modules/@actions/core/lib/utils.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.toCommandProperties = exports.toCommandValue = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.toCommandProperties = exports2.toCommandValue = void 0;
     function toCommandValue(input) {
       if (input === null || input === void 0) {
         return "";
@@ -4396,7 +4640,7 @@ var require_utils = __commonJS({
       }
       return JSON.stringify(input);
     }
-    exports.toCommandValue = toCommandValue;
+    exports2.toCommandValue = toCommandValue;
     function toCommandProperties(annotationProperties) {
       if (!Object.keys(annotationProperties).length) {
         return {};
@@ -4410,55 +4654,50 @@ var require_utils = __commonJS({
         endColumn: annotationProperties.endColumn
       };
     }
-    exports.toCommandProperties = toCommandProperties;
+    exports2.toCommandProperties = toCommandProperties;
   }
 });
 
 // node_modules/@actions/core/lib/command.js
 var require_command = __commonJS({
-  "node_modules/@actions/core/lib/command.js"(exports) {
+  "node_modules/@actions/core/lib/command.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m2, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m2[k];
       } });
     } : function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m2[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.issue = exports.issueCommand = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.issue = exports2.issueCommand = void 0;
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, properties, message) {
       const cmd = new Command(command, properties, message);
       process.stdout.write(cmd.toString() + os.EOL);
     }
-    exports.issueCommand = issueCommand;
+    exports2.issueCommand = issueCommand;
     function issue(name, message = "") {
       issueCommand(name, {}, message);
     }
-    exports.issue = issue;
+    exports2.issue = issue;
     var CMD_STRING = "::";
     var Command = class {
       constructor(command, properties, message) {
@@ -4501,534 +4740,371 @@ var require_command = __commonJS({
   }
 });
 
-// node_modules/uuid/dist/rng.js
-var require_rng = __commonJS({
-  "node_modules/uuid/dist/rng.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = rng;
-    var _crypto = _interopRequireDefault(require("crypto"));
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    var rnds8Pool = new Uint8Array(256);
-    var poolPtr = rnds8Pool.length;
-    function rng() {
-      if (poolPtr > rnds8Pool.length - 16) {
-        _crypto.default.randomFillSync(rnds8Pool);
-        poolPtr = 0;
-      }
-      return rnds8Pool.slice(poolPtr, poolPtr += 16);
-    }
+// node_modules/uuid/dist/esm-node/rng.js
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    import_crypto.default.randomFillSync(rnds8Pool);
+    poolPtr = 0;
+  }
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+var import_crypto, rnds8Pool, poolPtr;
+var init_rng = __esm({
+  "node_modules/uuid/dist/esm-node/rng.js"() {
+    import_crypto = __toESM(require("crypto"));
+    rnds8Pool = new Uint8Array(256);
+    poolPtr = rnds8Pool.length;
   }
 });
 
-// node_modules/uuid/dist/regex.js
-var require_regex = __commonJS({
-  "node_modules/uuid/dist/regex.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/regex.js
+var regex_default;
+var init_regex = __esm({
+  "node_modules/uuid/dist/esm-node/regex.js"() {
+    regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
   }
 });
 
-// node_modules/uuid/dist/validate.js
-var require_validate = __commonJS({
-  "node_modules/uuid/dist/validate.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _regex = _interopRequireDefault(require_regex());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function validate(uuid) {
-      return typeof uuid === "string" && _regex.default.test(uuid);
-    }
-    var _default = validate;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/validate.js
+function validate(uuid) {
+  return typeof uuid === "string" && regex_default.test(uuid);
+}
+var validate_default;
+var init_validate = __esm({
+  "node_modules/uuid/dist/esm-node/validate.js"() {
+    init_regex();
+    validate_default = validate;
   }
 });
 
-// node_modules/uuid/dist/stringify.js
-var require_stringify = __commonJS({
-  "node_modules/uuid/dist/stringify.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _validate = _interopRequireDefault(require_validate());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    var byteToHex = [];
+// node_modules/uuid/dist/esm-node/stringify.js
+function stringify(arr, offset = 0) {
+  const uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+  if (!validate_default(uuid)) {
+    throw TypeError("Stringified UUID is invalid");
+  }
+  return uuid;
+}
+var byteToHex, stringify_default;
+var init_stringify = __esm({
+  "node_modules/uuid/dist/esm-node/stringify.js"() {
+    init_validate();
+    byteToHex = [];
     for (let i2 = 0; i2 < 256; ++i2) {
       byteToHex.push((i2 + 256).toString(16).substr(1));
     }
-    function stringify(arr, offset = 0) {
-      const uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
-      if (!(0, _validate.default)(uuid)) {
-        throw TypeError("Stringified UUID is invalid");
-      }
-      return uuid;
-    }
-    var _default = stringify;
-    exports.default = _default;
+    stringify_default = stringify;
   }
 });
 
-// node_modules/uuid/dist/v1.js
-var require_v1 = __commonJS({
-  "node_modules/uuid/dist/v1.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _rng = _interopRequireDefault(require_rng());
-    var _stringify = _interopRequireDefault(require_stringify());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
+// node_modules/uuid/dist/esm-node/v1.js
+function v1(options, buf, offset) {
+  let i2 = buf && offset || 0;
+  const b = buf || new Array(16);
+  options = options || {};
+  let node = options.node || _nodeId;
+  let clockseq = options.clockseq !== void 0 ? options.clockseq : _clockseq;
+  if (node == null || clockseq == null) {
+    const seedBytes = options.random || (options.rng || rng)();
+    if (node == null) {
+      node = _nodeId = [seedBytes[0] | 1, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
     }
-    var _nodeId;
-    var _clockseq;
-    var _lastMSecs = 0;
-    var _lastNSecs = 0;
-    function v1(options, buf, offset) {
-      let i2 = buf && offset || 0;
-      const b = buf || new Array(16);
-      options = options || {};
-      let node = options.node || _nodeId;
-      let clockseq = options.clockseq !== void 0 ? options.clockseq : _clockseq;
-      if (node == null || clockseq == null) {
-        const seedBytes = options.random || (options.rng || _rng.default)();
-        if (node == null) {
-          node = _nodeId = [seedBytes[0] | 1, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
-        }
-        if (clockseq == null) {
-          clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 16383;
-        }
-      }
-      let msecs = options.msecs !== void 0 ? options.msecs : Date.now();
-      let nsecs = options.nsecs !== void 0 ? options.nsecs : _lastNSecs + 1;
-      const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 1e4;
-      if (dt < 0 && options.clockseq === void 0) {
-        clockseq = clockseq + 1 & 16383;
-      }
-      if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === void 0) {
-        nsecs = 0;
-      }
-      if (nsecs >= 1e4) {
-        throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
-      }
-      _lastMSecs = msecs;
-      _lastNSecs = nsecs;
-      _clockseq = clockseq;
-      msecs += 122192928e5;
-      const tl = ((msecs & 268435455) * 1e4 + nsecs) % 4294967296;
-      b[i2++] = tl >>> 24 & 255;
-      b[i2++] = tl >>> 16 & 255;
-      b[i2++] = tl >>> 8 & 255;
-      b[i2++] = tl & 255;
-      const tmh = msecs / 4294967296 * 1e4 & 268435455;
-      b[i2++] = tmh >>> 8 & 255;
-      b[i2++] = tmh & 255;
-      b[i2++] = tmh >>> 24 & 15 | 16;
-      b[i2++] = tmh >>> 16 & 255;
-      b[i2++] = clockseq >>> 8 | 128;
-      b[i2++] = clockseq & 255;
-      for (let n = 0; n < 6; ++n) {
-        b[i2 + n] = node[n];
-      }
-      return buf || (0, _stringify.default)(b);
+    if (clockseq == null) {
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 16383;
     }
-    var _default = v1;
-    exports.default = _default;
+  }
+  let msecs = options.msecs !== void 0 ? options.msecs : Date.now();
+  let nsecs = options.nsecs !== void 0 ? options.nsecs : _lastNSecs + 1;
+  const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 1e4;
+  if (dt < 0 && options.clockseq === void 0) {
+    clockseq = clockseq + 1 & 16383;
+  }
+  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === void 0) {
+    nsecs = 0;
+  }
+  if (nsecs >= 1e4) {
+    throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
+  }
+  _lastMSecs = msecs;
+  _lastNSecs = nsecs;
+  _clockseq = clockseq;
+  msecs += 122192928e5;
+  const tl = ((msecs & 268435455) * 1e4 + nsecs) % 4294967296;
+  b[i2++] = tl >>> 24 & 255;
+  b[i2++] = tl >>> 16 & 255;
+  b[i2++] = tl >>> 8 & 255;
+  b[i2++] = tl & 255;
+  const tmh = msecs / 4294967296 * 1e4 & 268435455;
+  b[i2++] = tmh >>> 8 & 255;
+  b[i2++] = tmh & 255;
+  b[i2++] = tmh >>> 24 & 15 | 16;
+  b[i2++] = tmh >>> 16 & 255;
+  b[i2++] = clockseq >>> 8 | 128;
+  b[i2++] = clockseq & 255;
+  for (let n = 0; n < 6; ++n) {
+    b[i2 + n] = node[n];
+  }
+  return buf || stringify_default(b);
+}
+var _nodeId, _clockseq, _lastMSecs, _lastNSecs, v1_default;
+var init_v1 = __esm({
+  "node_modules/uuid/dist/esm-node/v1.js"() {
+    init_rng();
+    init_stringify();
+    _lastMSecs = 0;
+    _lastNSecs = 0;
+    v1_default = v1;
   }
 });
 
-// node_modules/uuid/dist/parse.js
-var require_parse = __commonJS({
-  "node_modules/uuid/dist/parse.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _validate = _interopRequireDefault(require_validate());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function parse(uuid) {
-      if (!(0, _validate.default)(uuid)) {
-        throw TypeError("Invalid UUID");
-      }
-      let v;
-      const arr = new Uint8Array(16);
-      arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
-      arr[1] = v >>> 16 & 255;
-      arr[2] = v >>> 8 & 255;
-      arr[3] = v & 255;
-      arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
-      arr[5] = v & 255;
-      arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
-      arr[7] = v & 255;
-      arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
-      arr[9] = v & 255;
-      arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255;
-      arr[11] = v / 4294967296 & 255;
-      arr[12] = v >>> 24 & 255;
-      arr[13] = v >>> 16 & 255;
-      arr[14] = v >>> 8 & 255;
-      arr[15] = v & 255;
-      return arr;
-    }
-    var _default = parse;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/parse.js
+function parse(uuid) {
+  if (!validate_default(uuid)) {
+    throw TypeError("Invalid UUID");
+  }
+  let v;
+  const arr = new Uint8Array(16);
+  arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
+  arr[1] = v >>> 16 & 255;
+  arr[2] = v >>> 8 & 255;
+  arr[3] = v & 255;
+  arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
+  arr[5] = v & 255;
+  arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
+  arr[7] = v & 255;
+  arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
+  arr[9] = v & 255;
+  arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255;
+  arr[11] = v / 4294967296 & 255;
+  arr[12] = v >>> 24 & 255;
+  arr[13] = v >>> 16 & 255;
+  arr[14] = v >>> 8 & 255;
+  arr[15] = v & 255;
+  return arr;
+}
+var parse_default;
+var init_parse = __esm({
+  "node_modules/uuid/dist/esm-node/parse.js"() {
+    init_validate();
+    parse_default = parse;
   }
 });
 
-// node_modules/uuid/dist/v35.js
-var require_v35 = __commonJS({
-  "node_modules/uuid/dist/v35.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = _default;
-    exports.URL = exports.DNS = void 0;
-    var _stringify = _interopRequireDefault(require_stringify());
-    var _parse = _interopRequireDefault(require_parse());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
+// node_modules/uuid/dist/esm-node/v35.js
+function stringToBytes(str) {
+  str = unescape(encodeURIComponent(str));
+  const bytes = [];
+  for (let i2 = 0; i2 < str.length; ++i2) {
+    bytes.push(str.charCodeAt(i2));
+  }
+  return bytes;
+}
+function v35_default(name, version2, hashfunc) {
+  function generateUUID(value, namespace, buf, offset) {
+    if (typeof value === "string") {
+      value = stringToBytes(value);
     }
-    function stringToBytes(str) {
-      str = unescape(encodeURIComponent(str));
-      const bytes = [];
-      for (let i2 = 0; i2 < str.length; ++i2) {
-        bytes.push(str.charCodeAt(i2));
-      }
-      return bytes;
+    if (typeof namespace === "string") {
+      namespace = parse_default(namespace);
     }
-    var DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-    exports.DNS = DNS;
-    var URL2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
-    exports.URL = URL2;
-    function _default(name, version, hashfunc) {
-      function generateUUID(value, namespace, buf, offset) {
-        if (typeof value === "string") {
-          value = stringToBytes(value);
-        }
-        if (typeof namespace === "string") {
-          namespace = (0, _parse.default)(namespace);
-        }
-        if (namespace.length !== 16) {
-          throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
-        }
-        let bytes = new Uint8Array(16 + value.length);
-        bytes.set(namespace);
-        bytes.set(value, namespace.length);
-        bytes = hashfunc(bytes);
-        bytes[6] = bytes[6] & 15 | version;
-        bytes[8] = bytes[8] & 63 | 128;
-        if (buf) {
-          offset = offset || 0;
-          for (let i2 = 0; i2 < 16; ++i2) {
-            buf[offset + i2] = bytes[i2];
-          }
-          return buf;
-        }
-        return (0, _stringify.default)(bytes);
-      }
-      try {
-        generateUUID.name = name;
-      } catch (err) {
-      }
-      generateUUID.DNS = DNS;
-      generateUUID.URL = URL2;
-      return generateUUID;
+    if (namespace.length !== 16) {
+      throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
     }
+    let bytes = new Uint8Array(16 + value.length);
+    bytes.set(namespace);
+    bytes.set(value, namespace.length);
+    bytes = hashfunc(bytes);
+    bytes[6] = bytes[6] & 15 | version2;
+    bytes[8] = bytes[8] & 63 | 128;
+    if (buf) {
+      offset = offset || 0;
+      for (let i2 = 0; i2 < 16; ++i2) {
+        buf[offset + i2] = bytes[i2];
+      }
+      return buf;
+    }
+    return stringify_default(bytes);
+  }
+  try {
+    generateUUID.name = name;
+  } catch (err) {
+  }
+  generateUUID.DNS = DNS;
+  generateUUID.URL = URL2;
+  return generateUUID;
+}
+var DNS, URL2;
+var init_v35 = __esm({
+  "node_modules/uuid/dist/esm-node/v35.js"() {
+    init_stringify();
+    init_parse();
+    DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+    URL2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
   }
 });
 
-// node_modules/uuid/dist/md5.js
-var require_md5 = __commonJS({
-  "node_modules/uuid/dist/md5.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _crypto = _interopRequireDefault(require("crypto"));
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function md5(bytes) {
-      if (Array.isArray(bytes)) {
-        bytes = Buffer.from(bytes);
-      } else if (typeof bytes === "string") {
-        bytes = Buffer.from(bytes, "utf8");
-      }
-      return _crypto.default.createHash("md5").update(bytes).digest();
-    }
-    var _default = md5;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/md5.js
+function md5(bytes) {
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === "string") {
+    bytes = Buffer.from(bytes, "utf8");
+  }
+  return import_crypto2.default.createHash("md5").update(bytes).digest();
+}
+var import_crypto2, md5_default;
+var init_md5 = __esm({
+  "node_modules/uuid/dist/esm-node/md5.js"() {
+    import_crypto2 = __toESM(require("crypto"));
+    md5_default = md5;
   }
 });
 
-// node_modules/uuid/dist/v3.js
-var require_v3 = __commonJS({
-  "node_modules/uuid/dist/v3.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _v = _interopRequireDefault(require_v35());
-    var _md = _interopRequireDefault(require_md5());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    var v3 = (0, _v.default)("v3", 48, _md.default);
-    var _default = v3;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/v3.js
+var v3, v3_default;
+var init_v3 = __esm({
+  "node_modules/uuid/dist/esm-node/v3.js"() {
+    init_v35();
+    init_md5();
+    v3 = v35_default("v3", 48, md5_default);
+    v3_default = v3;
   }
 });
 
-// node_modules/uuid/dist/v4.js
-var require_v4 = __commonJS({
-  "node_modules/uuid/dist/v4.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _rng = _interopRequireDefault(require_rng());
-    var _stringify = _interopRequireDefault(require_stringify());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
+// node_modules/uuid/dist/esm-node/v4.js
+function v4(options, buf, offset) {
+  options = options || {};
+  const rnds = options.random || (options.rng || rng)();
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  if (buf) {
+    offset = offset || 0;
+    for (let i2 = 0; i2 < 16; ++i2) {
+      buf[offset + i2] = rnds[i2];
     }
-    function v4(options, buf, offset) {
-      options = options || {};
-      const rnds = options.random || (options.rng || _rng.default)();
-      rnds[6] = rnds[6] & 15 | 64;
-      rnds[8] = rnds[8] & 63 | 128;
-      if (buf) {
-        offset = offset || 0;
-        for (let i2 = 0; i2 < 16; ++i2) {
-          buf[offset + i2] = rnds[i2];
-        }
-        return buf;
-      }
-      return (0, _stringify.default)(rnds);
-    }
-    var _default = v4;
-    exports.default = _default;
+    return buf;
+  }
+  return stringify_default(rnds);
+}
+var v4_default;
+var init_v4 = __esm({
+  "node_modules/uuid/dist/esm-node/v4.js"() {
+    init_rng();
+    init_stringify();
+    v4_default = v4;
   }
 });
 
-// node_modules/uuid/dist/sha1.js
-var require_sha1 = __commonJS({
-  "node_modules/uuid/dist/sha1.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _crypto = _interopRequireDefault(require("crypto"));
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function sha1(bytes) {
-      if (Array.isArray(bytes)) {
-        bytes = Buffer.from(bytes);
-      } else if (typeof bytes === "string") {
-        bytes = Buffer.from(bytes, "utf8");
-      }
-      return _crypto.default.createHash("sha1").update(bytes).digest();
-    }
-    var _default = sha1;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/sha1.js
+function sha1(bytes) {
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === "string") {
+    bytes = Buffer.from(bytes, "utf8");
+  }
+  return import_crypto3.default.createHash("sha1").update(bytes).digest();
+}
+var import_crypto3, sha1_default;
+var init_sha1 = __esm({
+  "node_modules/uuid/dist/esm-node/sha1.js"() {
+    import_crypto3 = __toESM(require("crypto"));
+    sha1_default = sha1;
   }
 });
 
-// node_modules/uuid/dist/v5.js
-var require_v5 = __commonJS({
-  "node_modules/uuid/dist/v5.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _v = _interopRequireDefault(require_v35());
-    var _sha = _interopRequireDefault(require_sha1());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    var v5 = (0, _v.default)("v5", 80, _sha.default);
-    var _default = v5;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/v5.js
+var v5, v5_default;
+var init_v5 = __esm({
+  "node_modules/uuid/dist/esm-node/v5.js"() {
+    init_v35();
+    init_sha1();
+    v5 = v35_default("v5", 80, sha1_default);
+    v5_default = v5;
   }
 });
 
-// node_modules/uuid/dist/nil.js
-var require_nil = __commonJS({
-  "node_modules/uuid/dist/nil.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _default = "00000000-0000-0000-0000-000000000000";
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/nil.js
+var nil_default;
+var init_nil = __esm({
+  "node_modules/uuid/dist/esm-node/nil.js"() {
+    nil_default = "00000000-0000-0000-0000-000000000000";
   }
 });
 
-// node_modules/uuid/dist/version.js
-var require_version = __commonJS({
-  "node_modules/uuid/dist/version.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _validate = _interopRequireDefault(require_validate());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function version(uuid) {
-      if (!(0, _validate.default)(uuid)) {
-        throw TypeError("Invalid UUID");
-      }
-      return parseInt(uuid.substr(14, 1), 16);
-    }
-    var _default = version;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/version.js
+function version(uuid) {
+  if (!validate_default(uuid)) {
+    throw TypeError("Invalid UUID");
+  }
+  return parseInt(uuid.substr(14, 1), 16);
+}
+var version_default;
+var init_version = __esm({
+  "node_modules/uuid/dist/esm-node/version.js"() {
+    init_validate();
+    version_default = version;
   }
 });
 
-// node_modules/uuid/dist/index.js
-var require_dist = __commonJS({
-  "node_modules/uuid/dist/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    Object.defineProperty(exports, "v1", {
-      enumerable: true,
-      get: function() {
-        return _v.default;
-      }
-    });
-    Object.defineProperty(exports, "v3", {
-      enumerable: true,
-      get: function() {
-        return _v2.default;
-      }
-    });
-    Object.defineProperty(exports, "v4", {
-      enumerable: true,
-      get: function() {
-        return _v3.default;
-      }
-    });
-    Object.defineProperty(exports, "v5", {
-      enumerable: true,
-      get: function() {
-        return _v4.default;
-      }
-    });
-    Object.defineProperty(exports, "NIL", {
-      enumerable: true,
-      get: function() {
-        return _nil.default;
-      }
-    });
-    Object.defineProperty(exports, "version", {
-      enumerable: true,
-      get: function() {
-        return _version.default;
-      }
-    });
-    Object.defineProperty(exports, "validate", {
-      enumerable: true,
-      get: function() {
-        return _validate.default;
-      }
-    });
-    Object.defineProperty(exports, "stringify", {
-      enumerable: true,
-      get: function() {
-        return _stringify.default;
-      }
-    });
-    Object.defineProperty(exports, "parse", {
-      enumerable: true,
-      get: function() {
-        return _parse.default;
-      }
-    });
-    var _v = _interopRequireDefault(require_v1());
-    var _v2 = _interopRequireDefault(require_v3());
-    var _v3 = _interopRequireDefault(require_v4());
-    var _v4 = _interopRequireDefault(require_v5());
-    var _nil = _interopRequireDefault(require_nil());
-    var _version = _interopRequireDefault(require_version());
-    var _validate = _interopRequireDefault(require_validate());
-    var _stringify = _interopRequireDefault(require_stringify());
-    var _parse = _interopRequireDefault(require_parse());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
+// node_modules/uuid/dist/esm-node/index.js
+var esm_node_exports = {};
+__export(esm_node_exports, {
+  NIL: () => nil_default,
+  parse: () => parse_default,
+  stringify: () => stringify_default,
+  v1: () => v1_default,
+  v3: () => v3_default,
+  v4: () => v4_default,
+  v5: () => v5_default,
+  validate: () => validate_default,
+  version: () => version_default
+});
+var init_esm_node = __esm({
+  "node_modules/uuid/dist/esm-node/index.js"() {
+    init_v1();
+    init_v3();
+    init_v4();
+    init_v5();
+    init_nil();
+    init_version();
+    init_validate();
+    init_stringify();
+    init_parse();
   }
 });
 
 // node_modules/@actions/core/lib/file-command.js
 var require_file_command = __commonJS({
-  "node_modules/@actions/core/lib/file-command.js"(exports) {
+  "node_modules/@actions/core/lib/file-command.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m2, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m2[k];
       } });
     } : function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m2[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.prepareKeyValueMessage = exports2.issueFileCommand = void 0;
     var fs3 = __importStar(require("fs"));
     var os = __importStar(require("os"));
-    var uuid_1 = require_dist();
+    var uuid_1 = (init_esm_node(), __toCommonJS(esm_node_exports));
     var utils_1 = require_utils();
     function issueFileCommand(command, message) {
       const filePath = process.env[`GITHUB_${command}`];
@@ -5042,7 +5118,7 @@ var require_file_command = __commonJS({
         encoding: "utf8"
       });
     }
-    exports.issueFileCommand = issueFileCommand;
+    exports2.issueFileCommand = issueFileCommand;
     function prepareKeyValueMessage(key, value) {
       const delimiter = `ghadelimiter_${uuid_1.v4()}`;
       const convertedValue = utils_1.toCommandValue(value);
@@ -5054,16 +5130,16 @@ var require_file_command = __commonJS({
       }
       return `${key}<<${delimiter}${os.EOL}${convertedValue}${os.EOL}${delimiter}`;
     }
-    exports.prepareKeyValueMessage = prepareKeyValueMessage;
+    exports2.prepareKeyValueMessage = prepareKeyValueMessage;
   }
 });
 
 // node_modules/@actions/http-client/lib/proxy.js
 var require_proxy = __commonJS({
-  "node_modules/@actions/http-client/lib/proxy.js"(exports) {
+  "node_modules/@actions/http-client/lib/proxy.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.checkBypass = exports.getProxyUrl = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.checkBypass = exports2.getProxyUrl = void 0;
     function getProxyUrl(reqUrl) {
       const usingSsl = reqUrl.protocol === "https:";
       if (checkBypass(reqUrl)) {
@@ -5082,7 +5158,7 @@ var require_proxy = __commonJS({
         return void 0;
       }
     }
-    exports.getProxyUrl = getProxyUrl;
+    exports2.getProxyUrl = getProxyUrl;
     function checkBypass(reqUrl) {
       if (!reqUrl.hostname) {
         return false;
@@ -5110,13 +5186,13 @@ var require_proxy = __commonJS({
       }
       return false;
     }
-    exports.checkBypass = checkBypass;
+    exports2.checkBypass = checkBypass;
   }
 });
 
 // node_modules/tunnel/lib/tunnel.js
 var require_tunnel = __commonJS({
-  "node_modules/tunnel/lib/tunnel.js"(exports) {
+  "node_modules/tunnel/lib/tunnel.js"(exports2) {
     "use strict";
     var net = require("net");
     var tls = require("tls");
@@ -5125,10 +5201,10 @@ var require_tunnel = __commonJS({
     var events = require("events");
     var assert = require("assert");
     var util = require("util");
-    exports.httpOverHttp = httpOverHttp;
-    exports.httpsOverHttp = httpsOverHttp;
-    exports.httpOverHttps = httpOverHttps;
-    exports.httpsOverHttps = httpsOverHttps;
+    exports2.httpOverHttp = httpOverHttp;
+    exports2.httpsOverHttp = httpsOverHttp;
+    exports2.httpOverHttps = httpOverHttps;
+    exports2.httpsOverHttps = httpsOverHttps;
     function httpOverHttp(options) {
       var agent = new TunnelingAgent(options);
       agent.request = http3.request;
@@ -5340,50 +5416,45 @@ var require_tunnel = __commonJS({
       debug = function() {
       };
     }
-    exports.debug = debug;
+    exports2.debug = debug;
   }
 });
 
 // node_modules/tunnel/index.js
 var require_tunnel2 = __commonJS({
-  "node_modules/tunnel/index.js"(exports, module2) {
+  "node_modules/tunnel/index.js"(exports2, module2) {
     module2.exports = require_tunnel();
   }
 });
 
 // node_modules/@actions/http-client/lib/index.js
 var require_lib = __commonJS({
-  "node_modules/@actions/http-client/lib/index.js"(exports) {
+  "node_modules/@actions/http-client/lib/index.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m2, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m2[k];
       } });
     } : function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m2[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -5410,8 +5481,8 @@ var require_lib = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.HttpClient = exports.isHttps = exports.HttpClientResponse = exports.HttpClientError = exports.getProxyUrl = exports.MediaTypes = exports.Headers = exports.HttpCodes = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.HttpClient = exports2.isHttps = exports2.HttpClientResponse = exports2.HttpClientError = exports2.getProxyUrl = exports2.MediaTypes = exports2.Headers = exports2.HttpCodes = void 0;
     var http3 = __importStar(require("http"));
     var https2 = __importStar(require("https"));
     var pm = __importStar(require_proxy());
@@ -5445,21 +5516,21 @@ var require_lib = __commonJS({
       HttpCodes2[HttpCodes2["BadGateway"] = 502] = "BadGateway";
       HttpCodes2[HttpCodes2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
       HttpCodes2[HttpCodes2["GatewayTimeout"] = 504] = "GatewayTimeout";
-    })(HttpCodes = exports.HttpCodes || (exports.HttpCodes = {}));
+    })(HttpCodes = exports2.HttpCodes || (exports2.HttpCodes = {}));
     var Headers2;
     (function(Headers3) {
       Headers3["Accept"] = "accept";
       Headers3["ContentType"] = "content-type";
-    })(Headers2 = exports.Headers || (exports.Headers = {}));
+    })(Headers2 = exports2.Headers || (exports2.Headers = {}));
     var MediaTypes;
     (function(MediaTypes2) {
       MediaTypes2["ApplicationJson"] = "application/json";
-    })(MediaTypes = exports.MediaTypes || (exports.MediaTypes = {}));
+    })(MediaTypes = exports2.MediaTypes || (exports2.MediaTypes = {}));
     function getProxyUrl(serverUrl) {
       const proxyUrl = pm.getProxyUrl(new URL(serverUrl));
       return proxyUrl ? proxyUrl.href : "";
     }
-    exports.getProxyUrl = getProxyUrl;
+    exports2.getProxyUrl = getProxyUrl;
     var HttpRedirectCodes = [
       HttpCodes.MovedPermanently,
       HttpCodes.ResourceMoved,
@@ -5475,15 +5546,15 @@ var require_lib = __commonJS({
     var RetryableHttpVerbs = ["OPTIONS", "GET", "DELETE", "HEAD"];
     var ExponentialBackoffCeiling = 10;
     var ExponentialBackoffTimeSlice = 5;
-    var HttpClientError = class extends Error {
+    var HttpClientError = class _HttpClientError extends Error {
       constructor(message, statusCode) {
         super(message);
         this.name = "HttpClientError";
         this.statusCode = statusCode;
-        Object.setPrototypeOf(this, HttpClientError.prototype);
+        Object.setPrototypeOf(this, _HttpClientError.prototype);
       }
     };
-    exports.HttpClientError = HttpClientError;
+    exports2.HttpClientError = HttpClientError;
     var HttpClientResponse = class {
       constructor(message) {
         this.message = message;
@@ -5502,12 +5573,12 @@ var require_lib = __commonJS({
         });
       }
     };
-    exports.HttpClientResponse = HttpClientResponse;
+    exports2.HttpClientResponse = HttpClientResponse;
     function isHttps(requestUrl) {
       const parsedUrl = new URL(requestUrl);
       return parsedUrl.protocol === "https:";
     }
-    exports.isHttps = isHttps;
+    exports2.isHttps = isHttps;
     var HttpClient = class {
       constructor(userAgent, handlers, requestOptions) {
         this._ignoreSslError = false;
@@ -5586,6 +5657,10 @@ var require_lib = __commonJS({
           return this.request(verb, requestUrl, stream, additionalHeaders);
         });
       }
+      /**
+       * Gets a typed object from an endpoint
+       * Be aware that not found returns a null.  Other errors (4xx, 5xx) reject the promise
+       */
       getJson(requestUrl, additionalHeaders = {}) {
         return __awaiter(this, void 0, void 0, function* () {
           additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes.ApplicationJson);
@@ -5620,6 +5695,11 @@ var require_lib = __commonJS({
           return this._processResponse(res, this.requestOptions);
         });
       }
+      /**
+       * Makes a raw http request.
+       * All other methods such as get, post, patch, and request ultimately call this.
+       * Prefer get, del, post and patch
+       */
       request(verb, requestUrl, data, headers) {
         return __awaiter(this, void 0, void 0, function* () {
           if (this._disposed) {
@@ -5680,12 +5760,20 @@ var require_lib = __commonJS({
           return response;
         });
       }
+      /**
+       * Needs to be called if keepAlive is set to true in request options.
+       */
       dispose() {
         if (this._agent) {
           this._agent.destroy();
         }
         this._disposed = true;
       }
+      /**
+       * Raw request.
+       * @param info
+       * @param data
+       */
       requestRaw(info, data) {
         return __awaiter(this, void 0, void 0, function* () {
           return new Promise((resolve, reject) => {
@@ -5702,6 +5790,12 @@ var require_lib = __commonJS({
           });
         });
       }
+      /**
+       * Raw request with callback.
+       * @param info
+       * @param data
+       * @param onResult
+       */
       requestRawWithCallback(info, data, onResult) {
         if (typeof data === "string") {
           if (!info.options.headers) {
@@ -5745,6 +5839,11 @@ var require_lib = __commonJS({
           req.end();
         }
       }
+      /**
+       * Gets an http agent. This function is useful when you need an http agent that handles
+       * routing through a proxy server - depending upon the url and proxy environment variables.
+       * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
+       */
       getAgent(serverUrl) {
         const parsedUrl = new URL(serverUrl);
         return this._getAgent(parsedUrl);
@@ -5898,16 +5997,16 @@ var require_lib = __commonJS({
         });
       }
     };
-    exports.HttpClient = HttpClient;
+    exports2.HttpClient = HttpClient;
     var lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k) => (c[k.toLowerCase()] = obj[k], c), {});
   }
 });
 
 // node_modules/@actions/http-client/lib/auth.js
 var require_auth = __commonJS({
-  "node_modules/@actions/http-client/lib/auth.js"(exports) {
+  "node_modules/@actions/http-client/lib/auth.js"(exports2) {
     "use strict";
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -5934,8 +6033,8 @@ var require_auth = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.PersonalAccessTokenCredentialHandler = exports.BearerCredentialHandler = exports.BasicCredentialHandler = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.PersonalAccessTokenCredentialHandler = exports2.BearerCredentialHandler = exports2.BasicCredentialHandler = void 0;
     var BasicCredentialHandler = class {
       constructor(username, password) {
         this.username = username;
@@ -5947,6 +6046,7 @@ var require_auth = __commonJS({
         }
         options.headers["Authorization"] = `Basic ${Buffer.from(`${this.username}:${this.password}`).toString("base64")}`;
       }
+      // This handler cannot handle 401
       canHandleAuthentication() {
         return false;
       }
@@ -5956,17 +6056,20 @@ var require_auth = __commonJS({
         });
       }
     };
-    exports.BasicCredentialHandler = BasicCredentialHandler;
+    exports2.BasicCredentialHandler = BasicCredentialHandler;
     var BearerCredentialHandler = class {
       constructor(token) {
         this.token = token;
       }
+      // currently implements pre-authorization
+      // TODO: support preAuth = false where it hooks on 401
       prepareRequest(options) {
         if (!options.headers) {
           throw Error("The request has no headers");
         }
         options.headers["Authorization"] = `Bearer ${this.token}`;
       }
+      // This handler cannot handle 401
       canHandleAuthentication() {
         return false;
       }
@@ -5976,17 +6079,20 @@ var require_auth = __commonJS({
         });
       }
     };
-    exports.BearerCredentialHandler = BearerCredentialHandler;
+    exports2.BearerCredentialHandler = BearerCredentialHandler;
     var PersonalAccessTokenCredentialHandler = class {
       constructor(token) {
         this.token = token;
       }
+      // currently implements pre-authorization
+      // TODO: support preAuth = false where it hooks on 401
       prepareRequest(options) {
         if (!options.headers) {
           throw Error("The request has no headers");
         }
         options.headers["Authorization"] = `Basic ${Buffer.from(`PAT:${this.token}`).toString("base64")}`;
       }
+      // This handler cannot handle 401
       canHandleAuthentication() {
         return false;
       }
@@ -5996,15 +6102,15 @@ var require_auth = __commonJS({
         });
       }
     };
-    exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
+    exports2.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
   }
 });
 
 // node_modules/@actions/core/lib/oidc-utils.js
 var require_oidc_utils = __commonJS({
-  "node_modules/@actions/core/lib/oidc-utils.js"(exports) {
+  "node_modules/@actions/core/lib/oidc-utils.js"(exports2) {
     "use strict";
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -6031,18 +6137,18 @@ var require_oidc_utils = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.OidcClient = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.OidcClient = void 0;
     var http_client_1 = require_lib();
     var auth_1 = require_auth();
     var core_1 = require_core();
-    var OidcClient = class {
+    var OidcClient = class _OidcClient {
       static createHttpClient(allowRetry = true, maxRetry = 10) {
         const requestOptions = {
           allowRetries: allowRetry,
           maxRetries: maxRetry
         };
-        return new http_client_1.HttpClient("actions/oidc-client", [new auth_1.BearerCredentialHandler(OidcClient.getRequestToken())], requestOptions);
+        return new http_client_1.HttpClient("actions/oidc-client", [new auth_1.BearerCredentialHandler(_OidcClient.getRequestToken())], requestOptions);
       }
       static getRequestToken() {
         const token = process.env["ACTIONS_ID_TOKEN_REQUEST_TOKEN"];
@@ -6061,7 +6167,7 @@ var require_oidc_utils = __commonJS({
       static getCall(id_token_url) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-          const httpclient = OidcClient.createHttpClient();
+          const httpclient = _OidcClient.createHttpClient();
           const res = yield httpclient.getJson(id_token_url).catch((error) => {
             throw new Error(`Failed to get ID Token. 
  
@@ -6079,13 +6185,13 @@ var require_oidc_utils = __commonJS({
       static getIDToken(audience) {
         return __awaiter(this, void 0, void 0, function* () {
           try {
-            let id_token_url = OidcClient.getIDTokenUrl();
+            let id_token_url = _OidcClient.getIDTokenUrl();
             if (audience) {
               const encodedAudience = encodeURIComponent(audience);
               id_token_url = `${id_token_url}&audience=${encodedAudience}`;
             }
             core_1.debug(`ID token url is ${id_token_url}`);
-            const id_token = yield OidcClient.getCall(id_token_url);
+            const id_token = yield _OidcClient.getCall(id_token_url);
             core_1.setSecret(id_token);
             return id_token;
           } catch (error) {
@@ -6094,15 +6200,15 @@ var require_oidc_utils = __commonJS({
         });
       }
     };
-    exports.OidcClient = OidcClient;
+    exports2.OidcClient = OidcClient;
   }
 });
 
 // node_modules/@actions/core/lib/summary.js
 var require_summary = __commonJS({
-  "node_modules/@actions/core/lib/summary.js"(exports) {
+  "node_modules/@actions/core/lib/summary.js"(exports2) {
     "use strict";
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -6129,25 +6235,31 @@ var require_summary = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.summary = exports.markdownSummary = exports.SUMMARY_DOCS_URL = exports.SUMMARY_ENV_VAR = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.summary = exports2.markdownSummary = exports2.SUMMARY_DOCS_URL = exports2.SUMMARY_ENV_VAR = void 0;
     var os_1 = require("os");
     var fs_1 = require("fs");
     var { access, appendFile, writeFile } = fs_1.promises;
-    exports.SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
-    exports.SUMMARY_DOCS_URL = "https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary";
+    exports2.SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
+    exports2.SUMMARY_DOCS_URL = "https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary";
     var Summary = class {
       constructor() {
         this._buffer = "";
       }
+      /**
+       * Finds the summary file path from the environment, rejects if env var is not found or file does not exist
+       * Also checks r/w permissions.
+       *
+       * @returns step summary file path
+       */
       filePath() {
         return __awaiter(this, void 0, void 0, function* () {
           if (this._filePath) {
             return this._filePath;
           }
-          const pathFromEnv = process.env[exports.SUMMARY_ENV_VAR];
+          const pathFromEnv = process.env[exports2.SUMMARY_ENV_VAR];
           if (!pathFromEnv) {
-            throw new Error(`Unable to find environment variable for $${exports.SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
+            throw new Error(`Unable to find environment variable for $${exports2.SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
           }
           try {
             yield access(pathFromEnv, fs_1.constants.R_OK | fs_1.constants.W_OK);
@@ -6158,6 +6270,15 @@ var require_summary = __commonJS({
           return this._filePath;
         });
       }
+      /**
+       * Wraps content in an HTML tag, adding any HTML attributes
+       *
+       * @param {string} tag HTML tag to wrap
+       * @param {string | null} content content within the tag
+       * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
+       *
+       * @returns {string} content wrapped in HTML element
+       */
       wrap(tag, content, attrs = {}) {
         const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
         if (!content) {
@@ -6165,6 +6286,13 @@ var require_summary = __commonJS({
         }
         return `<${tag}${htmlAttrs}>${content}</${tag}>`;
       }
+      /**
+       * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
+       *
+       * @param {SummaryWriteOptions} [options] (optional) options for write operation
+       *
+       * @returns {Promise<Summary>} summary instance
+       */
       write(options) {
         return __awaiter(this, void 0, void 0, function* () {
           const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
@@ -6174,39 +6302,95 @@ var require_summary = __commonJS({
           return this.emptyBuffer();
         });
       }
+      /**
+       * Clears the summary buffer and wipes the summary file
+       *
+       * @returns {Summary} summary instance
+       */
       clear() {
         return __awaiter(this, void 0, void 0, function* () {
           return this.emptyBuffer().write({ overwrite: true });
         });
       }
+      /**
+       * Returns the current summary buffer as a string
+       *
+       * @returns {string} string of summary buffer
+       */
       stringify() {
         return this._buffer;
       }
+      /**
+       * If the summary buffer is empty
+       *
+       * @returns {boolen} true if the buffer is empty
+       */
       isEmptyBuffer() {
         return this._buffer.length === 0;
       }
+      /**
+       * Resets the summary buffer without writing to summary file
+       *
+       * @returns {Summary} summary instance
+       */
       emptyBuffer() {
         this._buffer = "";
         return this;
       }
+      /**
+       * Adds raw text to the summary buffer
+       *
+       * @param {string} text content to add
+       * @param {boolean} [addEOL=false] (optional) append an EOL to the raw text (default: false)
+       *
+       * @returns {Summary} summary instance
+       */
       addRaw(text, addEOL = false) {
         this._buffer += text;
         return addEOL ? this.addEOL() : this;
       }
+      /**
+       * Adds the operating system-specific end-of-line marker to the buffer
+       *
+       * @returns {Summary} summary instance
+       */
       addEOL() {
         return this.addRaw(os_1.EOL);
       }
+      /**
+       * Adds an HTML codeblock to the summary buffer
+       *
+       * @param {string} code content to render within fenced code block
+       * @param {string} lang (optional) language to syntax highlight code
+       *
+       * @returns {Summary} summary instance
+       */
       addCodeBlock(code, lang) {
         const attrs = Object.assign({}, lang && { lang });
         const element = this.wrap("pre", this.wrap("code", code), attrs);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML list to the summary buffer
+       *
+       * @param {string[]} items list of items to render
+       * @param {boolean} [ordered=false] (optional) if the rendered list should be ordered or not (default: false)
+       *
+       * @returns {Summary} summary instance
+       */
       addList(items, ordered = false) {
         const tag = ordered ? "ol" : "ul";
         const listItems = items.map((item) => this.wrap("li", item)).join("");
         const element = this.wrap(tag, listItems);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML table to the summary buffer
+       *
+       * @param {SummaryTableCell[]} rows table rows
+       *
+       * @returns {Summary} summary instance
+       */
       addTable(rows) {
         const tableBody = rows.map((row) => {
           const cells = row.map((cell) => {
@@ -6223,129 +6407,170 @@ var require_summary = __commonJS({
         const element = this.wrap("table", tableBody);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds a collapsable HTML details element to the summary buffer
+       *
+       * @param {string} label text for the closed state
+       * @param {string} content collapsable content
+       *
+       * @returns {Summary} summary instance
+       */
       addDetails(label, content) {
         const element = this.wrap("details", this.wrap("summary", label) + content);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML image tag to the summary buffer
+       *
+       * @param {string} src path to the image you to embed
+       * @param {string} alt text description of the image
+       * @param {SummaryImageOptions} options (optional) addition image attributes
+       *
+       * @returns {Summary} summary instance
+       */
       addImage(src, alt, options) {
         const { width, height } = options || {};
         const attrs = Object.assign(Object.assign({}, width && { width }), height && { height });
         const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML section heading element
+       *
+       * @param {string} text heading text
+       * @param {number | string} [level=1] (optional) the heading level, default: 1
+       *
+       * @returns {Summary} summary instance
+       */
       addHeading(text, level) {
         const tag = `h${level}`;
         const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
         const element = this.wrap(allowedTag, text);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML thematic break (<hr>) to the summary buffer
+       *
+       * @returns {Summary} summary instance
+       */
       addSeparator() {
         const element = this.wrap("hr", null);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML line break (<br>) to the summary buffer
+       *
+       * @returns {Summary} summary instance
+       */
       addBreak() {
         const element = this.wrap("br", null);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML blockquote to the summary buffer
+       *
+       * @param {string} text quote text
+       * @param {string} cite (optional) citation url
+       *
+       * @returns {Summary} summary instance
+       */
       addQuote(text, cite) {
         const attrs = Object.assign({}, cite && { cite });
         const element = this.wrap("blockquote", text, attrs);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML anchor tag to the summary buffer
+       *
+       * @param {string} text link text/content
+       * @param {string} href hyperlink
+       *
+       * @returns {Summary} summary instance
+       */
       addLink(text, href) {
         const element = this.wrap("a", text, { href });
         return this.addRaw(element).addEOL();
       }
     };
     var _summary = new Summary();
-    exports.markdownSummary = _summary;
-    exports.summary = _summary;
+    exports2.markdownSummary = _summary;
+    exports2.summary = _summary;
   }
 });
 
 // node_modules/@actions/core/lib/path-utils.js
 var require_path_utils = __commonJS({
-  "node_modules/@actions/core/lib/path-utils.js"(exports) {
+  "node_modules/@actions/core/lib/path-utils.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m2, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m2[k];
       } });
     } : function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m2[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.toPlatformPath = exports2.toWin32Path = exports2.toPosixPath = void 0;
     var path = __importStar(require("path"));
     function toPosixPath(pth) {
       return pth.replace(/[\\]/g, "/");
     }
-    exports.toPosixPath = toPosixPath;
+    exports2.toPosixPath = toPosixPath;
     function toWin32Path(pth) {
       return pth.replace(/[/]/g, "\\");
     }
-    exports.toWin32Path = toWin32Path;
+    exports2.toWin32Path = toWin32Path;
     function toPlatformPath(pth) {
       return pth.replace(/[/\\]/g, path.sep);
     }
-    exports.toPlatformPath = toPlatformPath;
+    exports2.toPlatformPath = toPlatformPath;
   }
 });
 
 // node_modules/@actions/core/lib/core.js
 var require_core = __commonJS({
-  "node_modules/@actions/core/lib/core.js"(exports) {
+  "node_modules/@actions/core/lib/core.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m2, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m2[k];
       } });
     } : function(o, m2, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m2[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -6372,8 +6597,8 @@ var require_core = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getIDToken = exports2.getState = exports2.saveState = exports2.group = exports2.endGroup = exports2.startGroup = exports2.info = exports2.notice = exports2.warning = exports2.error = exports2.debug = exports2.isDebug = exports2.setFailed = exports2.setCommandEcho = exports2.setOutput = exports2.getBooleanInput = exports2.getMultilineInput = exports2.getInput = exports2.addPath = exports2.setSecret = exports2.exportVariable = exports2.ExitCode = void 0;
     var command_1 = require_command();
     var file_command_1 = require_file_command();
     var utils_1 = require_utils();
@@ -6384,7 +6609,7 @@ var require_core = __commonJS({
     (function(ExitCode2) {
       ExitCode2[ExitCode2["Success"] = 0] = "Success";
       ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
-    })(ExitCode = exports.ExitCode || (exports.ExitCode = {}));
+    })(ExitCode = exports2.ExitCode || (exports2.ExitCode = {}));
     function exportVariable(name, val) {
       const convertedVal = utils_1.toCommandValue(val);
       process.env[name] = convertedVal;
@@ -6394,11 +6619,11 @@ var require_core = __commonJS({
       }
       command_1.issueCommand("set-env", { name }, convertedVal);
     }
-    exports.exportVariable = exportVariable;
+    exports2.exportVariable = exportVariable;
     function setSecret(secret) {
       command_1.issueCommand("add-mask", {}, secret);
     }
-    exports.setSecret = setSecret;
+    exports2.setSecret = setSecret;
     function addPath(inputPath) {
       const filePath = process.env["GITHUB_PATH"] || "";
       if (filePath) {
@@ -6408,7 +6633,7 @@ var require_core = __commonJS({
       }
       process.env["PATH"] = `${inputPath}${path.delimiter}${process.env["PATH"]}`;
     }
-    exports.addPath = addPath;
+    exports2.addPath = addPath;
     function getInput2(name, options) {
       const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
       if (options && options.required && !val) {
@@ -6419,7 +6644,7 @@ var require_core = __commonJS({
       }
       return val.trim();
     }
-    exports.getInput = getInput2;
+    exports2.getInput = getInput2;
     function getMultilineInput(name, options) {
       const inputs = getInput2(name, options).split("\n").filter((x2) => x2 !== "");
       if (options && options.trimWhitespace === false) {
@@ -6427,7 +6652,7 @@ var require_core = __commonJS({
       }
       return inputs.map((input) => input.trim());
     }
-    exports.getMultilineInput = getMultilineInput;
+    exports2.getMultilineInput = getMultilineInput;
     function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
@@ -6439,7 +6664,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports.getBooleanInput = getBooleanInput;
+    exports2.getBooleanInput = getBooleanInput;
     function setOutput(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -6448,48 +6673,48 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       process.stdout.write(os.EOL);
       command_1.issueCommand("set-output", { name }, utils_1.toCommandValue(value));
     }
-    exports.setOutput = setOutput;
+    exports2.setOutput = setOutput;
     function setCommandEcho(enabled) {
       command_1.issue("echo", enabled ? "on" : "off");
     }
-    exports.setCommandEcho = setCommandEcho;
+    exports2.setCommandEcho = setCommandEcho;
     function setFailed2(message) {
       process.exitCode = ExitCode.Failure;
       error(message);
     }
-    exports.setFailed = setFailed2;
+    exports2.setFailed = setFailed2;
     function isDebug() {
       return process.env["RUNNER_DEBUG"] === "1";
     }
-    exports.isDebug = isDebug;
+    exports2.isDebug = isDebug;
     function debug(message) {
       command_1.issueCommand("debug", {}, message);
     }
-    exports.debug = debug;
+    exports2.debug = debug;
     function error(message, properties = {}) {
       command_1.issueCommand("error", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.error = error;
+    exports2.error = error;
     function warning2(message, properties = {}) {
       command_1.issueCommand("warning", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.warning = warning2;
+    exports2.warning = warning2;
     function notice(message, properties = {}) {
       command_1.issueCommand("notice", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.notice = notice;
+    exports2.notice = notice;
     function info(message) {
       process.stdout.write(message + os.EOL);
     }
-    exports.info = info;
+    exports2.info = info;
     function startGroup(name) {
       command_1.issue("group", name);
     }
-    exports.startGroup = startGroup;
+    exports2.startGroup = startGroup;
     function endGroup() {
       command_1.issue("endgroup");
     }
-    exports.endGroup = endGroup;
+    exports2.endGroup = endGroup;
     function group(name, fn) {
       return __awaiter(this, void 0, void 0, function* () {
         startGroup(name);
@@ -6502,7 +6727,7 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
         return result;
       });
     }
-    exports.group = group;
+    exports2.group = group;
     function saveState(name, value) {
       const filePath = process.env["GITHUB_STATE"] || "";
       if (filePath) {
@@ -6510,33 +6735,33 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       }
       command_1.issueCommand("save-state", { name }, utils_1.toCommandValue(value));
     }
-    exports.saveState = saveState;
+    exports2.saveState = saveState;
     function getState(name) {
       return process.env[`STATE_${name}`] || "";
     }
-    exports.getState = getState;
+    exports2.getState = getState;
     function getIDToken(aud) {
       return __awaiter(this, void 0, void 0, function* () {
         return yield oidc_utils_1.OidcClient.getIDToken(aud);
       });
     }
-    exports.getIDToken = getIDToken;
+    exports2.getIDToken = getIDToken;
     var summary_1 = require_summary();
-    Object.defineProperty(exports, "summary", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "summary", { enumerable: true, get: function() {
       return summary_1.summary;
     } });
     var summary_2 = require_summary();
-    Object.defineProperty(exports, "markdownSummary", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "markdownSummary", { enumerable: true, get: function() {
       return summary_2.markdownSummary;
     } });
     var path_utils_1 = require_path_utils();
-    Object.defineProperty(exports, "toPosixPath", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "toPosixPath", { enumerable: true, get: function() {
       return path_utils_1.toPosixPath;
     } });
-    Object.defineProperty(exports, "toWin32Path", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "toWin32Path", { enumerable: true, get: function() {
       return path_utils_1.toWin32Path;
     } });
-    Object.defineProperty(exports, "toPlatformPath", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "toPlatformPath", { enumerable: true, get: function() {
       return path_utils_1.toPlatformPath;
     } });
   }
@@ -6612,6 +6837,11 @@ var FetchBaseError = class extends Error {
 
 // node_modules/node-fetch/src/errors/fetch-error.js
 var FetchError = class extends FetchBaseError {
+  /**
+   * @param  {string} message -      Error message for human
+   * @param  {string} [type] -        Error type for machine
+   * @param  {SystemError} [systemError] - For Node.js system error
+   */
   constructor(message, type, systemError) {
     super(message, type);
     if (systemError) {
@@ -6695,6 +6925,11 @@ var Body = class {
   get bodyUsed() {
     return this[INTERNALS].disturbed;
   }
+  /**
+   * Decode response as ArrayBuffer
+   *
+   * @return  Promise
+   */
   async arrayBuffer() {
     const { buffer, byteOffset, byteLength } = await consumeBody(this);
     return buffer.slice(byteOffset, byteOffset + byteLength);
@@ -6712,6 +6947,11 @@ var Body = class {
     const { toFormData: toFormData2 } = await Promise.resolve().then(() => (init_multipart_parser(), multipart_parser_exports));
     return toFormData2(this.body, ct);
   }
+  /**
+   * Return raw response as Blob
+   *
+   * @return Promise
+   */
   async blob() {
     const ct = this.headers && this.headers.get("content-type") || this[INTERNALS].body && this[INTERNALS].body.type || "";
     const buf = await this.arrayBuffer();
@@ -6719,14 +6959,29 @@ var Body = class {
       type: ct
     });
   }
+  /**
+   * Decode response as json
+   *
+   * @return  Promise
+   */
   async json() {
     const text = await this.text();
     return JSON.parse(text);
   }
+  /**
+   * Decode response as text
+   *
+   * @return  Promise
+   */
   async text() {
     const buffer = await consumeBody(this);
     return new TextDecoder().decode(buffer);
   }
+  /**
+   * Decode response as buffer (non-spec api)
+   *
+   * @return  Promise
+   */
   buffer() {
     return consumeBody(this);
   }
@@ -6880,10 +7135,16 @@ var validateHeaderValue = typeof import_node_http.default.validateHeaderValue ==
     throw error;
   }
 };
-var Headers = class extends URLSearchParams {
+var Headers = class _Headers extends URLSearchParams {
+  /**
+   * Headers class
+   *
+   * @constructor
+   * @param {HeadersInit} [init] - Response headers
+   */
   constructor(init) {
     let result = [];
-    if (init instanceof Headers) {
+    if (init instanceof _Headers) {
       const raw = init.raw();
       for (const [name, values] of Object.entries(raw)) {
         result.push(...values.map((value) => [name, value]));
@@ -6980,6 +7241,9 @@ var Headers = class extends URLSearchParams {
       yield this.get(name);
     }
   }
+  /**
+   * @type {() => IterableIterator<[string, string]>}
+   */
   *entries() {
     for (const name of this.keys()) {
       yield [name, this.get(name)];
@@ -6988,12 +7252,20 @@ var Headers = class extends URLSearchParams {
   [Symbol.iterator]() {
     return this.entries();
   }
+  /**
+   * Node-fetch non-spec method
+   * returning all headers and their values as array
+   * @returns {Record<string, string[]>}
+   */
   raw() {
     return [...this.keys()].reduce((result, key) => {
       result[key] = this.getAll(key);
       return result;
     }, {});
   }
+  /**
+   * For better console.log(headers) and also to convert Headers into Node.js Request compatible format
+   */
   [Symbol.for("nodejs.util.inspect.custom")]() {
     return [...this.keys()].reduce((result, key) => {
       const values = this.getAll(key);
@@ -7040,7 +7312,7 @@ var isRedirect = (code) => {
 
 // node_modules/node-fetch/src/response.js
 var INTERNALS2 = Symbol("Response internals");
-var Response = class extends Body {
+var Response = class _Response extends Body {
   constructor(body = null, options = {}) {
     super(body, options);
     const status = options.status != null ? options.status : 200;
@@ -7070,6 +7342,9 @@ var Response = class extends Body {
   get status() {
     return this[INTERNALS2].status;
   }
+  /**
+   * Convenience property representing if the request ended normally
+   */
   get ok() {
     return this[INTERNALS2].status >= 200 && this[INTERNALS2].status < 300;
   }
@@ -7085,8 +7360,13 @@ var Response = class extends Body {
   get highWaterMark() {
     return this[INTERNALS2].highWaterMark;
   }
+  /**
+   * Clone this response
+   *
+   * @return  Response
+   */
   clone() {
-    return new Response(clone(this, this.highWaterMark), {
+    return new _Response(clone(this, this.highWaterMark), {
       type: this.type,
       url: this.url,
       status: this.status,
@@ -7098,11 +7378,16 @@ var Response = class extends Body {
       highWaterMark: this.highWaterMark
     });
   }
+  /**
+   * @param {string} url    The URL that the new response is to originate from.
+   * @param {number} status An optional status code for the response (e.g., 302.)
+   * @returns {Response}    A Response object.
+   */
   static redirect(url, status = 302) {
     if (!isRedirect(status)) {
       throw new RangeError('Failed to execute "redirect" on "response": Invalid status code');
     }
-    return new Response(null, {
+    return new _Response(null, {
       headers: {
         location: new URL(url).toString()
       },
@@ -7110,7 +7395,7 @@ var Response = class extends Body {
     });
   }
   static error() {
-    const response = new Response(null, { status: 0, statusText: "" });
+    const response = new _Response(null, { status: 0, statusText: "" });
     response[INTERNALS2].type = "error";
     return response;
   }
@@ -7294,7 +7579,7 @@ var doBadDataWarn = (0, import_node_util3.deprecate)(
   ".data is not a valid RequestInit property, use .body instead",
   "https://github.com/node-fetch/node-fetch/issues/1000 (request)"
 );
-var Request = class extends Body {
+var Request = class _Request extends Body {
   constructor(input, init = {}) {
     let parsedURL;
     if (isRequest(input)) {
@@ -7359,21 +7644,26 @@ var Request = class extends Body {
     this.insecureHTTPParser = init.insecureHTTPParser || input.insecureHTTPParser || false;
     this.referrerPolicy = init.referrerPolicy || input.referrerPolicy || "";
   }
+  /** @returns {string} */
   get method() {
     return this[INTERNALS3].method;
   }
+  /** @returns {string} */
   get url() {
     return (0, import_node_url.format)(this[INTERNALS3].parsedURL);
   }
+  /** @returns {Headers} */
   get headers() {
     return this[INTERNALS3].headers;
   }
   get redirect() {
     return this[INTERNALS3].redirect;
   }
+  /** @returns {AbortSignal} */
   get signal() {
     return this[INTERNALS3].signal;
   }
+  // https://fetch.spec.whatwg.org/#dom-request-referrer
   get referrer() {
     if (this[INTERNALS3].referrer === "no-referrer") {
       return "";
@@ -7392,8 +7682,13 @@ var Request = class extends Body {
   set referrerPolicy(referrerPolicy) {
     this[INTERNALS3].referrerPolicy = validateReferrerPolicy(referrerPolicy);
   }
+  /**
+   * Clone this request
+   *
+   * @return  Request
+   */
   clone() {
-    return new Request(this);
+    return new _Request(this);
   }
   get [Symbol.toStringTag]() {
     return "Request";
@@ -7454,13 +7749,16 @@ var getNodeRequestOptions = (request) => {
   }
   const search = getSearch(parsedURL);
   const options = {
+    // Overwrite search to retain trailing ? (issue #776)
     path: parsedURL.pathname + search,
+    // The following options are not expressed in the URL
     method: request.method,
     headers: headers[Symbol.for("nodejs.util.inspect.custom")](),
     insecureHTTPParser: request.insecureHTTPParser,
     agent
   };
   return {
+    /** @type {URL} */
     parsedURL,
     options
   };
@@ -7787,6 +8085,14 @@ async function run() {
   }
 }
 run();
-/*! fetch-blob. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
-/*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
-/*! node-domexception. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
+/*! Bundled license information:
+
+fetch-blob/index.js:
+  (*! fetch-blob. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> *)
+
+formdata-polyfill/esm.min.js:
+  (*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> *)
+
+node-domexception/index.js:
+  (*! node-domexception. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> *)
+*/
