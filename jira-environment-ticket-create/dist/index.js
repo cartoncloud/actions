@@ -21857,10 +21857,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       command_1.issueCommand("error", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
     exports.error = error2;
-    function warning(message, properties = {}) {
+    function warning2(message, properties = {}) {
       command_1.issueCommand("warning", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.warning = warning;
+    exports.warning = warning2;
     function notice(message, properties = {}) {
       command_1.issueCommand("notice", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
@@ -23150,7 +23150,25 @@ async function run() {
     const issueTypeId = core.getInput("issueTypeId", { required: true });
     const nameField = core.getInput("nameField", { required: true });
     const urlField = core.getInput("urlField", { required: true });
+    const projectKey = core.getInput("projectKey", { required: true });
+    const jiraEnvironmentField = core.getInput("jiraEnvironmentField", { required: true });
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString("base64");
+    const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
+    core.info("Checking if issue already exists");
+    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}`);
+    core.info(`GET ${existingUrl}`);
+    const existingResponse = await fetch(existingUrl, {
+      method: "GET",
+      headers: {
+        "Authorization": `Basic ${jiraBase64Credentials}`,
+        "Content-Type": "application/json"
+      }
+    });
+    const matchingIssues = await existingResponse.json();
+    if (matchingIssues.total !== 0) {
+      core.warning(`A ticket for environment ${environmentName} already exists.`);
+      return;
+    }
     core.info("Creating issue.");
     const createResponse = await fetch(`https://${jiraServer}/rest/api/latest/issue`, {
       method: "POST",

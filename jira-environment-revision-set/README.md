@@ -21,3 +21,8 @@ App/project name i.e. React
 
 ### revision (required)
 Git branch or tag
+
+## Outputs
+
+### existingRevision
+The revision that was previously set, if present

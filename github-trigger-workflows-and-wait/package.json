@@ -1,7 +1,7 @@
 {
-  "name": "github-download-multi-run-artifacts",
+  "name": "github-trigger-workflows-and-wait",
   "version": "1.0.0",
-  "description": "Download multiple workflow runs artifacts to specified folder",
+  "description": "Trigger a list of workflows and wait for their result",
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc && esbuild src/index.ts --bundle --platform=node --outdir=dist"
@@ -15,12 +15,13 @@
   "license": "ISC",
   "dependencies": {
     "@actions/core": "^1.10.1",
-    "@actions/github": "^6.0.0",
-    "adm-zip": "^0.5.10"
+    "@actions/github": "^5.1.1",
+    "@octokit/rest": "^21.0.2",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.5.2",
     "@types/node": "^20.8.3",
+    "@types/uuid": "^10.0.0",
     "esbuild": "^0.25.0",
     "typescript": "^5.2.2"
   }
