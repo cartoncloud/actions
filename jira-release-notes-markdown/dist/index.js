@@ -5,8 +5,15 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
@@ -17,16 +24,21 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // node_modules/@actions/core/lib/utils.js
 var require_utils = __commonJS({
-  "node_modules/@actions/core/lib/utils.js"(exports) {
+  "node_modules/@actions/core/lib/utils.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.toCommandProperties = exports.toCommandValue = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.toCommandProperties = exports2.toCommandValue = void 0;
     function toCommandValue(input) {
       if (input === null || input === void 0) {
         return "";
@@ -35,7 +47,7 @@ var require_utils = __commonJS({
       }
       return JSON.stringify(input);
     }
-    exports.toCommandValue = toCommandValue;
+    exports2.toCommandValue = toCommandValue;
     function toCommandProperties(annotationProperties) {
       if (!Object.keys(annotationProperties).length) {
         return {};
@@ -49,55 +61,50 @@ var require_utils = __commonJS({
         endColumn: annotationProperties.endColumn
       };
     }
-    exports.toCommandProperties = toCommandProperties;
+    exports2.toCommandProperties = toCommandProperties;
   }
 });
 
 // node_modules/@actions/core/lib/command.js
 var require_command = __commonJS({
-  "node_modules/@actions/core/lib/command.js"(exports) {
+  "node_modules/@actions/core/lib/command.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m[k];
       } });
     } : function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.issue = exports.issueCommand = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.issue = exports2.issueCommand = void 0;
     var os = __importStar(require("os"));
     var utils_1 = require_utils();
     function issueCommand(command, properties, message) {
       const cmd = new Command(command, properties, message);
       process.stdout.write(cmd.toString() + os.EOL);
     }
-    exports.issueCommand = issueCommand;
+    exports2.issueCommand = issueCommand;
     function issue(name, message = "") {
       issueCommand(name, {}, message);
     }
-    exports.issue = issue;
+    exports2.issue = issue;
     var CMD_STRING = "::";
     var Command = class {
       constructor(command, properties, message) {
@@ -140,534 +147,371 @@ var require_command = __commonJS({
   }
 });
 
-// node_modules/uuid/dist/rng.js
-var require_rng = __commonJS({
-  "node_modules/uuid/dist/rng.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = rng;
-    var _crypto = _interopRequireDefault(require("crypto"));
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    var rnds8Pool = new Uint8Array(256);
-    var poolPtr = rnds8Pool.length;
-    function rng() {
-      if (poolPtr > rnds8Pool.length - 16) {
-        _crypto.default.randomFillSync(rnds8Pool);
-        poolPtr = 0;
-      }
-      return rnds8Pool.slice(poolPtr, poolPtr += 16);
-    }
+// node_modules/uuid/dist/esm-node/rng.js
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    import_crypto.default.randomFillSync(rnds8Pool);
+    poolPtr = 0;
+  }
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+var import_crypto, rnds8Pool, poolPtr;
+var init_rng = __esm({
+  "node_modules/uuid/dist/esm-node/rng.js"() {
+    import_crypto = __toESM(require("crypto"));
+    rnds8Pool = new Uint8Array(256);
+    poolPtr = rnds8Pool.length;
   }
 });
 
-// node_modules/uuid/dist/regex.js
-var require_regex = __commonJS({
-  "node_modules/uuid/dist/regex.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/regex.js
+var regex_default;
+var init_regex = __esm({
+  "node_modules/uuid/dist/esm-node/regex.js"() {
+    regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
   }
 });
 
-// node_modules/uuid/dist/validate.js
-var require_validate = __commonJS({
-  "node_modules/uuid/dist/validate.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _regex = _interopRequireDefault(require_regex());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function validate(uuid) {
-      return typeof uuid === "string" && _regex.default.test(uuid);
-    }
-    var _default = validate;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/validate.js
+function validate(uuid) {
+  return typeof uuid === "string" && regex_default.test(uuid);
+}
+var validate_default;
+var init_validate = __esm({
+  "node_modules/uuid/dist/esm-node/validate.js"() {
+    init_regex();
+    validate_default = validate;
   }
 });
 
-// node_modules/uuid/dist/stringify.js
-var require_stringify = __commonJS({
-  "node_modules/uuid/dist/stringify.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _validate = _interopRequireDefault(require_validate());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    var byteToHex = [];
+// node_modules/uuid/dist/esm-node/stringify.js
+function stringify(arr, offset = 0) {
+  const uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+  if (!validate_default(uuid)) {
+    throw TypeError("Stringified UUID is invalid");
+  }
+  return uuid;
+}
+var byteToHex, stringify_default;
+var init_stringify = __esm({
+  "node_modules/uuid/dist/esm-node/stringify.js"() {
+    init_validate();
+    byteToHex = [];
     for (let i = 0; i < 256; ++i) {
       byteToHex.push((i + 256).toString(16).substr(1));
     }
-    function stringify(arr, offset = 0) {
-      const uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
-      if (!(0, _validate.default)(uuid)) {
-        throw TypeError("Stringified UUID is invalid");
-      }
-      return uuid;
-    }
-    var _default = stringify;
-    exports.default = _default;
+    stringify_default = stringify;
   }
 });
 
-// node_modules/uuid/dist/v1.js
-var require_v1 = __commonJS({
-  "node_modules/uuid/dist/v1.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _rng = _interopRequireDefault(require_rng());
-    var _stringify = _interopRequireDefault(require_stringify());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
+// node_modules/uuid/dist/esm-node/v1.js
+function v1(options, buf, offset) {
+  let i = buf && offset || 0;
+  const b = buf || new Array(16);
+  options = options || {};
+  let node = options.node || _nodeId;
+  let clockseq = options.clockseq !== void 0 ? options.clockseq : _clockseq;
+  if (node == null || clockseq == null) {
+    const seedBytes = options.random || (options.rng || rng)();
+    if (node == null) {
+      node = _nodeId = [seedBytes[0] | 1, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
     }
-    var _nodeId;
-    var _clockseq;
-    var _lastMSecs = 0;
-    var _lastNSecs = 0;
-    function v1(options, buf, offset) {
-      let i = buf && offset || 0;
-      const b = buf || new Array(16);
-      options = options || {};
-      let node = options.node || _nodeId;
-      let clockseq = options.clockseq !== void 0 ? options.clockseq : _clockseq;
-      if (node == null || clockseq == null) {
-        const seedBytes = options.random || (options.rng || _rng.default)();
-        if (node == null) {
-          node = _nodeId = [seedBytes[0] | 1, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
-        }
-        if (clockseq == null) {
-          clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 16383;
-        }
-      }
-      let msecs = options.msecs !== void 0 ? options.msecs : Date.now();
-      let nsecs = options.nsecs !== void 0 ? options.nsecs : _lastNSecs + 1;
-      const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 1e4;
-      if (dt < 0 && options.clockseq === void 0) {
-        clockseq = clockseq + 1 & 16383;
-      }
-      if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === void 0) {
-        nsecs = 0;
-      }
-      if (nsecs >= 1e4) {
-        throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
-      }
-      _lastMSecs = msecs;
-      _lastNSecs = nsecs;
-      _clockseq = clockseq;
-      msecs += 122192928e5;
-      const tl = ((msecs & 268435455) * 1e4 + nsecs) % 4294967296;
-      b[i++] = tl >>> 24 & 255;
-      b[i++] = tl >>> 16 & 255;
-      b[i++] = tl >>> 8 & 255;
-      b[i++] = tl & 255;
-      const tmh = msecs / 4294967296 * 1e4 & 268435455;
-      b[i++] = tmh >>> 8 & 255;
-      b[i++] = tmh & 255;
-      b[i++] = tmh >>> 24 & 15 | 16;
-      b[i++] = tmh >>> 16 & 255;
-      b[i++] = clockseq >>> 8 | 128;
-      b[i++] = clockseq & 255;
-      for (let n = 0; n < 6; ++n) {
-        b[i + n] = node[n];
-      }
-      return buf || (0, _stringify.default)(b);
+    if (clockseq == null) {
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 16383;
     }
-    var _default = v1;
-    exports.default = _default;
+  }
+  let msecs = options.msecs !== void 0 ? options.msecs : Date.now();
+  let nsecs = options.nsecs !== void 0 ? options.nsecs : _lastNSecs + 1;
+  const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 1e4;
+  if (dt < 0 && options.clockseq === void 0) {
+    clockseq = clockseq + 1 & 16383;
+  }
+  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === void 0) {
+    nsecs = 0;
+  }
+  if (nsecs >= 1e4) {
+    throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
+  }
+  _lastMSecs = msecs;
+  _lastNSecs = nsecs;
+  _clockseq = clockseq;
+  msecs += 122192928e5;
+  const tl = ((msecs & 268435455) * 1e4 + nsecs) % 4294967296;
+  b[i++] = tl >>> 24 & 255;
+  b[i++] = tl >>> 16 & 255;
+  b[i++] = tl >>> 8 & 255;
+  b[i++] = tl & 255;
+  const tmh = msecs / 4294967296 * 1e4 & 268435455;
+  b[i++] = tmh >>> 8 & 255;
+  b[i++] = tmh & 255;
+  b[i++] = tmh >>> 24 & 15 | 16;
+  b[i++] = tmh >>> 16 & 255;
+  b[i++] = clockseq >>> 8 | 128;
+  b[i++] = clockseq & 255;
+  for (let n = 0; n < 6; ++n) {
+    b[i + n] = node[n];
+  }
+  return buf || stringify_default(b);
+}
+var _nodeId, _clockseq, _lastMSecs, _lastNSecs, v1_default;
+var init_v1 = __esm({
+  "node_modules/uuid/dist/esm-node/v1.js"() {
+    init_rng();
+    init_stringify();
+    _lastMSecs = 0;
+    _lastNSecs = 0;
+    v1_default = v1;
   }
 });
 
-// node_modules/uuid/dist/parse.js
-var require_parse = __commonJS({
-  "node_modules/uuid/dist/parse.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _validate = _interopRequireDefault(require_validate());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function parse(uuid) {
-      if (!(0, _validate.default)(uuid)) {
-        throw TypeError("Invalid UUID");
-      }
-      let v;
-      const arr = new Uint8Array(16);
-      arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
-      arr[1] = v >>> 16 & 255;
-      arr[2] = v >>> 8 & 255;
-      arr[3] = v & 255;
-      arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
-      arr[5] = v & 255;
-      arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
-      arr[7] = v & 255;
-      arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
-      arr[9] = v & 255;
-      arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255;
-      arr[11] = v / 4294967296 & 255;
-      arr[12] = v >>> 24 & 255;
-      arr[13] = v >>> 16 & 255;
-      arr[14] = v >>> 8 & 255;
-      arr[15] = v & 255;
-      return arr;
-    }
-    var _default = parse;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/parse.js
+function parse(uuid) {
+  if (!validate_default(uuid)) {
+    throw TypeError("Invalid UUID");
+  }
+  let v;
+  const arr = new Uint8Array(16);
+  arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
+  arr[1] = v >>> 16 & 255;
+  arr[2] = v >>> 8 & 255;
+  arr[3] = v & 255;
+  arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
+  arr[5] = v & 255;
+  arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
+  arr[7] = v & 255;
+  arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
+  arr[9] = v & 255;
+  arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 1099511627776 & 255;
+  arr[11] = v / 4294967296 & 255;
+  arr[12] = v >>> 24 & 255;
+  arr[13] = v >>> 16 & 255;
+  arr[14] = v >>> 8 & 255;
+  arr[15] = v & 255;
+  return arr;
+}
+var parse_default;
+var init_parse = __esm({
+  "node_modules/uuid/dist/esm-node/parse.js"() {
+    init_validate();
+    parse_default = parse;
   }
 });
 
-// node_modules/uuid/dist/v35.js
-var require_v35 = __commonJS({
-  "node_modules/uuid/dist/v35.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = _default;
-    exports.URL = exports.DNS = void 0;
-    var _stringify = _interopRequireDefault(require_stringify());
-    var _parse = _interopRequireDefault(require_parse());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
+// node_modules/uuid/dist/esm-node/v35.js
+function stringToBytes(str) {
+  str = unescape(encodeURIComponent(str));
+  const bytes = [];
+  for (let i = 0; i < str.length; ++i) {
+    bytes.push(str.charCodeAt(i));
+  }
+  return bytes;
+}
+function v35_default(name, version2, hashfunc) {
+  function generateUUID(value, namespace, buf, offset) {
+    if (typeof value === "string") {
+      value = stringToBytes(value);
     }
-    function stringToBytes(str) {
-      str = unescape(encodeURIComponent(str));
-      const bytes = [];
-      for (let i = 0; i < str.length; ++i) {
-        bytes.push(str.charCodeAt(i));
-      }
-      return bytes;
+    if (typeof namespace === "string") {
+      namespace = parse_default(namespace);
     }
-    var DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-    exports.DNS = DNS;
-    var URL2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
-    exports.URL = URL2;
-    function _default(name, version, hashfunc) {
-      function generateUUID(value, namespace, buf, offset) {
-        if (typeof value === "string") {
-          value = stringToBytes(value);
-        }
-        if (typeof namespace === "string") {
-          namespace = (0, _parse.default)(namespace);
-        }
-        if (namespace.length !== 16) {
-          throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
-        }
-        let bytes = new Uint8Array(16 + value.length);
-        bytes.set(namespace);
-        bytes.set(value, namespace.length);
-        bytes = hashfunc(bytes);
-        bytes[6] = bytes[6] & 15 | version;
-        bytes[8] = bytes[8] & 63 | 128;
-        if (buf) {
-          offset = offset || 0;
-          for (let i = 0; i < 16; ++i) {
-            buf[offset + i] = bytes[i];
-          }
-          return buf;
-        }
-        return (0, _stringify.default)(bytes);
-      }
-      try {
-        generateUUID.name = name;
-      } catch (err) {
-      }
-      generateUUID.DNS = DNS;
-      generateUUID.URL = URL2;
-      return generateUUID;
+    if (namespace.length !== 16) {
+      throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
     }
+    let bytes = new Uint8Array(16 + value.length);
+    bytes.set(namespace);
+    bytes.set(value, namespace.length);
+    bytes = hashfunc(bytes);
+    bytes[6] = bytes[6] & 15 | version2;
+    bytes[8] = bytes[8] & 63 | 128;
+    if (buf) {
+      offset = offset || 0;
+      for (let i = 0; i < 16; ++i) {
+        buf[offset + i] = bytes[i];
+      }
+      return buf;
+    }
+    return stringify_default(bytes);
+  }
+  try {
+    generateUUID.name = name;
+  } catch (err) {
+  }
+  generateUUID.DNS = DNS;
+  generateUUID.URL = URL2;
+  return generateUUID;
+}
+var DNS, URL2;
+var init_v35 = __esm({
+  "node_modules/uuid/dist/esm-node/v35.js"() {
+    init_stringify();
+    init_parse();
+    DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+    URL2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
   }
 });
 
-// node_modules/uuid/dist/md5.js
-var require_md5 = __commonJS({
-  "node_modules/uuid/dist/md5.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _crypto = _interopRequireDefault(require("crypto"));
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function md5(bytes) {
-      if (Array.isArray(bytes)) {
-        bytes = Buffer.from(bytes);
-      } else if (typeof bytes === "string") {
-        bytes = Buffer.from(bytes, "utf8");
-      }
-      return _crypto.default.createHash("md5").update(bytes).digest();
-    }
-    var _default = md5;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/md5.js
+function md5(bytes) {
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === "string") {
+    bytes = Buffer.from(bytes, "utf8");
+  }
+  return import_crypto2.default.createHash("md5").update(bytes).digest();
+}
+var import_crypto2, md5_default;
+var init_md5 = __esm({
+  "node_modules/uuid/dist/esm-node/md5.js"() {
+    import_crypto2 = __toESM(require("crypto"));
+    md5_default = md5;
   }
 });
 
-// node_modules/uuid/dist/v3.js
-var require_v3 = __commonJS({
-  "node_modules/uuid/dist/v3.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _v = _interopRequireDefault(require_v35());
-    var _md = _interopRequireDefault(require_md5());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    var v3 = (0, _v.default)("v3", 48, _md.default);
-    var _default = v3;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/v3.js
+var v3, v3_default;
+var init_v3 = __esm({
+  "node_modules/uuid/dist/esm-node/v3.js"() {
+    init_v35();
+    init_md5();
+    v3 = v35_default("v3", 48, md5_default);
+    v3_default = v3;
   }
 });
 
-// node_modules/uuid/dist/v4.js
-var require_v4 = __commonJS({
-  "node_modules/uuid/dist/v4.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _rng = _interopRequireDefault(require_rng());
-    var _stringify = _interopRequireDefault(require_stringify());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
+// node_modules/uuid/dist/esm-node/v4.js
+function v4(options, buf, offset) {
+  options = options || {};
+  const rnds = options.random || (options.rng || rng)();
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  if (buf) {
+    offset = offset || 0;
+    for (let i = 0; i < 16; ++i) {
+      buf[offset + i] = rnds[i];
     }
-    function v4(options, buf, offset) {
-      options = options || {};
-      const rnds = options.random || (options.rng || _rng.default)();
-      rnds[6] = rnds[6] & 15 | 64;
-      rnds[8] = rnds[8] & 63 | 128;
-      if (buf) {
-        offset = offset || 0;
-        for (let i = 0; i < 16; ++i) {
-          buf[offset + i] = rnds[i];
-        }
-        return buf;
-      }
-      return (0, _stringify.default)(rnds);
-    }
-    var _default = v4;
-    exports.default = _default;
+    return buf;
+  }
+  return stringify_default(rnds);
+}
+var v4_default;
+var init_v4 = __esm({
+  "node_modules/uuid/dist/esm-node/v4.js"() {
+    init_rng();
+    init_stringify();
+    v4_default = v4;
   }
 });
 
-// node_modules/uuid/dist/sha1.js
-var require_sha1 = __commonJS({
-  "node_modules/uuid/dist/sha1.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _crypto = _interopRequireDefault(require("crypto"));
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function sha1(bytes) {
-      if (Array.isArray(bytes)) {
-        bytes = Buffer.from(bytes);
-      } else if (typeof bytes === "string") {
-        bytes = Buffer.from(bytes, "utf8");
-      }
-      return _crypto.default.createHash("sha1").update(bytes).digest();
-    }
-    var _default = sha1;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/sha1.js
+function sha1(bytes) {
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === "string") {
+    bytes = Buffer.from(bytes, "utf8");
+  }
+  return import_crypto3.default.createHash("sha1").update(bytes).digest();
+}
+var import_crypto3, sha1_default;
+var init_sha1 = __esm({
+  "node_modules/uuid/dist/esm-node/sha1.js"() {
+    import_crypto3 = __toESM(require("crypto"));
+    sha1_default = sha1;
   }
 });
 
-// node_modules/uuid/dist/v5.js
-var require_v5 = __commonJS({
-  "node_modules/uuid/dist/v5.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _v = _interopRequireDefault(require_v35());
-    var _sha = _interopRequireDefault(require_sha1());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    var v5 = (0, _v.default)("v5", 80, _sha.default);
-    var _default = v5;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/v5.js
+var v5, v5_default;
+var init_v5 = __esm({
+  "node_modules/uuid/dist/esm-node/v5.js"() {
+    init_v35();
+    init_sha1();
+    v5 = v35_default("v5", 80, sha1_default);
+    v5_default = v5;
   }
 });
 
-// node_modules/uuid/dist/nil.js
-var require_nil = __commonJS({
-  "node_modules/uuid/dist/nil.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _default = "00000000-0000-0000-0000-000000000000";
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/nil.js
+var nil_default;
+var init_nil = __esm({
+  "node_modules/uuid/dist/esm-node/nil.js"() {
+    nil_default = "00000000-0000-0000-0000-000000000000";
   }
 });
 
-// node_modules/uuid/dist/version.js
-var require_version = __commonJS({
-  "node_modules/uuid/dist/version.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.default = void 0;
-    var _validate = _interopRequireDefault(require_validate());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
-    function version(uuid) {
-      if (!(0, _validate.default)(uuid)) {
-        throw TypeError("Invalid UUID");
-      }
-      return parseInt(uuid.substr(14, 1), 16);
-    }
-    var _default = version;
-    exports.default = _default;
+// node_modules/uuid/dist/esm-node/version.js
+function version(uuid) {
+  if (!validate_default(uuid)) {
+    throw TypeError("Invalid UUID");
+  }
+  return parseInt(uuid.substr(14, 1), 16);
+}
+var version_default;
+var init_version = __esm({
+  "node_modules/uuid/dist/esm-node/version.js"() {
+    init_validate();
+    version_default = version;
   }
 });
 
-// node_modules/uuid/dist/index.js
-var require_dist = __commonJS({
-  "node_modules/uuid/dist/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    Object.defineProperty(exports, "v1", {
-      enumerable: true,
-      get: function() {
-        return _v.default;
-      }
-    });
-    Object.defineProperty(exports, "v3", {
-      enumerable: true,
-      get: function() {
-        return _v2.default;
-      }
-    });
-    Object.defineProperty(exports, "v4", {
-      enumerable: true,
-      get: function() {
-        return _v3.default;
-      }
-    });
-    Object.defineProperty(exports, "v5", {
-      enumerable: true,
-      get: function() {
-        return _v4.default;
-      }
-    });
-    Object.defineProperty(exports, "NIL", {
-      enumerable: true,
-      get: function() {
-        return _nil.default;
-      }
-    });
-    Object.defineProperty(exports, "version", {
-      enumerable: true,
-      get: function() {
-        return _version.default;
-      }
-    });
-    Object.defineProperty(exports, "validate", {
-      enumerable: true,
-      get: function() {
-        return _validate.default;
-      }
-    });
-    Object.defineProperty(exports, "stringify", {
-      enumerable: true,
-      get: function() {
-        return _stringify.default;
-      }
-    });
-    Object.defineProperty(exports, "parse", {
-      enumerable: true,
-      get: function() {
-        return _parse.default;
-      }
-    });
-    var _v = _interopRequireDefault(require_v1());
-    var _v2 = _interopRequireDefault(require_v3());
-    var _v3 = _interopRequireDefault(require_v4());
-    var _v4 = _interopRequireDefault(require_v5());
-    var _nil = _interopRequireDefault(require_nil());
-    var _version = _interopRequireDefault(require_version());
-    var _validate = _interopRequireDefault(require_validate());
-    var _stringify = _interopRequireDefault(require_stringify());
-    var _parse = _interopRequireDefault(require_parse());
-    function _interopRequireDefault(obj) {
-      return obj && obj.__esModule ? obj : { default: obj };
-    }
+// node_modules/uuid/dist/esm-node/index.js
+var esm_node_exports = {};
+__export(esm_node_exports, {
+  NIL: () => nil_default,
+  parse: () => parse_default,
+  stringify: () => stringify_default,
+  v1: () => v1_default,
+  v3: () => v3_default,
+  v4: () => v4_default,
+  v5: () => v5_default,
+  validate: () => validate_default,
+  version: () => version_default
+});
+var init_esm_node = __esm({
+  "node_modules/uuid/dist/esm-node/index.js"() {
+    init_v1();
+    init_v3();
+    init_v4();
+    init_v5();
+    init_nil();
+    init_version();
+    init_validate();
+    init_stringify();
+    init_parse();
   }
 });
 
 // node_modules/@actions/core/lib/file-command.js
 var require_file_command = __commonJS({
-  "node_modules/@actions/core/lib/file-command.js"(exports) {
+  "node_modules/@actions/core/lib/file-command.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m[k];
       } });
     } : function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.prepareKeyValueMessage = exports2.issueFileCommand = void 0;
     var fs2 = __importStar(require("fs"));
     var os = __importStar(require("os"));
-    var uuid_1 = require_dist();
+    var uuid_1 = (init_esm_node(), __toCommonJS(esm_node_exports));
     var utils_1 = require_utils();
     function issueFileCommand(command, message) {
       const filePath = process.env[`GITHUB_${command}`];
@@ -681,7 +525,7 @@ var require_file_command = __commonJS({
         encoding: "utf8"
       });
     }
-    exports.issueFileCommand = issueFileCommand;
+    exports2.issueFileCommand = issueFileCommand;
     function prepareKeyValueMessage(key, value) {
       const delimiter = `ghadelimiter_${uuid_1.v4()}`;
       const convertedValue = utils_1.toCommandValue(value);
@@ -693,16 +537,16 @@ var require_file_command = __commonJS({
       }
       return `${key}<<${delimiter}${os.EOL}${convertedValue}${os.EOL}${delimiter}`;
     }
-    exports.prepareKeyValueMessage = prepareKeyValueMessage;
+    exports2.prepareKeyValueMessage = prepareKeyValueMessage;
   }
 });
 
 // node_modules/@actions/http-client/lib/proxy.js
 var require_proxy = __commonJS({
-  "node_modules/@actions/http-client/lib/proxy.js"(exports) {
+  "node_modules/@actions/http-client/lib/proxy.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.checkBypass = exports.getProxyUrl = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.checkBypass = exports2.getProxyUrl = void 0;
     function getProxyUrl(reqUrl) {
       const usingSsl = reqUrl.protocol === "https:";
       if (checkBypass(reqUrl)) {
@@ -721,7 +565,7 @@ var require_proxy = __commonJS({
         return void 0;
       }
     }
-    exports.getProxyUrl = getProxyUrl;
+    exports2.getProxyUrl = getProxyUrl;
     function checkBypass(reqUrl) {
       if (!reqUrl.hostname) {
         return false;
@@ -749,13 +593,13 @@ var require_proxy = __commonJS({
       }
       return false;
     }
-    exports.checkBypass = checkBypass;
+    exports2.checkBypass = checkBypass;
   }
 });
 
 // node_modules/tunnel/lib/tunnel.js
 var require_tunnel = __commonJS({
-  "node_modules/tunnel/lib/tunnel.js"(exports) {
+  "node_modules/tunnel/lib/tunnel.js"(exports2) {
     "use strict";
     var net = require("net");
     var tls = require("tls");
@@ -764,10 +608,10 @@ var require_tunnel = __commonJS({
     var events = require("events");
     var assert = require("assert");
     var util = require("util");
-    exports.httpOverHttp = httpOverHttp;
-    exports.httpsOverHttp = httpsOverHttp;
-    exports.httpOverHttps = httpOverHttps;
-    exports.httpsOverHttps = httpsOverHttps;
+    exports2.httpOverHttp = httpOverHttp;
+    exports2.httpsOverHttp = httpsOverHttp;
+    exports2.httpOverHttps = httpOverHttps;
+    exports2.httpsOverHttps = httpsOverHttps;
     function httpOverHttp(options) {
       var agent = new TunnelingAgent(options);
       agent.request = http.request;
@@ -979,50 +823,45 @@ var require_tunnel = __commonJS({
       debug = function() {
       };
     }
-    exports.debug = debug;
+    exports2.debug = debug;
   }
 });
 
 // node_modules/tunnel/index.js
 var require_tunnel2 = __commonJS({
-  "node_modules/tunnel/index.js"(exports, module2) {
+  "node_modules/tunnel/index.js"(exports2, module2) {
     module2.exports = require_tunnel();
   }
 });
 
 // node_modules/@actions/http-client/lib/index.js
 var require_lib = __commonJS({
-  "node_modules/@actions/http-client/lib/index.js"(exports) {
+  "node_modules/@actions/http-client/lib/index.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m[k];
       } });
     } : function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -1049,8 +888,8 @@ var require_lib = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.HttpClient = exports.isHttps = exports.HttpClientResponse = exports.HttpClientError = exports.getProxyUrl = exports.MediaTypes = exports.Headers = exports.HttpCodes = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.HttpClient = exports2.isHttps = exports2.HttpClientResponse = exports2.HttpClientError = exports2.getProxyUrl = exports2.MediaTypes = exports2.Headers = exports2.HttpCodes = void 0;
     var http = __importStar(require("http"));
     var https = __importStar(require("https"));
     var pm = __importStar(require_proxy());
@@ -1084,21 +923,21 @@ var require_lib = __commonJS({
       HttpCodes2[HttpCodes2["BadGateway"] = 502] = "BadGateway";
       HttpCodes2[HttpCodes2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
       HttpCodes2[HttpCodes2["GatewayTimeout"] = 504] = "GatewayTimeout";
-    })(HttpCodes = exports.HttpCodes || (exports.HttpCodes = {}));
+    })(HttpCodes = exports2.HttpCodes || (exports2.HttpCodes = {}));
     var Headers;
     (function(Headers2) {
       Headers2["Accept"] = "accept";
       Headers2["ContentType"] = "content-type";
-    })(Headers = exports.Headers || (exports.Headers = {}));
+    })(Headers = exports2.Headers || (exports2.Headers = {}));
     var MediaTypes;
     (function(MediaTypes2) {
       MediaTypes2["ApplicationJson"] = "application/json";
-    })(MediaTypes = exports.MediaTypes || (exports.MediaTypes = {}));
+    })(MediaTypes = exports2.MediaTypes || (exports2.MediaTypes = {}));
     function getProxyUrl(serverUrl) {
       const proxyUrl = pm.getProxyUrl(new URL(serverUrl));
       return proxyUrl ? proxyUrl.href : "";
     }
-    exports.getProxyUrl = getProxyUrl;
+    exports2.getProxyUrl = getProxyUrl;
     var HttpRedirectCodes = [
       HttpCodes.MovedPermanently,
       HttpCodes.ResourceMoved,
@@ -1114,15 +953,15 @@ var require_lib = __commonJS({
     var RetryableHttpVerbs = ["OPTIONS", "GET", "DELETE", "HEAD"];
     var ExponentialBackoffCeiling = 10;
     var ExponentialBackoffTimeSlice = 5;
-    var HttpClientError = class extends Error {
+    var HttpClientError = class _HttpClientError extends Error {
       constructor(message, statusCode) {
         super(message);
         this.name = "HttpClientError";
         this.statusCode = statusCode;
-        Object.setPrototypeOf(this, HttpClientError.prototype);
+        Object.setPrototypeOf(this, _HttpClientError.prototype);
       }
     };
-    exports.HttpClientError = HttpClientError;
+    exports2.HttpClientError = HttpClientError;
     var HttpClientResponse = class {
       constructor(message) {
         this.message = message;
@@ -1141,12 +980,12 @@ var require_lib = __commonJS({
         });
       }
     };
-    exports.HttpClientResponse = HttpClientResponse;
+    exports2.HttpClientResponse = HttpClientResponse;
     function isHttps(requestUrl) {
       const parsedUrl = new URL(requestUrl);
       return parsedUrl.protocol === "https:";
     }
-    exports.isHttps = isHttps;
+    exports2.isHttps = isHttps;
     var HttpClient = class {
       constructor(userAgent, handlers, requestOptions) {
         this._ignoreSslError = false;
@@ -1225,6 +1064,10 @@ var require_lib = __commonJS({
           return this.request(verb, requestUrl, stream, additionalHeaders);
         });
       }
+      /**
+       * Gets a typed object from an endpoint
+       * Be aware that not found returns a null.  Other errors (4xx, 5xx) reject the promise
+       */
       getJson(requestUrl, additionalHeaders = {}) {
         return __awaiter(this, void 0, void 0, function* () {
           additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
@@ -1259,6 +1102,11 @@ var require_lib = __commonJS({
           return this._processResponse(res, this.requestOptions);
         });
       }
+      /**
+       * Makes a raw http request.
+       * All other methods such as get, post, patch, and request ultimately call this.
+       * Prefer get, del, post and patch
+       */
       request(verb, requestUrl, data, headers) {
         return __awaiter(this, void 0, void 0, function* () {
           if (this._disposed) {
@@ -1319,12 +1167,20 @@ var require_lib = __commonJS({
           return response;
         });
       }
+      /**
+       * Needs to be called if keepAlive is set to true in request options.
+       */
       dispose() {
         if (this._agent) {
           this._agent.destroy();
         }
         this._disposed = true;
       }
+      /**
+       * Raw request.
+       * @param info
+       * @param data
+       */
       requestRaw(info, data) {
         return __awaiter(this, void 0, void 0, function* () {
           return new Promise((resolve, reject) => {
@@ -1341,6 +1197,12 @@ var require_lib = __commonJS({
           });
         });
       }
+      /**
+       * Raw request with callback.
+       * @param info
+       * @param data
+       * @param onResult
+       */
       requestRawWithCallback(info, data, onResult) {
         if (typeof data === "string") {
           if (!info.options.headers) {
@@ -1384,6 +1246,11 @@ var require_lib = __commonJS({
           req.end();
         }
       }
+      /**
+       * Gets an http agent. This function is useful when you need an http agent that handles
+       * routing through a proxy server - depending upon the url and proxy environment variables.
+       * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
+       */
       getAgent(serverUrl) {
         const parsedUrl = new URL(serverUrl);
         return this._getAgent(parsedUrl);
@@ -1537,16 +1404,16 @@ var require_lib = __commonJS({
         });
       }
     };
-    exports.HttpClient = HttpClient;
+    exports2.HttpClient = HttpClient;
     var lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k) => (c[k.toLowerCase()] = obj[k], c), {});
   }
 });
 
 // node_modules/@actions/http-client/lib/auth.js
 var require_auth = __commonJS({
-  "node_modules/@actions/http-client/lib/auth.js"(exports) {
+  "node_modules/@actions/http-client/lib/auth.js"(exports2) {
     "use strict";
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -1573,8 +1440,8 @@ var require_auth = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.PersonalAccessTokenCredentialHandler = exports.BearerCredentialHandler = exports.BasicCredentialHandler = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.PersonalAccessTokenCredentialHandler = exports2.BearerCredentialHandler = exports2.BasicCredentialHandler = void 0;
     var BasicCredentialHandler = class {
       constructor(username, password) {
         this.username = username;
@@ -1586,6 +1453,7 @@ var require_auth = __commonJS({
         }
         options.headers["Authorization"] = `Basic ${Buffer.from(`${this.username}:${this.password}`).toString("base64")}`;
       }
+      // This handler cannot handle 401
       canHandleAuthentication() {
         return false;
       }
@@ -1595,17 +1463,20 @@ var require_auth = __commonJS({
         });
       }
     };
-    exports.BasicCredentialHandler = BasicCredentialHandler;
+    exports2.BasicCredentialHandler = BasicCredentialHandler;
     var BearerCredentialHandler = class {
       constructor(token) {
         this.token = token;
       }
+      // currently implements pre-authorization
+      // TODO: support preAuth = false where it hooks on 401
       prepareRequest(options) {
         if (!options.headers) {
           throw Error("The request has no headers");
         }
         options.headers["Authorization"] = `Bearer ${this.token}`;
       }
+      // This handler cannot handle 401
       canHandleAuthentication() {
         return false;
       }
@@ -1615,17 +1486,20 @@ var require_auth = __commonJS({
         });
       }
     };
-    exports.BearerCredentialHandler = BearerCredentialHandler;
+    exports2.BearerCredentialHandler = BearerCredentialHandler;
     var PersonalAccessTokenCredentialHandler = class {
       constructor(token) {
         this.token = token;
       }
+      // currently implements pre-authorization
+      // TODO: support preAuth = false where it hooks on 401
       prepareRequest(options) {
         if (!options.headers) {
           throw Error("The request has no headers");
         }
         options.headers["Authorization"] = `Basic ${Buffer.from(`PAT:${this.token}`).toString("base64")}`;
       }
+      // This handler cannot handle 401
       canHandleAuthentication() {
         return false;
       }
@@ -1635,15 +1509,15 @@ var require_auth = __commonJS({
         });
       }
     };
-    exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
+    exports2.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
   }
 });
 
 // node_modules/@actions/core/lib/oidc-utils.js
 var require_oidc_utils = __commonJS({
-  "node_modules/@actions/core/lib/oidc-utils.js"(exports) {
+  "node_modules/@actions/core/lib/oidc-utils.js"(exports2) {
     "use strict";
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -1670,18 +1544,18 @@ var require_oidc_utils = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.OidcClient = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.OidcClient = void 0;
     var http_client_1 = require_lib();
     var auth_1 = require_auth();
     var core_1 = require_core();
-    var OidcClient = class {
+    var OidcClient = class _OidcClient {
       static createHttpClient(allowRetry = true, maxRetry = 10) {
         const requestOptions = {
           allowRetries: allowRetry,
           maxRetries: maxRetry
         };
-        return new http_client_1.HttpClient("actions/oidc-client", [new auth_1.BearerCredentialHandler(OidcClient.getRequestToken())], requestOptions);
+        return new http_client_1.HttpClient("actions/oidc-client", [new auth_1.BearerCredentialHandler(_OidcClient.getRequestToken())], requestOptions);
       }
       static getRequestToken() {
         const token = process.env["ACTIONS_ID_TOKEN_REQUEST_TOKEN"];
@@ -1700,7 +1574,7 @@ var require_oidc_utils = __commonJS({
       static getCall(id_token_url) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-          const httpclient = OidcClient.createHttpClient();
+          const httpclient = _OidcClient.createHttpClient();
           const res = yield httpclient.getJson(id_token_url).catch((error) => {
             throw new Error(`Failed to get ID Token. 
  
@@ -1718,13 +1592,13 @@ var require_oidc_utils = __commonJS({
       static getIDToken(audience) {
         return __awaiter(this, void 0, void 0, function* () {
           try {
-            let id_token_url = OidcClient.getIDTokenUrl();
+            let id_token_url = _OidcClient.getIDTokenUrl();
             if (audience) {
               const encodedAudience = encodeURIComponent(audience);
               id_token_url = `${id_token_url}&audience=${encodedAudience}`;
             }
             core_1.debug(`ID token url is ${id_token_url}`);
-            const id_token = yield OidcClient.getCall(id_token_url);
+            const id_token = yield _OidcClient.getCall(id_token_url);
             core_1.setSecret(id_token);
             return id_token;
           } catch (error) {
@@ -1733,15 +1607,15 @@ var require_oidc_utils = __commonJS({
         });
       }
     };
-    exports.OidcClient = OidcClient;
+    exports2.OidcClient = OidcClient;
   }
 });
 
 // node_modules/@actions/core/lib/summary.js
 var require_summary = __commonJS({
-  "node_modules/@actions/core/lib/summary.js"(exports) {
+  "node_modules/@actions/core/lib/summary.js"(exports2) {
     "use strict";
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -1768,25 +1642,31 @@ var require_summary = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.summary = exports.markdownSummary = exports.SUMMARY_DOCS_URL = exports.SUMMARY_ENV_VAR = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.summary = exports2.markdownSummary = exports2.SUMMARY_DOCS_URL = exports2.SUMMARY_ENV_VAR = void 0;
     var os_1 = require("os");
     var fs_1 = require("fs");
     var { access, appendFile, writeFile } = fs_1.promises;
-    exports.SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
-    exports.SUMMARY_DOCS_URL = "https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary";
+    exports2.SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
+    exports2.SUMMARY_DOCS_URL = "https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary";
     var Summary = class {
       constructor() {
         this._buffer = "";
       }
+      /**
+       * Finds the summary file path from the environment, rejects if env var is not found or file does not exist
+       * Also checks r/w permissions.
+       *
+       * @returns step summary file path
+       */
       filePath() {
         return __awaiter(this, void 0, void 0, function* () {
           if (this._filePath) {
             return this._filePath;
           }
-          const pathFromEnv = process.env[exports.SUMMARY_ENV_VAR];
+          const pathFromEnv = process.env[exports2.SUMMARY_ENV_VAR];
           if (!pathFromEnv) {
-            throw new Error(`Unable to find environment variable for $${exports.SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
+            throw new Error(`Unable to find environment variable for $${exports2.SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
           }
           try {
             yield access(pathFromEnv, fs_1.constants.R_OK | fs_1.constants.W_OK);
@@ -1797,6 +1677,15 @@ var require_summary = __commonJS({
           return this._filePath;
         });
       }
+      /**
+       * Wraps content in an HTML tag, adding any HTML attributes
+       *
+       * @param {string} tag HTML tag to wrap
+       * @param {string | null} content content within the tag
+       * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
+       *
+       * @returns {string} content wrapped in HTML element
+       */
       wrap(tag, content, attrs = {}) {
         const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
         if (!content) {
@@ -1804,6 +1693,13 @@ var require_summary = __commonJS({
         }
         return `<${tag}${htmlAttrs}>${content}</${tag}>`;
       }
+      /**
+       * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
+       *
+       * @param {SummaryWriteOptions} [options] (optional) options for write operation
+       *
+       * @returns {Promise<Summary>} summary instance
+       */
       write(options) {
         return __awaiter(this, void 0, void 0, function* () {
           const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
@@ -1813,39 +1709,95 @@ var require_summary = __commonJS({
           return this.emptyBuffer();
         });
       }
+      /**
+       * Clears the summary buffer and wipes the summary file
+       *
+       * @returns {Summary} summary instance
+       */
       clear() {
         return __awaiter(this, void 0, void 0, function* () {
           return this.emptyBuffer().write({ overwrite: true });
         });
       }
+      /**
+       * Returns the current summary buffer as a string
+       *
+       * @returns {string} string of summary buffer
+       */
       stringify() {
         return this._buffer;
       }
+      /**
+       * If the summary buffer is empty
+       *
+       * @returns {boolen} true if the buffer is empty
+       */
       isEmptyBuffer() {
         return this._buffer.length === 0;
       }
+      /**
+       * Resets the summary buffer without writing to summary file
+       *
+       * @returns {Summary} summary instance
+       */
       emptyBuffer() {
         this._buffer = "";
         return this;
       }
+      /**
+       * Adds raw text to the summary buffer
+       *
+       * @param {string} text content to add
+       * @param {boolean} [addEOL=false] (optional) append an EOL to the raw text (default: false)
+       *
+       * @returns {Summary} summary instance
+       */
       addRaw(text, addEOL = false) {
         this._buffer += text;
         return addEOL ? this.addEOL() : this;
       }
+      /**
+       * Adds the operating system-specific end-of-line marker to the buffer
+       *
+       * @returns {Summary} summary instance
+       */
       addEOL() {
         return this.addRaw(os_1.EOL);
       }
+      /**
+       * Adds an HTML codeblock to the summary buffer
+       *
+       * @param {string} code content to render within fenced code block
+       * @param {string} lang (optional) language to syntax highlight code
+       *
+       * @returns {Summary} summary instance
+       */
       addCodeBlock(code, lang) {
         const attrs = Object.assign({}, lang && { lang });
         const element = this.wrap("pre", this.wrap("code", code), attrs);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML list to the summary buffer
+       *
+       * @param {string[]} items list of items to render
+       * @param {boolean} [ordered=false] (optional) if the rendered list should be ordered or not (default: false)
+       *
+       * @returns {Summary} summary instance
+       */
       addList(items, ordered = false) {
         const tag = ordered ? "ol" : "ul";
         const listItems = items.map((item) => this.wrap("li", item)).join("");
         const element = this.wrap(tag, listItems);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML table to the summary buffer
+       *
+       * @param {SummaryTableCell[]} rows table rows
+       *
+       * @returns {Summary} summary instance
+       */
       addTable(rows) {
         const tableBody = rows.map((row) => {
           const cells = row.map((cell) => {
@@ -1862,129 +1814,170 @@ var require_summary = __commonJS({
         const element = this.wrap("table", tableBody);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds a collapsable HTML details element to the summary buffer
+       *
+       * @param {string} label text for the closed state
+       * @param {string} content collapsable content
+       *
+       * @returns {Summary} summary instance
+       */
       addDetails(label, content) {
         const element = this.wrap("details", this.wrap("summary", label) + content);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML image tag to the summary buffer
+       *
+       * @param {string} src path to the image you to embed
+       * @param {string} alt text description of the image
+       * @param {SummaryImageOptions} options (optional) addition image attributes
+       *
+       * @returns {Summary} summary instance
+       */
       addImage(src, alt, options) {
         const { width, height } = options || {};
         const attrs = Object.assign(Object.assign({}, width && { width }), height && { height });
         const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML section heading element
+       *
+       * @param {string} text heading text
+       * @param {number | string} [level=1] (optional) the heading level, default: 1
+       *
+       * @returns {Summary} summary instance
+       */
       addHeading(text, level) {
         const tag = `h${level}`;
         const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
         const element = this.wrap(allowedTag, text);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML thematic break (<hr>) to the summary buffer
+       *
+       * @returns {Summary} summary instance
+       */
       addSeparator() {
         const element = this.wrap("hr", null);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML line break (<br>) to the summary buffer
+       *
+       * @returns {Summary} summary instance
+       */
       addBreak() {
         const element = this.wrap("br", null);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML blockquote to the summary buffer
+       *
+       * @param {string} text quote text
+       * @param {string} cite (optional) citation url
+       *
+       * @returns {Summary} summary instance
+       */
       addQuote(text, cite) {
         const attrs = Object.assign({}, cite && { cite });
         const element = this.wrap("blockquote", text, attrs);
         return this.addRaw(element).addEOL();
       }
+      /**
+       * Adds an HTML anchor tag to the summary buffer
+       *
+       * @param {string} text link text/content
+       * @param {string} href hyperlink
+       *
+       * @returns {Summary} summary instance
+       */
       addLink(text, href) {
         const element = this.wrap("a", text, { href });
         return this.addRaw(element).addEOL();
       }
     };
     var _summary = new Summary();
-    exports.markdownSummary = _summary;
-    exports.summary = _summary;
+    exports2.markdownSummary = _summary;
+    exports2.summary = _summary;
   }
 });
 
 // node_modules/@actions/core/lib/path-utils.js
 var require_path_utils = __commonJS({
-  "node_modules/@actions/core/lib/path-utils.js"(exports) {
+  "node_modules/@actions/core/lib/path-utils.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m[k];
       } });
     } : function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.toPlatformPath = exports2.toWin32Path = exports2.toPosixPath = void 0;
     var path = __importStar(require("path"));
     function toPosixPath(pth) {
       return pth.replace(/[\\]/g, "/");
     }
-    exports.toPosixPath = toPosixPath;
+    exports2.toPosixPath = toPosixPath;
     function toWin32Path(pth) {
       return pth.replace(/[/]/g, "\\");
     }
-    exports.toWin32Path = toWin32Path;
+    exports2.toWin32Path = toWin32Path;
     function toPlatformPath(pth) {
       return pth.replace(/[/\\]/g, path.sep);
     }
-    exports.toPlatformPath = toPlatformPath;
+    exports2.toPlatformPath = toPlatformPath;
   }
 });
 
 // node_modules/@actions/core/lib/core.js
 var require_core = __commonJS({
-  "node_modules/@actions/core/lib/core.js"(exports) {
+  "node_modules/@actions/core/lib/core.js"(exports2) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
       Object.defineProperty(o, k2, { enumerable: true, get: function() {
         return m[k];
       } });
     } : function(o, m, k, k2) {
-      if (k2 === void 0)
-        k2 = k;
+      if (k2 === void 0) k2 = k;
       o[k2] = m[k];
     });
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? function(o, v) {
       Object.defineProperty(o, "default", { enumerable: true, value: v });
     } : function(o, v) {
       o["default"] = v;
     });
-    var __importStar = exports && exports.__importStar || function(mod) {
-      if (mod && mod.__esModule)
-        return mod;
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
       var result = {};
       if (mod != null) {
-        for (var k in mod)
-          if (k !== "default" && Object.hasOwnProperty.call(mod, k))
-            __createBinding(result, mod, k);
+        for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
       }
       __setModuleDefault(result, mod);
       return result;
     };
-    var __awaiter = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
+    var __awaiter = exports2 && exports2.__awaiter || function(thisArg, _arguments, P, generator) {
       function adopt(value) {
         return value instanceof P ? value : new P(function(resolve) {
           resolve(value);
@@ -2011,8 +2004,8 @@ var require_core = __commonJS({
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
     };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getIDToken = exports2.getState = exports2.saveState = exports2.group = exports2.endGroup = exports2.startGroup = exports2.info = exports2.notice = exports2.warning = exports2.error = exports2.debug = exports2.isDebug = exports2.setFailed = exports2.setCommandEcho = exports2.setOutput = exports2.getBooleanInput = exports2.getMultilineInput = exports2.getInput = exports2.addPath = exports2.setSecret = exports2.exportVariable = exports2.ExitCode = void 0;
     var command_1 = require_command();
     var file_command_1 = require_file_command();
     var utils_1 = require_utils();
@@ -2023,7 +2016,7 @@ var require_core = __commonJS({
     (function(ExitCode2) {
       ExitCode2[ExitCode2["Success"] = 0] = "Success";
       ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
-    })(ExitCode = exports.ExitCode || (exports.ExitCode = {}));
+    })(ExitCode = exports2.ExitCode || (exports2.ExitCode = {}));
     function exportVariable(name, val) {
       const convertedVal = utils_1.toCommandValue(val);
       process.env[name] = convertedVal;
@@ -2033,11 +2026,11 @@ var require_core = __commonJS({
       }
       command_1.issueCommand("set-env", { name }, convertedVal);
     }
-    exports.exportVariable = exportVariable;
+    exports2.exportVariable = exportVariable;
     function setSecret(secret) {
       command_1.issueCommand("add-mask", {}, secret);
     }
-    exports.setSecret = setSecret;
+    exports2.setSecret = setSecret;
     function addPath(inputPath) {
       const filePath = process.env["GITHUB_PATH"] || "";
       if (filePath) {
@@ -2047,7 +2040,7 @@ var require_core = __commonJS({
       }
       process.env["PATH"] = `${inputPath}${path.delimiter}${process.env["PATH"]}`;
     }
-    exports.addPath = addPath;
+    exports2.addPath = addPath;
     function getInput2(name, options) {
       const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
       if (options && options.required && !val) {
@@ -2058,7 +2051,7 @@ var require_core = __commonJS({
       }
       return val.trim();
     }
-    exports.getInput = getInput2;
+    exports2.getInput = getInput2;
     function getMultilineInput(name, options) {
       const inputs = getInput2(name, options).split("\n").filter((x) => x !== "");
       if (options && options.trimWhitespace === false) {
@@ -2066,7 +2059,7 @@ var require_core = __commonJS({
       }
       return inputs.map((input) => input.trim());
     }
-    exports.getMultilineInput = getMultilineInput;
+    exports2.getMultilineInput = getMultilineInput;
     function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
@@ -2078,7 +2071,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports.getBooleanInput = getBooleanInput;
+    exports2.getBooleanInput = getBooleanInput;
     function setOutput2(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -2087,48 +2080,48 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       process.stdout.write(os.EOL);
       command_1.issueCommand("set-output", { name }, utils_1.toCommandValue(value));
     }
-    exports.setOutput = setOutput2;
+    exports2.setOutput = setOutput2;
     function setCommandEcho(enabled) {
       command_1.issue("echo", enabled ? "on" : "off");
     }
-    exports.setCommandEcho = setCommandEcho;
+    exports2.setCommandEcho = setCommandEcho;
     function setFailed2(message) {
       process.exitCode = ExitCode.Failure;
       error(message);
     }
-    exports.setFailed = setFailed2;
+    exports2.setFailed = setFailed2;
     function isDebug() {
       return process.env["RUNNER_DEBUG"] === "1";
     }
-    exports.isDebug = isDebug;
+    exports2.isDebug = isDebug;
     function debug(message) {
       command_1.issueCommand("debug", {}, message);
     }
-    exports.debug = debug;
+    exports2.debug = debug;
     function error(message, properties = {}) {
       command_1.issueCommand("error", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.error = error;
+    exports2.error = error;
     function warning(message, properties = {}) {
       command_1.issueCommand("warning", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.warning = warning;
+    exports2.warning = warning;
     function notice(message, properties = {}) {
       command_1.issueCommand("notice", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.notice = notice;
+    exports2.notice = notice;
     function info(message) {
       process.stdout.write(message + os.EOL);
     }
-    exports.info = info;
+    exports2.info = info;
     function startGroup(name) {
       command_1.issue("group", name);
     }
-    exports.startGroup = startGroup;
+    exports2.startGroup = startGroup;
     function endGroup() {
       command_1.issue("endgroup");
     }
-    exports.endGroup = endGroup;
+    exports2.endGroup = endGroup;
     function group(name, fn) {
       return __awaiter(this, void 0, void 0, function* () {
         startGroup(name);
@@ -2141,7 +2134,7 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
         return result;
       });
     }
-    exports.group = group;
+    exports2.group = group;
     function saveState(name, value) {
       const filePath = process.env["GITHUB_STATE"] || "";
       if (filePath) {
@@ -2149,33 +2142,33 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       }
       command_1.issueCommand("save-state", { name }, utils_1.toCommandValue(value));
     }
-    exports.saveState = saveState;
+    exports2.saveState = saveState;
     function getState(name) {
       return process.env[`STATE_${name}`] || "";
     }
-    exports.getState = getState;
+    exports2.getState = getState;
     function getIDToken(aud) {
       return __awaiter(this, void 0, void 0, function* () {
         return yield oidc_utils_1.OidcClient.getIDToken(aud);
       });
     }
-    exports.getIDToken = getIDToken;
+    exports2.getIDToken = getIDToken;
     var summary_1 = require_summary();
-    Object.defineProperty(exports, "summary", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "summary", { enumerable: true, get: function() {
       return summary_1.summary;
     } });
     var summary_2 = require_summary();
-    Object.defineProperty(exports, "markdownSummary", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "markdownSummary", { enumerable: true, get: function() {
       return summary_2.markdownSummary;
     } });
     var path_utils_1 = require_path_utils();
-    Object.defineProperty(exports, "toPosixPath", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "toPosixPath", { enumerable: true, get: function() {
       return path_utils_1.toPosixPath;
     } });
-    Object.defineProperty(exports, "toWin32Path", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "toWin32Path", { enumerable: true, get: function() {
       return path_utils_1.toWin32Path;
     } });
-    Object.defineProperty(exports, "toPlatformPath", { enumerable: true, get: function() {
+    Object.defineProperty(exports2, "toPlatformPath", { enumerable: true, get: function() {
       return path_utils_1.toPlatformPath;
     } });
   }
