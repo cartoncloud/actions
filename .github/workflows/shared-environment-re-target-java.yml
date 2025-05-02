@@ -44,8 +44,8 @@ jobs:
           projectKey: ENV
           appName: ${{ inputs.appName }}
           revision: ${{ inputs.prHeadRef }}
-          nameField: customfield_10224
-          urlField: customfield_10225
+          nameField: ${{ vars.JIRA_ENVIRONMENT_KEY_FIELD }}
+          urlField: ${{ vars.JIRA_ENVIRONMENT_URL_FIELD }}
 
   update-jira-environment:
     name: Update jira environment
@@ -65,11 +65,12 @@ jobs:
 
     steps:
       - name: Update Jira issue
+        if: matrix.environment.name != ''
         uses: cartoncloud/actions/jira-environment-revision-set@v3
         with:
           jiraServer: ${{ env.jiraServer }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ matrix.environment.name }}"'
+          environmentJql: 'project = ENV AND "GitHub Environment[Short text]" = "${{ matrix.environment.name }}"'
           appName: ${{ inputs.appName }}
           revision: ${{ inputs.prBaseRef }}
