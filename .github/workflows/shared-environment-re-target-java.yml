@@ -65,7 +65,6 @@ jobs:
 
     steps:
       - name: Update Jira issue
-        if: matrix.environment.name != ''
         uses: cartoncloud/actions/jira-environment-revision-set@v3
         with:
           jiraServer: ${{ env.jiraServer }}
