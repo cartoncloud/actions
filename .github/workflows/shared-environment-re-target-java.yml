@@ -72,4 +72,4 @@ jobs:
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
           environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ matrix.environment.name }}"'
           appName: ${{ inputs.appName }}
-          revision: ${{ inputs.prBaseRef }}
+          revision: ${{ inputs.prHeadRef }}
