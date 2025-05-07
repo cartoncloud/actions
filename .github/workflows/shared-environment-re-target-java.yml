@@ -65,11 +65,12 @@ jobs:
 
     steps:
       - name: Update Jira issue
-        uses: cartoncloud/actions/jira-environment-revision-set@v3
+        uses: cartoncloud/actions/jira-deployment-status@v3
         with:
           jiraServer: ${{ env.jiraServer }}
           jiraUsername: ${{ secrets.JIRA_USERNAME }}
           jiraPassword: ${{ secrets.JIRA_PASSWORD }}
-          environmentJql: 'project = ENV AND "GitHub Environment[Short text]" ~ "${{ matrix.environment.name }}"'
           appName: ${{ inputs.appName }}
-          revision: ${{ inputs.prHeadRef }}
+          revision: ${{ inputs.prBaseRef }}
+          environment: ${{ matrix.environment.name }}
+          status: 'success'
