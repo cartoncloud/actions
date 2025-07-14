@@ -36,7 +36,7 @@ jobs:
 
       - name: Merge conflict Slack notification
         if: ${{ failure() && steps.back-merge-production.conclusion == 'failure' }}
-        uses: slackapi/slack-github-action@v2
+        uses: slackapi/slack-github-action@v2.1.1
 
         with:
           method: chat.postMessage
