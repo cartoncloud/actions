@@ -45,7 +45,7 @@ runs:
   using: composite
 
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -86,7 +86,7 @@ runs:
       shell: bash
       run: mvn -s settings.xml versions:set -DnewVersion="${{ inputs.pomVersion }}"
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       if: ${{ inputs.jasperBuild == 'true' }}
       with:
         repository: cartoncloud/jasper-report
