@@ -15,7 +15,7 @@ jobs:
       contents: read
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_ROLE_CARTONCLOUD_APP_SDLC }}
           aws-region: ${{ vars.SERVICES_SDLC_REGION }}
@@ -34,7 +34,7 @@ jobs:
       contents: read
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_ROLE_CARTONCLOUD_APP_PROD }}
           aws-region: ${{ vars.SERVICES_PROD_2_REGION }}
