@@ -19,7 +19,7 @@ async function run() {
     const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
 
     core.info('Checking if issue already exists');
-    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}`);
+    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${environmentJql}`);
     core.info(`GET ${existingUrl}`);
     const existingResponse = await fetch(existingUrl, {
       method: 'GET',
