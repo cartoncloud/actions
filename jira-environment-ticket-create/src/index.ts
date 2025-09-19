@@ -19,7 +19,7 @@ async function run() {
     const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
 
     core.info('Checking if issue already exists');
-    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${environmentJql}`);
+    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${environmentJql}&maxResults=1`);
     core.info(`GET ${existingUrl}`);
     const existingResponse = await fetch(existingUrl, {
       method: 'GET',
@@ -31,7 +31,7 @@ async function run() {
 
     const matchingIssues: any = await existingResponse.json();
 
-    if (matchingIssues.total !== 0) {
+    if (Array.isArray(matchingIssues.issues) && matchingIssues.issues.length > 0) {
       core.warning(`A ticket for environment ${environmentName} already exists.`);
       return;
     }

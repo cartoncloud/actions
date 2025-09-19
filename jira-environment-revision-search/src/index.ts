@@ -34,7 +34,7 @@ async function run() {
 
     const matchingIssues: any = await issuesResponse.json();
 
-    core.info(`${matchingIssues.total > 0 ? matchingIssues.total : 'No'} matching issue(s) found.`);
+    core.info(`${Array.isArray(matchingIssues.issues) && matchingIssues.issues.length > 0 ? matchingIssues.issuses.length : 'No'} matching issue(s) found.`);
     core.setOutput('issues', matchingIssues.issues);
 
     if (nameField && urlField) {
