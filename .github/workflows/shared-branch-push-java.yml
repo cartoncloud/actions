@@ -88,7 +88,7 @@ jobs:
       environments: ${{ steps.find-issues.outputs.environments }}
 
     steps:
-      - uses: cartoncloud/actions/jira-environment-revision-search@tech/PLT-1777-jira-environment-revision-search
+      - uses: cartoncloud/actions/jira-environment-revision-search@v3
         id: find-issues
         with:
           jiraServer: ${{ vars.JIRA_SERVER }}
@@ -122,7 +122,7 @@ jobs:
 
     steps:
       - name: Deploy
-        uses: cartoncloud/actions/deploy-java@tech/PLT-1777-jira-environment-revision-search
+        uses: cartoncloud/actions/deploy-java@v3
         with:
           appName: ${{ inputs.appName }}
           revision: ${{ github.ref_name }}
