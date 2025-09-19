@@ -88,7 +88,7 @@ jobs:
       environments: ${{ steps.find-issues.outputs.environments }}
 
     steps:
-      - uses: cartoncloud/actions/jira-environment-revision-search@v3
+      - uses: cartoncloud/actions/jira-environment-revision-search@tech/PLT-1777-jira-environment-revision-search
         id: find-issues
         with:
           jiraServer: ${{ vars.JIRA_SERVER }}
