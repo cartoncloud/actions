@@ -122,7 +122,7 @@ jobs:
 
     steps:
       - name: Deploy
-        uses: cartoncloud/actions/deploy-java@v3
+        uses: cartoncloud/actions/deploy-java@tech/PLT-1777-jira-environment-revision-search
         with:
           appName: ${{ inputs.appName }}
           revision: ${{ github.ref_name }}
