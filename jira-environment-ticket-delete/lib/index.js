@@ -33,37 +33,47 @@ async function run() {
         const jiraServer = core.getInput('jiraServer', { required: true });
         const jiraUsername = core.getInput('jiraUsername', { required: true });
         const jiraPassword = core.getInput('jiraPassword', { required: true });
+        const environmentName = core.getInput('environmentName', { required: true });
         const projectKey = core.getInput('projectKey', { required: true });
-        const appName = core.getInput('appName', { required: true });
-        const revision = core.getInput('revision', { required: true });
-        const nameField = core.getInput('nameField', { required: false });
-        const urlField = core.getInput('urlField', { required: false });
+        const jiraEnvironmentField = core.getInput('jiraEnvironmentField', { required: true });
         const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
-        const labelToFind = `${appName.toLowerCase().replaceAll(' ', '-')}-${revision}`;
-        const jql = `project = ${projectKey} AND labels = "${labelToFind}"`;
-        const url = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${jql}`);
-        core.info(`GET ${url}`);
-        const issuesResponse = await (0, node_fetch_1.default)(url, {
+        const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
+        const existingUrl = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${environmentJql}&fields=labels`);
+        core.info(`GET ${existingUrl}`);
+        const existingResponse = await (0, node_fetch_1.default)(existingUrl, {
             method: 'GET',
             headers: {
                 'Authorization': `Basic ${jiraBase64Credentials}`,
                 'Content-Type': 'application/json',
             },
         });
-        if (!issuesResponse.ok) {
-            core.error(`Failed to search issues.`);
+        if (!existingResponse.ok) {
+            core.warning(`Failed to get environment issue.`);
+            const body = await existingResponse.text();
+            core.warning(body);
             return;
         }
-        const matchingIssues = await issuesResponse.json();
-        core.info(`${Array.isArray(matchingIssues.issues) && matchingIssues.issues.length > 0 ? matchingIssues.issuses.length : 'No'} matching issue(s) found.`);
-        core.setOutput('issues', matchingIssues.issues);
-        if (nameField && urlField) {
-            const mappedIssues = matchingIssues.issues.map((issue) => ({
-                name: issue.fields[nameField],
-                url: issue.fields[urlField],
-            }));
-            core.setOutput('environments', mappedIssues);
+        const matchingIssues = await existingResponse.json();
+        if (Array.isArray(matchingIssues.issues) && matchingIssues.issues.length === 0) {
+            core.warning(`No matching environment issue found.`);
+            return;
         }
+        const issue = matchingIssues.issues[0];
+        core.info('Deleting ticket: ' + issue.key);
+        const deleteResponse = await (0, node_fetch_1.default)(`https://${jiraServer}/rest/api/latest/issue/${issue.key}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Basic ${jiraBase64Credentials}`,
+                'Content-Type': 'application/json',
+            },
+        });
+        if (!deleteResponse.ok) {
+            core.error(`response code: ${deleteResponse.status}`);
+            core.error('response: ' + JSON.stringify(deleteResponse.json()));
+            core.setFailed(`Failed to delete environment ticket.`);
+            return;
+        }
+        core.info('Successfully deleted ticket.');
     }
     catch (error) {
         core.setFailed(error.message);

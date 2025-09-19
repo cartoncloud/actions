@@ -55,7 +55,7 @@ async function run() {
             return;
         }
         const matchingIssues = await existingResponse.json();
-        if (matchingIssues.total === 0) {
+        if (Array.isArray(matchingIssues.issues) && matchingIssues.issues.length === 0) {
             core.warning(`No matching environment issue found.`);
             return;
         }
