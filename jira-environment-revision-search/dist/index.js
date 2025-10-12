@@ -8049,7 +8049,7 @@ async function run() {
     const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString("base64");
     const labelToFind = `${appName.toLowerCase().replaceAll(" ", "-")}-${revision}`;
     const jql = `project = ${projectKey} AND labels = "${labelToFind}"`;
-    const url = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${jql}`);
+    const url = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${jql}&fields=${encodeURIComponent(nameField)}&fields=$(encodeURIComponent(urlField)}`);
     core.info(`GET ${url}`);
     const issuesResponse = await fetch(url, {
       method: "GET",
@@ -8063,7 +8063,7 @@ async function run() {
       return;
     }
     const matchingIssues = await issuesResponse.json();
-    core.info(`${matchingIssues.total > 0 ? matchingIssues.total : "No"} matching issue(s) found.`);
+    core.info(`${Array.isArray(matchingIssues.issues) && matchingIssues.issues.length > 0 ? matchingIssues.issues.length : "No"} matching issue(s) found.`);
     core.setOutput("issues", matchingIssues.issues);
     if (nameField && urlField) {
       const mappedIssues = matchingIssues.issues.map((issue) => ({

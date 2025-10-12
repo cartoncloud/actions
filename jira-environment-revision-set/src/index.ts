@@ -14,7 +14,7 @@ async function run() {
     const labelPrefix = `${appName.toLowerCase().replaceAll(' ', '-')}-`;
     const labelToAdd = `${labelPrefix}${revision}`;
 
-    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/latest/search?jql=${environmentJql}&fields=labels`);
+    const existingUrl = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${environmentJql}&fields=labels`);
     core.info(`GET ${existingUrl}`);
     const existingResponse = await fetch(existingUrl, {
       method: 'GET',
@@ -33,7 +33,7 @@ async function run() {
 
     const matchingIssues: any = await existingResponse.json();
 
-    if (matchingIssues.total === 0) {
+    if (Array.isArray(matchingIssues.issues) && matchingIssues.issues.length === 0) {
       core.warning(`No matching environment issue found.`);
       return;
     }

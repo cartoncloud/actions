@@ -34,17 +34,11 @@ async function run() {
         const jiraUsername = core.getInput('jiraUsername', { required: true });
         const jiraPassword = core.getInput('jiraPassword', { required: true });
         const environmentName = core.getInput('environmentName', { required: true });
-        const environmentUrl = core.getInput('environmentUrl', { required: true });
-        const projectId = core.getInput('projectId', { required: true });
-        const issueTypeId = core.getInput('issueTypeId', { required: true });
-        const nameField = core.getInput('nameField', { required: true });
-        const urlField = core.getInput('urlField', { required: true });
         const projectKey = core.getInput('projectKey', { required: true });
         const jiraEnvironmentField = core.getInput('jiraEnvironmentField', { required: true });
         const jiraBase64Credentials = Buffer.from(`${jiraUsername}:${jiraPassword}`).toString('base64');
         const environmentJql = `project = ${projectKey} AND "${jiraEnvironmentField}" ~ "${environmentName}"`;
-        core.info('Checking if issue already exists');
-        const existingUrl = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${environmentJql}&maxResults=1`);
+        const existingUrl = encodeURI(`https://${jiraServer}/rest/api/3/search/jql?jql=${environmentJql}&fields=labels`);
         core.info(`GET ${existingUrl}`);
         const existingResponse = await (0, node_fetch_1.default)(existingUrl, {
             method: 'GET',
@@ -53,42 +47,33 @@ async function run() {
                 'Content-Type': 'application/json',
             },
         });
-        const matchingIssues = await existingResponse.json();
-        if (Array.isArray(matchingIssues.issues) && matchingIssues.issues.length > 0) {
-            core.warning(`A ticket for environment ${environmentName} already exists.`);
+        if (!existingResponse.ok) {
+            core.warning(`Failed to get environment issue.`);
+            const body = await existingResponse.text();
+            core.warning(body);
             return;
         }
-        core.info('Creating issue.');
-        const createResponse = await (0, node_fetch_1.default)(`https://${jiraServer}/rest/api/latest/issue`, {
-            method: 'POST',
+        const matchingIssues = await existingResponse.json();
+        if (Array.isArray(matchingIssues.issues) && matchingIssues.issues.length === 0) {
+            core.warning(`No matching environment issue found.`);
+            return;
+        }
+        const issue = matchingIssues.issues[0];
+        core.info('Deleting ticket: ' + issue.key);
+        const deleteResponse = await (0, node_fetch_1.default)(`https://${jiraServer}/rest/api/latest/issue/${issue.key}`, {
+            method: 'DELETE',
             headers: {
                 'Authorization': `Basic ${jiraBase64Credentials}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                fields: {
-                    project: {
-                        id: projectId
-                    },
-                    issuetype: {
-                        id: issueTypeId
-                    },
-                    summary: environmentName,
-                    [nameField]: environmentName,
-                    [urlField]: environmentUrl
-                }
-            }),
         });
-        const createResponseJson = await createResponse.json();
-        if (!createResponse.ok) {
-            core.error(`response code: ${createResponse.status}`);
-            core.error('response: ' + JSON.stringify(createResponseJson));
-            core.setFailed(`Failed to create environment ticket.`);
+        if (!deleteResponse.ok) {
+            core.error(`response code: ${deleteResponse.status}`);
+            core.error('response: ' + JSON.stringify(deleteResponse.json()));
+            core.setFailed(`Failed to delete environment ticket.`);
             return;
         }
-        const issueLink = `https://${jiraServer}/browse/${createResponseJson.key}`;
-        core.info(`Successfully created environment ticket ${issueLink}`);
-        core.setOutput('issueLink', issueLink);
+        core.info('Successfully deleted ticket.');
     }
     catch (error) {
         core.setFailed(error.message);
