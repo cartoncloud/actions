@@ -75,7 +75,7 @@ jobs:
       - name: Remove existing compiled actions
         run: find . -type d -name dist -prune -exec rm -rf {} \;
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           merge-multiple: true
 
