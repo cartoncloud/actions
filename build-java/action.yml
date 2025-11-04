@@ -1,5 +1,5 @@
 name: 'Build Java'
-description: 'Action to build Java project, upload Maven artefact and upload docker image'
+description: 'Action to build Java project, and upload docker image'
 inputs:
   appName:
     description: 'Name of the application'
@@ -18,10 +18,6 @@ inputs:
   versionTag:
     description: 'Version tag to apply to docker image'
     required: false
-  mavenS3AccessKeyId:
-    description: 'Maven S3 Access Key Id to upload artefact'
-  mavenS3SecretAccessKey:
-    description: 'Maven S3 Secret Access Key to upload artefact'
   sonarUrl:
     description: 'URL to Sonar Server'
   sonarToken:
@@ -79,8 +75,6 @@ runs:
 
     - name: Update pom version
       env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
         GITHUB_PACKAGES_USERNAME: ${{ inputs.tokenUsername }}
         GITHUB_PACKAGES_TOKEN: ${{ inputs.token }}
       shell: bash
@@ -105,8 +99,6 @@ runs:
 
     - name: Build project
       env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
         GITHUB_PACKAGES_USERNAME: ${{ inputs.tokenUsername }}
         GITHUB_PACKAGES_TOKEN: ${{ inputs.token }}
       shell: bash
@@ -114,8 +106,6 @@ runs:
 
     - name: Run Sonar
       env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.mavenS3AccessKeyId }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.mavenS3SecretAccessKey }}
         GITHUB_PACKAGES_USERNAME: ${{ inputs.tokenUsername }}
         GITHUB_PACKAGES_TOKEN: ${{ inputs.token }}
       shell: bash
