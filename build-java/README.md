@@ -18,12 +18,6 @@ Docker version tag to apply to the image. Defaults to github.sha
 ### versionTag (optional)
 Additional docker version tag to apply to the image
 
-### mavenS3AccessKeyId
-Maven S3 Access Key Id to upload artefact
-
-### mavenS3SecretAccessKey
-Maven S3 Secret Access Key to upload artefact
-
 ### sonarUrl (optional)
 URL to Sonar Server
 
