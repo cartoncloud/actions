@@ -56,7 +56,7 @@ jobs:
       markdownReleaseNotes: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: '0'
 
@@ -200,7 +200,7 @@ jobs:
       htmlUrl: ${{ steps.github-release.outputs.html_url }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: '0'
 
@@ -304,7 +304,7 @@ jobs:
       jiraReleaseId: ${{ steps.create-jira-release.outputs.releaseId }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: '0'
 
