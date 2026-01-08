@@ -18887,7 +18887,7 @@ var require_core = __commonJS({
       return inputs.map((input) => input.trim());
     }
     exports2.getMultilineInput = getMultilineInput;
-    function getBooleanInput(name, options) {
+    function getBooleanInput2(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
       const val = getInput2(name, options);
@@ -18898,7 +18898,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports2.getBooleanInput = getBooleanInput;
+    exports2.getBooleanInput = getBooleanInput2;
     function setOutput(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -23083,6 +23083,7 @@ async function run() {
     const workflowName = core.getInput("workflowName", { required: true });
     const waitTimeout = parseInt(core.getInput("waitTimeout", { required: false }));
     const checkInterval = parseInt(core.getInput("checkInterval", { required: false }));
+    const continueOnTimeout = core.getBooleanInput("continueOnTimeout", { required: false });
     const inputRepos = core.getInput("repos", { required: true });
     const workflowStartISOTimestamp = (/* @__PURE__ */ new Date()).toISOString();
     const octokit = github.getOctokit(token);
@@ -23160,9 +23161,15 @@ async function run() {
       if (oneWorkflowFailed) {
         throw new Error("\u{1F534}\u{1F534}\u{1F534} There were problems in some triggered workflows \u{1F534}\u{1F534}\u{1F534}");
       } else if (remainingWorkflowsMap.size > 0) {
-        throw new Error("\u{1F534}\u{1F534}\u{1F534} Some of the triggered workflow dispatches didnt finish in time or were not found \u{1F534}\u{1F534}\u{1F534}");
+        if (continueOnTimeout) {
+          const remaining = Array.from(remainingWorkflowsMap.keys()).join(", ");
+          core.info(`Timeout reached. Continuing as continueOnTimeout is true. Workflows still running: ${remaining}`);
+        } else {
+          throw new Error("\u{1F534}\u{1F534}\u{1F534} Some of the triggered workflow dispatches didnt finish in time or were not found \u{1F534}\u{1F534}\u{1F534}");
+        }
+      } else {
+        core.info(`\u2705\u2705\u2705 All triggered jobs finished successfully \u2705\u2705\u2705`);
       }
-      core.info(`\u2705\u2705\u2705 All triggered jobs finished successfully \u2705\u2705\u2705`);
     }
     const repos = await parseRepos(inputRepos);
     await triggerRepoWorkflows(repos);
