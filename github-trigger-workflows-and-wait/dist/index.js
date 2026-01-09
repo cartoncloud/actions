@@ -23169,19 +23169,35 @@ async function run() {
             workflow_id,
             per_page: 10
           });
-          const matchingRuns = response.data.workflow_runs.filter((run2) => {
-            const matchesEnvironment = run2.name?.includes(environment) || false;
-            const isNewerThanBaseline = latestRunId === null || run2.id > latestRunId;
-            return matchesEnvironment && isNewerThanBaseline;
-          }).sort((a, b) => {
+          core.info(`DEBUG: Found ${response.data.workflow_runs.length} runs, baseline is ${latestRunId}`);
+          response.data.workflow_runs.forEach((run2) => {
+            core.info(`DEBUG: Run ID ${run2.id}, name: "${run2.name}", created: ${run2.created_at}, status: ${run2.status}`);
+          });
+          const newerRuns = response.data.workflow_runs.filter((run2) => {
+            return latestRunId === null || run2.id > latestRunId;
+          });
+          core.info(`DEBUG: ${newerRuns.length} runs are newer than baseline ${latestRunId}`);
+          if (newerRuns.length === 0) {
+            core.info(`\u23F3 Attempt number: ${attemptNumber}, Workflow has not yet started for ${owner}/${repo} ...`);
+            return;
+          }
+          newerRuns.sort((a, b) => {
             const timeA = new Date(a.created_at).getTime();
             const timeB = new Date(b.created_at).getTime();
             return timeB - timeA;
           });
-          const desiredRun = matchingRuns[0];
-          if (!desiredRun) {
-            core.info(`\u23F3 Attempt number: ${attemptNumber}, Workflow has not yet started for ${owner}/${repo} ...`);
-          } else if (desiredRun.status != "completed") {
+          const runMatchingEnvironment = newerRuns.find((run2) => {
+            const matches = run2.name?.includes(environment) || false;
+            core.info(`DEBUG: Run ID ${run2.id}, name: "${run2.name}", matches environment "${environment}": ${matches}`);
+            return matches;
+          });
+          const desiredRun = runMatchingEnvironment || newerRuns[0];
+          if (runMatchingEnvironment) {
+            core.info(`DEBUG: Using run ${desiredRun.id} that matches environment "${environment}"`);
+          } else {
+            core.info(`DEBUG: No run name matches environment "${environment}", using newest run ${desiredRun.id} (name: "${desiredRun.name}")`);
+          }
+          if (desiredRun.status != "completed") {
             core.info(`\u23F3 Attempt number: ${attemptNumber}, Workflow in progress with status: "${desiredRun.status}" for ${owner}/${repo}`);
           } else if (desiredRun.conclusion != "success") {
             core.info(`\u{1F534} Attempt number: ${attemptNumber}, Workflow finished with conclusion: "${desiredRun.conclusion}" for ${owner}/${repo}`);
