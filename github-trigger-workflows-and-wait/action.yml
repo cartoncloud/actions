@@ -20,6 +20,10 @@ inputs:
     description: Time in seconds to wait between triggered workflow status updates
     type: numnber
     default: 60
+  continueOnTimeout:
+    description: 'If true, treat timeout as success instead of failure (workflow still running at timeout)'
+    type: boolean
+    default: false
   repos:
     description: 'Repositories json object'
     required: true
