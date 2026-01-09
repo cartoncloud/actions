@@ -29,6 +29,7 @@ async function run() {
     const workflowName = core.getInput("workflowName", { required: true });
     const waitTimeout = parseInt(core.getInput("waitTimeout", { required: false }));
     const checkInterval = parseInt(core.getInput("checkInterval", { required: false }));
+    const continueOnTimeout = core.getBooleanInput("continueOnTimeout", { required: false });
     const inputRepos = core.getInput("repos", { required: true });
     
     const octokit = github.getOctokit(token);
@@ -172,9 +173,16 @@ async function run() {
         throw new Error('🔴🔴🔴 There were problems in some triggered workflows 🔴🔴🔴');
       } 
       else if(remainingWorkflowsMap.size > 0) {
-        throw new Error('🔴🔴🔴 Some of the triggered workflow dispatches didnt finish in time or were not found 🔴🔴🔴');
+        if (continueOnTimeout) {
+          const remaining = Array.from(remainingWorkflowsMap.keys()).join(', ');
+          core.info(`Timeout reached. Continuing as continueOnTimeout is true. Workflows still running: ${remaining}`);
+        } else {
+          throw new Error('🔴🔴🔴 Some of the triggered workflow dispatches didnt finish in time or were not found 🔴🔴🔴');
+        }
       }
-      core.info(`✅✅✅ All triggered jobs finished successfully ✅✅✅`);
+      else {
+        core.info(`✅✅✅ All triggered jobs finished successfully ✅✅✅`);
+      }
     }
     
     const repos = await parseRepos(inputRepos);
