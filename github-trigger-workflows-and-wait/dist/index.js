@@ -18929,10 +18929,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       command_1.issueCommand("error", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
     exports2.error = error2;
-    function warning2(message, properties = {}) {
+    function warning(message, properties = {}) {
       command_1.issueCommand("warning", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports2.warning = warning2;
+    exports2.warning = warning;
     function notice(message, properties = {}) {
       command_1.issueCommand("notice", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
@@ -23085,6 +23085,7 @@ async function run() {
     const checkInterval = parseInt(core.getInput("checkInterval", { required: false }));
     const continueOnTimeout = core.getBooleanInput("continueOnTimeout", { required: false });
     const inputRepos = core.getInput("repos", { required: true });
+    const debug = core.getBooleanInput("debug", { required: false });
     const octokit = github.getOctokit(token);
     async function parseRepos(repos2) {
       core.info(`Parsing repo list:${repos2} ...`);
@@ -23121,8 +23122,7 @@ async function run() {
           core.info(`Baseline for ${owner}/${repo}: latest run ID = ${latestRunId || "none"}`);
           return { owner, repo, workflow_id, latestRunId };
         } catch (error2) {
-          core.warning(`Failed to get baseline for ${owner}/${repo}: ${error2.message}`);
-          return { owner, repo, workflow_id, latestRunId: null };
+          throw new Error(`\u{1F534} Failed to get baseline for ${owner}/${repo}: ${error2.message}. Cannot proceed without baseline to reliably detect triggered workflow.`);
         }
       }));
       return baselines2;
@@ -23151,7 +23151,7 @@ async function run() {
     async function waitForWorkflowStatuses(baselines2) {
       let oneWorkflowFailed = false;
       let attemptNumber = 1;
-      const maxAttempts = Math.ceil(waitTimeout / checkInterval);
+      const maxAttempts = Math.ceil(waitTimeout / checkInterval) + 1;
       const remainingWorkflowsMap = new Map(baselines2.map((baseline) => [`${baseline.owner}/${baseline.repo}`, true]));
       core.info("\u23F3\u23F3\u23F3 Waiting for workflows to report status ...");
       while (remainingWorkflowsMap.size > 0 && oneWorkflowFailed === false && attemptNumber <= maxAttempts) {
@@ -23169,14 +23169,18 @@ async function run() {
             workflow_id,
             per_page: 10
           });
-          core.info(`DEBUG: Found ${response.data.workflow_runs.length} runs, baseline is ${latestRunId}`);
-          response.data.workflow_runs.forEach((run2) => {
-            core.info(`DEBUG: Run ID ${run2.id}, name: "${run2.name}", created: ${run2.created_at}, status: ${run2.status}`);
-          });
+          if (debug) {
+            core.info(`DEBUG: Found ${response.data.workflow_runs.length} runs, baseline is ${latestRunId}`);
+            response.data.workflow_runs.forEach((run2) => {
+              core.info(`DEBUG: Run ID ${run2.id}, name: "${run2.name}", created: ${run2.created_at}, status: ${run2.status}`);
+            });
+          }
           const newerRuns = response.data.workflow_runs.filter((run2) => {
             return latestRunId === null || run2.id > latestRunId;
           });
-          core.info(`DEBUG: ${newerRuns.length} runs are newer than baseline ${latestRunId}`);
+          if (debug) {
+            core.info(`DEBUG: ${newerRuns.length} runs are newer than baseline ${latestRunId}`);
+          }
           if (newerRuns.length === 0) {
             core.info(`\u23F3 Attempt number: ${attemptNumber}, Workflow has not yet started for ${owner}/${repo} ...`);
             return;
@@ -23188,14 +23192,18 @@ async function run() {
           });
           const runMatchingEnvironment = newerRuns.find((run2) => {
             const matches = run2.name?.includes(environment) || false;
-            core.info(`DEBUG: Run ID ${run2.id}, name: "${run2.name}", matches environment "${environment}": ${matches}`);
+            if (debug) {
+              core.info(`DEBUG: Run ID ${run2.id}, name: "${run2.name}", matches environment "${environment}": ${matches}`);
+            }
             return matches;
           });
           const desiredRun = runMatchingEnvironment || newerRuns[0];
-          if (runMatchingEnvironment) {
-            core.info(`DEBUG: Using run ${desiredRun.id} that matches environment "${environment}"`);
-          } else {
-            core.info(`DEBUG: No run name matches environment "${environment}", using newest run ${desiredRun.id} (name: "${desiredRun.name}")`);
+          if (debug) {
+            if (runMatchingEnvironment) {
+              core.info(`DEBUG: Using run ${desiredRun.id} that matches environment "${environment}"`);
+            } else {
+              core.info(`DEBUG: No run name matches environment "${environment}", using newest run ${desiredRun.id} (name: "${desiredRun.name}")`);
+            }
           }
           if (desiredRun.status != "completed") {
             core.info(`\u23F3 Attempt number: ${attemptNumber}, Workflow in progress with status: "${desiredRun.status}" for ${owner}/${repo}`);
