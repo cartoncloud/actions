@@ -18929,10 +18929,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       command_1.issueCommand("error", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
     exports2.error = error2;
-    function warning(message, properties = {}) {
+    function warning2(message, properties = {}) {
       command_1.issueCommand("warning", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
-    exports2.warning = warning;
+    exports2.warning = warning2;
     function notice(message, properties = {}) {
       command_1.issueCommand("notice", utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
     }
@@ -23085,7 +23085,6 @@ async function run() {
     const checkInterval = parseInt(core.getInput("checkInterval", { required: false }));
     const continueOnTimeout = core.getBooleanInput("continueOnTimeout", { required: false });
     const inputRepos = core.getInput("repos", { required: true });
-    const workflowStartISOTimestamp = (/* @__PURE__ */ new Date()).toISOString();
     const octokit = github.getOctokit(token);
     async function parseRepos(repos2) {
       core.info(`Parsing repo list:${repos2} ...`);
@@ -23108,6 +23107,26 @@ async function run() {
       core.info(`\u2705 Successfully parsed repo list: ${JSON.stringify(repoList)}`);
       return repoList;
     }
+    async function getBaselineRunIds(repos2) {
+      core.info("\u{1F4CA} Getting baseline workflow run IDs before triggering...");
+      const baselines2 = await Promise.all(repos2.map(async ({ owner, repo, workflow_id }) => {
+        try {
+          const response = await octokit.rest.actions.listWorkflowRuns({
+            owner,
+            repo,
+            workflow_id,
+            per_page: 1
+          });
+          const latestRunId = response.data.workflow_runs.length > 0 ? response.data.workflow_runs[0].id : null;
+          core.info(`Baseline for ${owner}/${repo}: latest run ID = ${latestRunId || "none"}`);
+          return { owner, repo, workflow_id, latestRunId };
+        } catch (error2) {
+          core.warning(`Failed to get baseline for ${owner}/${repo}: ${error2.message}`);
+          return { owner, repo, workflow_id, latestRunId: null };
+        }
+      }));
+      return baselines2;
+    }
     async function triggerRepoWorkflows(repos2) {
       let success = true;
       core.info("\u23F3\u23F3\u23F3 Triggering workflows list: ");
@@ -23129,21 +23148,37 @@ async function run() {
       return success;
     }
     ;
-    async function waitForWorkflowStatuses(repos2) {
+    async function waitForWorkflowStatuses(baselines2) {
       let oneWorkflowFailed = false;
       let attemptNumber = 1;
       const maxAttempts = Math.ceil(waitTimeout / checkInterval);
-      const remainingWorkflowsMap = new Map(repos2.map((repo) => [`${repo.owner}/${repo.repo}`, true]));
+      const remainingWorkflowsMap = new Map(baselines2.map((baseline) => [`${baseline.owner}/${baseline.repo}`, true]));
       core.info("\u23F3\u23F3\u23F3 Waiting for workflows to report status ...");
       while (remainingWorkflowsMap.size > 0 && oneWorkflowFailed === false && attemptNumber <= maxAttempts) {
-        await sleep(checkInterval);
-        await Promise.all(repos2.map(async ({ owner, repo, workflow_id }) => {
+        if (attemptNumber > 1) {
+          await sleep(checkInterval);
+        }
+        await Promise.all(baselines2.map(async ({ owner, repo, workflow_id, latestRunId }) => {
           const noSuccessReportYet = remainingWorkflowsMap.get(`${owner}/${repo}`);
           if (!noSuccessReportYet) {
             return;
           }
-          const response = await octokit.rest.actions.listWorkflowRuns({ owner, repo, workflow_id, per_page: 10, created: `>${workflowStartISOTimestamp}` });
-          const desiredRun = response.data.workflow_runs.filter((run2) => run2.name?.includes(environment))[0];
+          const response = await octokit.rest.actions.listWorkflowRuns({
+            owner,
+            repo,
+            workflow_id,
+            per_page: 10
+          });
+          const matchingRuns = response.data.workflow_runs.filter((run2) => {
+            const matchesEnvironment = run2.name?.includes(environment) || false;
+            const isNewerThanBaseline = latestRunId === null || run2.id > latestRunId;
+            return matchesEnvironment && isNewerThanBaseline;
+          }).sort((a, b) => {
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            return timeB - timeA;
+          });
+          const desiredRun = matchingRuns[0];
           if (!desiredRun) {
             core.info(`\u23F3 Attempt number: ${attemptNumber}, Workflow has not yet started for ${owner}/${repo} ...`);
           } else if (desiredRun.status != "completed") {
@@ -23152,7 +23187,7 @@ async function run() {
             core.info(`\u{1F534} Attempt number: ${attemptNumber}, Workflow finished with conclusion: "${desiredRun.conclusion}" for ${owner}/${repo}`);
             oneWorkflowFailed = true;
           } else {
-            core.info(`\u2705 Attempt number: ${attemptNumber}, Workflow status: "${desiredRun.status}" conclussion: "${desiredRun.conclusion}" for ${owner}/${repo}`);
+            core.info(`\u2705 Attempt number: ${attemptNumber}, Workflow status: "${desiredRun.status}" conclusion: "${desiredRun.conclusion}" for ${owner}/${repo}`);
             remainingWorkflowsMap.delete(`${owner}/${repo}`);
           }
         }));
@@ -23172,8 +23207,9 @@ async function run() {
       }
     }
     const repos = await parseRepos(inputRepos);
+    const baselines = await getBaselineRunIds(repos);
     await triggerRepoWorkflows(repos);
-    await waitForWorkflowStatuses(repos);
+    await waitForWorkflowStatuses(baselines);
   } catch (error2) {
     core.setFailed(error2.message);
   }
