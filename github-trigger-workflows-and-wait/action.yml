@@ -24,6 +24,10 @@ inputs:
     description: 'If true, treat timeout as success instead of failure (workflow still running at timeout)'
     type: boolean
     default: false
+  debug:
+    description: 'Enable debug logging'
+    type: boolean
+    default: false
   repos:
     description: 'Repositories json object'
     required: true
