@@ -135,26 +135,51 @@ async function run() {
             per_page: 10
           });
           
-          // Filter to runs that are newer than baseline and match environment name
-          // Sort by created_at descending (newest first) to get the most recent match
-          const matchingRuns = response.data.workflow_runs
-            .filter((run) => {
-              const matchesEnvironment = run.name?.includes(environment) || false;
-              const isNewerThanBaseline = latestRunId === null || run.id > latestRunId;
-              return matchesEnvironment && isNewerThanBaseline;
-            })
-            .sort((a, b) => {
-              const timeA = new Date(a.created_at).getTime();
-              const timeB = new Date(b.created_at).getTime();
-              return timeB - timeA; // Descending order (newest first)
-            });
+          // Debug: log what runs we got
+          core.info(`DEBUG: Found ${response.data.workflow_runs.length} runs, baseline is ${latestRunId}`);
+          response.data.workflow_runs.forEach((run) => {
+            core.info(`DEBUG: Run ID ${run.id}, name: "${run.name}", created: ${run.created_at}, status: ${run.status}`);
+          });
           
-          const desiredRun = matchingRuns[0];
+          // Filter to runs that are newer than baseline
+          // If we have a baseline, any run with higher ID is the one we triggered
+          const newerRuns = response.data.workflow_runs.filter((run) => {
+            return latestRunId === null || run.id > latestRunId;
+          });
           
-          if(!desiredRun){
+          core.info(`DEBUG: ${newerRuns.length} runs are newer than baseline ${latestRunId}`);
+          
+          if (newerRuns.length === 0) {
+            // No newer runs found yet
             core.info(`⏳ Attempt number: ${attemptNumber}, Workflow has not yet started for ${owner}/${repo} ...`);
+            return;
           }
-          else if (desiredRun.status != 'completed') {
+          
+          // Sort by created_at descending (newest first)
+          // Since we filtered by workflow_id and have a baseline, any run with higher ID is the one we triggered
+          newerRuns.sort((a, b) => {
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            return timeB - timeA; // Descending order (newest first)
+          });
+          
+          // Prefer runs matching environment name, but use newest if none match
+          // (The run name may not include the environment, so we can't require it)
+          const runMatchingEnvironment = newerRuns.find((run) => {
+            const matches = run.name?.includes(environment) || false;
+            core.info(`DEBUG: Run ID ${run.id}, name: "${run.name}", matches environment "${environment}": ${matches}`);
+            return matches;
+          });
+          
+          const desiredRun = runMatchingEnvironment || newerRuns[0];
+          
+          if (runMatchingEnvironment) {
+            core.info(`DEBUG: Using run ${desiredRun.id} that matches environment "${environment}"`);
+          } else {
+            core.info(`DEBUG: No run name matches environment "${environment}", using newest run ${desiredRun.id} (name: "${desiredRun.name}")`);
+          }
+          
+          if (desiredRun.status != 'completed') {
             core.info(`⏳ Attempt number: ${attemptNumber}, Workflow in progress with status: "${desiredRun.status}" for ${owner}/${repo}`);
           }
           else if (desiredRun.conclusion != 'success') {
