@@ -1,0 +1,81 @@
+name: 'Cleanup Java'
+description: 'Cleanup tasks for Java service (e.g., remove ECR environment tag)'
+inputs:
+  appName:
+    description: 'Name of the app and matching project field'
+    required: true
+  environmentTag:
+    description: 'Docker tag to remove from the image'
+    required: true
+  roleToAssumeForEcr:
+    description: 'AWS Role to Assume for access to ECR'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v5
+      with:
+        role-to-assume: ${{ inputs.roleToAssumeForEcr }}
+        aws-region: us-west-2
+
+    - name: Remove environment tag from ECR
+      shell: bash
+      run: |
+        echo "Removing ECR tag '${{ inputs.environmentTag }}' from '${{ inputs.appName }}'..."
+        # batch-delete-image removes the tag if the image has multiple tags (image is preserved).
+        # If this is the last tag, it deletes the image (which also removes the tag).
+        # This is safe for our use case.
+        
+        # Capture stderr separately to avoid contaminating JSON output with AWS CLI warnings
+        # (stderr warnings would cause jq parse failures and mask real errors)
+        stderr_file=$(mktemp)
+        trap 'rm -f "$stderr_file"' EXIT
+        
+        output=$(aws ecr batch-delete-image \
+          --repository-name "${{ inputs.appName }}" \
+          --image-ids imageTag="${{ inputs.environmentTag }}" \
+          --region us-west-2 \
+          --output json 2>"$stderr_file")
+        exit_code=$?
+        
+        stderr_output=$(cat "$stderr_file")
+        
+        if [ $exit_code -ne 0 ]; then
+          # Check both stdout and stderr for expected "not found" errors
+          combined_output="$output $stderr_output"
+          if echo "$combined_output" | grep -qiE "(ImageNotFoundException|RepositoryNotFoundException)"; then
+            echo "Image or tag '${{ inputs.environmentTag }}' not found - continuing"
+            exit 0
+          else
+            echo "Error calling batch-delete-image (exit code $exit_code):"
+            [ -n "$stderr_output" ] && echo "stderr: $stderr_output"
+            [ -n "$output" ] && echo "stdout: $output"
+            exit $exit_code
+          fi
+        fi
+
+        # Check for failures in the response using jq (avoids pipefail issues with grep)
+        failure_count=$(echo "$output" | jq -r '.failures | length')
+        # Validate jq output - if parsing failed, failure_count won't be a number
+        if ! [[ "$failure_count" =~ ^[0-9]+$ ]]; then
+          echo "Error: Failed to parse AWS response as JSON"
+          [ -n "$stderr_output" ] && echo "stderr: $stderr_output"
+          echo "stdout: $output"
+          exit 1
+        fi
+        
+        if [ "$failure_count" -gt 0 ]; then
+          # Count failures that are NOT ImageNotFound (those are real errors)
+          non_image_not_found_count=$(echo "$output" | jq -r '[.failures[] | select(.failureCode != "ImageNotFound")] | length')
+          if [ "$non_image_not_found_count" -eq 0 ]; then
+            echo "Image or tag '${{ inputs.environmentTag }}' not found - continuing"
+            exit 0
+          fi
+          failure_details=$(echo "$output" | jq -r '.failures')
+          echo "Failed to remove tag: $failure_details"
+          exit 1
+        fi
+
+        echo "Successfully removed tag '${{ inputs.environmentTag }}'"
