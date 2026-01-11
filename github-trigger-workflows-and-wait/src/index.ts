@@ -145,7 +145,7 @@ async function run() {
           }
           
           // Filter to runs that are newer than baseline
-          // Since we filtered by workflow_id and have a baseline, any run with higher ID is the one we triggered
+          // Since we filtered by workflow_id and have a baseline, any run with higher ID could be the one we triggered
           const newerRuns = response.data.workflow_runs.filter((run) => {
             return latestRunId === null || run.id > latestRunId;
           });
