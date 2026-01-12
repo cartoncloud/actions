@@ -12,7 +12,9 @@ Re-usable GitHub Actions
 
 ### Composite Actions
 
-- deployment-status
+- build-java
+- cleanup-java
+- deploy-java
 - jira-deployment-status
 - slack-deployment-status
 - sync-image-between-ecrs
@@ -27,6 +29,8 @@ Re-usable GitHub Actions
 - github-trigger-workflows-and-wait
 - jira-environment-revision-search
 - jira-environment-revision-set
+- jira-environment-ticket-create
+- jira-environment-ticket-delete
 - jira-issues-from-commits
 - jira-issues-update-fix-version
 - jira-project-version-create
