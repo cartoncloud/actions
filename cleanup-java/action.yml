@@ -22,8 +22,11 @@ runs:
 
     - name: Remove environment tag from ECR
       shell: bash
+      env:
+        APP_NAME: ${{ inputs.appName }}
+        ENVIRONMENT_TAG: ${{ inputs.environmentTag }}
       run: |
-        echo "Removing ECR tag '${{ inputs.environmentTag }}' from '${{ inputs.appName }}'..."
+        echo "Removing ECR tag '$ENVIRONMENT_TAG' from '$APP_NAME'..."
         # batch-delete-image removes the tag if the image has multiple tags (image is preserved).
         # If this is the last tag, it deletes the image (which also removes the tag).
         # This is safe for our use case.
@@ -34,8 +37,8 @@ runs:
         trap 'rm -f "$stderr_file"' EXIT
         
         output=$(aws ecr batch-delete-image \
-          --repository-name "${{ inputs.appName }}" \
-          --image-ids imageTag="${{ inputs.environmentTag }}" \
+          --repository-name "$APP_NAME" \
+          --image-ids imageTag="$ENVIRONMENT_TAG" \
           --region us-west-2 \
           --output json 2>"$stderr_file")
         exit_code=$?
@@ -46,7 +49,7 @@ runs:
           # Check both stdout and stderr for expected "not found" errors
           combined_output="$output $stderr_output"
           if echo "$combined_output" | grep -qiE "(ImageNotFoundException|RepositoryNotFoundException)"; then
-            echo "Image or tag '${{ inputs.environmentTag }}' not found - continuing"
+            echo "Image or tag '$ENVIRONMENT_TAG' not found - continuing"
             exit 0
           else
             echo "Error calling batch-delete-image (exit code $exit_code):"
@@ -70,7 +73,7 @@ runs:
           # Count failures that are NOT ImageNotFound (those are real errors)
           non_image_not_found_count=$(echo "$output" | jq -r '[.failures[] | select(.failureCode != "ImageNotFound")] | length')
           if [ "$non_image_not_found_count" -eq 0 ]; then
-            echo "Image or tag '${{ inputs.environmentTag }}' not found - continuing"
+            echo "Image or tag '$ENVIRONMENT_TAG' not found - continuing"
             exit 0
           fi
           failure_details=$(echo "$output" | jq -r '.failures')
@@ -78,4 +81,4 @@ runs:
           exit 1
         fi
 
-        echo "Successfully removed tag '${{ inputs.environmentTag }}'"
+        echo "Successfully removed tag '$ENVIRONMENT_TAG'"
