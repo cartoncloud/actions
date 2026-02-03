@@ -45,7 +45,7 @@ jobs:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
   sync-prod-3:
-    name: Sync APAC Prod Environment Variables
+    name: Sync Singapore/Backup Prod Environment Variables
     runs-on: ubuntu-latest
     permissions:
       id-token: write
