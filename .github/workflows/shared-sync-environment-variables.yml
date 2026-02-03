@@ -43,3 +43,21 @@ jobs:
         uses: cartoncloud/actions/aws-environment-param-sync@v3
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+  sync-prod-3:
+    name: Sync Singapore/Backup Prod Environment Variables
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_CARTONCLOUD_APP_PROD }}
+          aws-region: ${{ vars.SERVICES_PROD_3_REGION }}
+
+      - name: Sync Param Store with Environment Variables
+        uses: cartoncloud/actions/aws-environment-param-sync@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
