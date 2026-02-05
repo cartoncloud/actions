@@ -81,12 +81,6 @@ jobs:
     environment:
       name: ${{ inputs.environmentName }}
     steps:
-      - name: Fail if environment is production
-        if: needs.extract-environment-type.outputs.env-type == 'prod'
-        run: |
-          echo "This workflow should not be triggered for production from a branch, please use a git tag."
-          exit 1
-
       - name: Deploy
         uses: cartoncloud/actions/deploy-java@v3
         with:
