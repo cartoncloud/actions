@@ -36,7 +36,7 @@ runs:
   using: composite
 
   steps:
-    - uses: aws-actions/configure-aws-credentials@v5
+    - uses: aws-actions/configure-aws-credentials@v6
       with:
         role-to-assume: ${{ inputs.fromEcrRoleToAssume }}
         aws-region: ${{ inputs.fromEcrAwsRegion }}
@@ -52,7 +52,7 @@ runs:
       run: |
         docker image pull $FROM_REGISTRY/$FROM_REPOSITORY:$FROM_IMAGE_TAG 
 
-    - uses: aws-actions/configure-aws-credentials@v5
+    - uses: aws-actions/configure-aws-credentials@v6
       with:
         role-to-assume: ${{ inputs.toEcrRoleToAssume }}
         aws-region: ${{ inputs.toEcrAwsRegion }}
