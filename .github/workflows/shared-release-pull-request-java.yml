@@ -89,7 +89,7 @@ jobs:
           WITH_V: true
           DRY_RUN: true
           RELEASE_BRANCHES: .*
-          DEFAULT_BUMP: ${{ steps.jira-issues-from-commits.outputs.suggestedVersionBump }}
+          DEFAULT_BUMP: ${{ steps.jira-issues-from-commits.outputs.suggestedVersionBump || 'patch' }}
           VERBOSE: false
           INITIAL_VERSION: ${{ inputs.initialVersion }}
 
@@ -109,7 +109,7 @@ jobs:
           title: 'Release ${{ steps.increment-version.outputs.new_tag }}-${{ steps.sha.outputs.short-sha }} (#${{ github.event.pull_request.number }})'
 
       - name: Update pull request description (main release)
-        if: ${{ github.event.pull_request.head.ref == 'release/production' }}
+        if: ${{ github.event.pull_request.head.ref == 'release/production' && steps.release-notes-markdown.outputs.releaseNotes != '' }}
         run: |
           gh pr edit $PR --body "$BODY
           ---
@@ -120,7 +120,7 @@ jobs:
           BODY: ${{ steps.release-notes-markdown.outputs.releaseNotes }}
 
       - name: Update pull request description (hotfix)
-        if: ${{ github.event.pull_request.head.ref != 'release/production' }}
+        if: ${{ github.event.pull_request.head.ref != 'release/production' && steps.release-notes-markdown.outputs.releaseNotes != '' }}
         run: |
           gh pr edit $PR --body "$BODY
           ---
@@ -335,7 +335,7 @@ jobs:
           WITH_V: true
           DRY_RUN: false
           RELEASE_BRANCHES: .*
-          DEFAULT_BUMP: ${{ steps.jira-issues-from-commits.outputs.suggestedVersionBump }}
+          DEFAULT_BUMP: ${{ steps.jira-issues-from-commits.outputs.suggestedVersionBump || 'patch' }}
           VERBOSE: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INITIAL_VERSION: ${{ inputs.initialVersion }}
@@ -380,6 +380,7 @@ jobs:
           isReleased: false
 
       - name: Update JIRA fix versions
+        if: steps.create-jira-release.outputs.releaseId != ''
         continue-on-error: true
         uses: cartoncloud/actions/jira-issues-update-fix-version@v3
         with:
@@ -448,6 +449,7 @@ jobs:
           clusterName: ${{ vars.CLUSTER_NAME || '' }}
 
       - name: Mark JIRA as released
+        if: needs.create-releases.outputs.jiraReleaseId != ''
         continue-on-error: true
         uses: cartoncloud/actions/jira-project-version-update@v3
         with:
