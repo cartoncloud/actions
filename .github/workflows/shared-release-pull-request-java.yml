@@ -72,6 +72,7 @@ jobs:
 
       - name: Get JIRA issues from commits
         id: jira-issues-from-commits
+        continue-on-error: true
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
           jiraServer: ${{ vars.JIRA_SERVER }}
@@ -102,6 +103,7 @@ jobs:
 
       - name: Generate Markdown release notes
         id: release-notes-markdown
+        continue-on-error: true
         uses: cartoncloud/actions/jira-release-notes-markdown@v3
         with:
           title: 'Release ${{ steps.increment-version.outputs.new_tag }}-${{ steps.sha.outputs.short-sha }} (#${{ github.event.pull_request.number }})'
@@ -316,6 +318,7 @@ jobs:
 
       - name: Get JIRA issues from commits
         id: jira-issues-from-commits
+        continue-on-error: true
         uses: cartoncloud/actions/jira-issues-from-commits@v3
         with:
           jiraServer: ${{ vars.JIRA_SERVER }}
@@ -339,10 +342,12 @@ jobs:
 
       - name: Generate Markdown release notes
         id: release-notes-markdown
+        continue-on-error: true
         uses: cartoncloud/actions/jira-release-notes-markdown@v3
 
       - name: Generate Slack release notes
         id: release-notes-slack
+        continue-on-error: true
         uses: cartoncloud/actions/jira-release-notes-slack@v3
         with:
           title: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
@@ -363,6 +368,7 @@ jobs:
 
       - name: Create JIRA Release
         id: create-jira-release
+        continue-on-error: true
         uses: cartoncloud/actions/jira-project-version-create@v3
         with:
           username: ${{ secrets.JIRA_USERNAME }}
@@ -374,6 +380,7 @@ jobs:
           isReleased: false
 
       - name: Update JIRA fix versions
+        continue-on-error: true
         uses: cartoncloud/actions/jira-issues-update-fix-version@v3
         with:
           jiraServer: ${{ vars.JIRA_SERVER }}
@@ -441,6 +448,7 @@ jobs:
           clusterName: ${{ vars.CLUSTER_NAME || '' }}
 
       - name: Mark JIRA as released
+        continue-on-error: true
         uses: cartoncloud/actions/jira-project-version-update@v3
         with:
           username: ${{ secrets.JIRA_USERNAME }}
