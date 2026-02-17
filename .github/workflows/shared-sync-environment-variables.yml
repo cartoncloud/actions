@@ -25,6 +25,24 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
+  sync-staging:
+    name: Sync Staging Environment Variables
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_CARTONCLOUD_APP_STAGING }}
+          aws-region: ${{ vars.SERVICES_STAGING_REGION }}
+
+      - name: Sync Param Store with Environment Variables
+        uses: cartoncloud/actions/aws-environment-param-sync@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
 
   sync-prod-2:
     name: Sync NA Prod Environment Variables
