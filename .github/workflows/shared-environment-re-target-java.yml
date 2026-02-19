@@ -29,7 +29,7 @@ jobs:
   re-target-list:
     name: Environment Updates
     runs-on: ubuntu-latest
-    if: ${{ inputs.prMerged }} && ${{ inputs.prHeadRepoId }} == ${{ inputs.prBaseRepoId }} && ${{ inputs.prBaseRef }} == 'main'
+    if: ${{ inputs.prMerged && inputs.prHeadRepoId == inputs.prBaseRepoId && inputs.prBaseRef == 'main' }}
 
     outputs:
       environments: ${{ steps.find-issues.outputs.environments }}
