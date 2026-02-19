@@ -90,14 +90,18 @@ async function run() {
       core.info("⏳⏳⏳ Triggering workflows list: ");
       await Promise.all(repos.map(async ({owner,repo, workflow_id})=>{
         core.info(`Triggering workflow for :${owner}/${repo} ...`);
-
-        const response = await octokit.rest.actions.createWorkflowDispatch({owner ,repo ,workflow_id, ref:"main", inputs: {environment}});
-        if (response.status !== 204) {
-          core.error(`Failed to trigger workflow dispatch for :${owner}/${repo}`);
+        try {
+          const response = await octokit.rest.actions.createWorkflowDispatch({owner ,repo ,workflow_id, ref:"main", inputs: {environment}});
+          if (response.status !== 204) {
+            core.error(`Failed to trigger workflow dispatch for :${owner}/${repo} (Status: ${response.status})`);
+            success = false;
+          }
+          else {
+            core.info(`Successfully trigerred workflow dispatch for :${owner}/${repo}`);
+          }
+        } catch (error: any) {
+          core.error(`Failed to trigger workflow for :${owner}/${repo}: ${error.message}`);
           success = false;
-        }
-        else {
-          core.info(`Successfully trigerred workflow dispatch for :${owner}/${repo}`);
         }
       }));
 
@@ -111,25 +115,26 @@ async function run() {
     };
 
     async function waitForWorkflowStatuses(baselines:RepoBaseline[]) {
-      let oneWorkflowFailed = false;
       let attemptNumber = 1;
       // Add 1 to account for the immediate first check (no sleep before it)
       // This ensures we monitor for the full waitTimeout duration
       const maxAttempts = Math.ceil(waitTimeout/checkInterval) + 1;
       const remainingWorkflowsMap = new Map(baselines.map(baseline => [`${baseline.owner}/${baseline.repo}`, true]));
+      const baselineRunIdMap = new Map(baselines.map(b => [`${b.owner}/${b.repo}`, b.latestRunId]));
 
       core.info('⏳⏳⏳ Waiting for workflows to report status ...');
-      while(remainingWorkflowsMap.size > 0 && oneWorkflowFailed === false && attemptNumber<=maxAttempts) {
+      while(remainingWorkflowsMap.size > 0 && attemptNumber<=maxAttempts) {
         if (attemptNumber > 1) {
           await sleep(checkInterval);
         }
         
-        await Promise.all(baselines.map(async ({owner, repo, workflow_id, latestRunId}) => {
-          const noSuccessReportYet = remainingWorkflowsMap.get(`${owner}/${repo}`);
+        await Promise.all(baselines.map(async ({owner, repo, workflow_id}) => {
+          const key = `${owner}/${repo}`;
+          const noSuccessReportYet = remainingWorkflowsMap.get(key);
           if(!noSuccessReportYet) {
             return;
           }
-          
+          const latestRunId = baselineRunIdMap.get(key) ?? null;
           const response = await octokit.rest.actions.listWorkflowRuns({
             owner, 
             repo, 
@@ -189,21 +194,23 @@ async function run() {
             core.info(`⏳ Attempt number: ${attemptNumber}, Workflow in progress with status: "${desiredRun.status}" for ${owner}/${repo}`);
           }
           else if (desiredRun.conclusion != 'success') {
-            core.info(`🔴 Attempt number: ${attemptNumber}, Workflow finished with conclusion: "${desiredRun.conclusion}" for ${owner}/${repo}`);
-            oneWorkflowFailed = true;
+            core.info(`🔴 Workflow finished with conclusion: "${desiredRun.conclusion}" for ${owner}/${repo}. Re-triggering and waiting again.`);
+            try {
+              await octokit.rest.actions.createWorkflowDispatch({owner, repo, workflow_id, ref: "main", inputs: {environment}});
+              baselineRunIdMap.set(key, desiredRun.id);
+            } catch (error: any) {
+              core.error(`Failed to re-trigger workflow for ${owner}/${repo}: ${error.message}`);
+            }
           }
           else {
             core.info(`✅ Attempt number: ${attemptNumber}, Workflow status: "${desiredRun.status}" conclusion: "${desiredRun.conclusion}" for ${owner}/${repo}`);
-            remainingWorkflowsMap.delete(`${owner}/${repo}`);
+            remainingWorkflowsMap.delete(key);
           }
         }));
         
         attemptNumber += 1;
       }
-      if(oneWorkflowFailed){
-        throw new Error('🔴🔴🔴 There were problems in some triggered workflows 🔴🔴🔴');
-      } 
-      else if(remainingWorkflowsMap.size > 0) {
+      if(remainingWorkflowsMap.size > 0) {
         if (continueOnTimeout) {
           const remaining = Array.from(remainingWorkflowsMap.keys()).join(', ');
           core.info(`Timeout reached. Continuing as continueOnTimeout is true. Workflows still running: ${remaining}`);
