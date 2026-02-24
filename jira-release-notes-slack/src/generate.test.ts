@@ -278,4 +278,53 @@ describe('generate', () => {
     expect(combinedText).toContain('a0000000'); // First commit
     expect(combinedText).toContain('a0000099'); // Last commit
   });
+
+  it('truncates blocks when exceeding 50 block limit', async () => {
+    // Create enough issues to exceed 50 blocks
+    // Each issue creates at least 1 block, so 60 issues should create more than 50 blocks
+    const issues = Array.from({ length: 60 }, (_, i) => ({
+      "key": `CC-${i.toString().padStart(5, '0')}`,
+      "fields": {
+        "assignee": { "emailAddress": "test@example.com", "displayName": "Test User" },
+        "reporter": { "emailAddress": "test@example.com", "displayName": "Test User" },
+        "issuetype": { "name": "Story", "markdownEmoji": ":book:" },
+        "summary": `Issue ${i} summary`
+      },
+      "htmlUrl": `https://support.example.com/browse/CC-${i.toString().padStart(5, '0')}`
+    }));
+    
+    const result = await generate({
+      title: 'Test',
+      issues: issues,
+      otherCommits: [],
+      slackToken: '',
+      repoUrl: 'https://github.com/myorg/myrepo',
+    });
+
+    // Should have exactly 50 blocks total (1 context title + 48 issue blocks + 1 truncation message)
+    expect(result.blocks.length).toBe(50);
+    
+    // The last block should be the truncation message
+    const lastBlock = result.blocks[result.blocks.length - 1];
+    expect(lastBlock.type).toBe('context');
+    expect(lastBlock.elements[0].text).toBe('_Release notes have been truncated as they exceed the maximum length_');
+    
+    // The first block should be the context block with title
+    expect(result.blocks[0].type).toBe('context');
+    
+    // The remaining 48 blocks (blocks 1-48) should be section blocks with issues
+    for (let i = 1; i < 49; i++) {
+      expect(result.blocks[i].type).toBe('section');
+      expect(result.blocks[i].text.type).toBe('mrkdwn');
+    }
+    
+    // Verify that some early issues are included
+    const combinedText = result.blocks.slice(1, 49).map((block: any) => block.text.text).join('');
+    expect(combinedText).toContain('CC-00000'); // First issue
+    expect(combinedText).toContain('CC-00047'); // Last issue in truncated list (48 issues total)
+    
+    // Verify that later issues are not included (truncated)
+    expect(combinedText).not.toContain('CC-00048');
+    expect(combinedText).not.toContain('CC-00059');
+  });
 });
