@@ -28927,6 +28927,44 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 
 // src/generate.ts
 var core = __toESM(require_core());
+var SLACK_MAX_TEXT_LENGTH = 3e3;
+function splitTextIntoBlocks(text, maxLength = SLACK_MAX_TEXT_LENGTH) {
+  if (text.length <= maxLength) {
+    return [text];
+  }
+  const blocks = [];
+  let remaining = text;
+  while (remaining.length > maxLength) {
+    let splitPoint = maxLength;
+    const newlineIndex = remaining.lastIndexOf("\n", maxLength);
+    if (newlineIndex > maxLength * 0.7) {
+      splitPoint = newlineIndex + 1;
+    } else {
+      const spaceIndex = remaining.lastIndexOf(" ", maxLength);
+      if (spaceIndex > maxLength * 0.7) {
+        splitPoint = spaceIndex + 1;
+      }
+    }
+    blocks.push(remaining.substring(0, splitPoint));
+    remaining = remaining.substring(splitPoint);
+  }
+  if (remaining.length > 0) {
+    blocks.push(remaining);
+  }
+  return blocks;
+}
+function addSectionBlocks(message, text) {
+  const textBlocks = splitTextIntoBlocks(text);
+  for (const blockText of textBlocks) {
+    message.blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: blockText
+      }
+    });
+  }
+}
 async function getSlackUserId({ email, token }) {
   const response = await fetch(`https://slack.com/api/users.lookupByEmail?&email=${email}`, {
     method: "GET",
@@ -28990,37 +29028,38 @@ async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
     const jiraKey = `<${issue.htmlUrl}|${issue.key}>`;
     const reporter = issue.fields.reporter?.emailAddress ? emailsToUser[issue.fields.reporter.emailAddress] : "_No Reporter_";
     const assignee = issue.fields.assignee?.emailAddress ? emailsToUser[issue.fields.assignee.emailAddress] : "_Unassigned_";
-    slackMessage.blocks.push(
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `${blockPrefix}\u2022 ${jiraKey} ${summary}
-	${reporter}	${assignee}`
-        }
-      }
-    );
+    const fullText = `${blockPrefix}\u2022 ${jiraKey} ${summary}
+	${reporter}	${assignee}`;
+    addSectionBlocks(slackMessage, fullText);
   }
   if (issues.length === 0) {
     core.warning("No Jira changes found");
-    slackMessage.blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: "_No Jira changes found_"
-      }
-    });
+    addSectionBlocks(slackMessage, "_No Jira changes found_");
   }
   if (otherCommits.length > 0) {
     const commitUrl = `${repoUrl}/commit`;
     const commitBullets = otherCommits.map((it) => `\u2022 <${commitUrl}/${it.shortHash}|${it.shortHash}> ${it.message}`);
-    slackMessage.blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: ["*Other Commits*", ...commitBullets].join("\n")
+    const header = "*Other Commits*";
+    const blocks = [];
+    let currentBlockText = header;
+    for (const bullet of commitBullets) {
+      const testText = `${currentBlockText}
+${bullet}`;
+      if (testText.length > SLACK_MAX_TEXT_LENGTH) {
+        if (currentBlockText !== header) {
+          blocks.push(currentBlockText);
+        }
+        currentBlockText = bullet;
+      } else {
+        currentBlockText = testText;
       }
-    });
+    }
+    if (currentBlockText) {
+      blocks.push(currentBlockText);
+    }
+    for (const blockText of blocks) {
+      addSectionBlocks(slackMessage, blockText);
+    }
   }
   if (slackMessage.blocks.length > 50) {
     slackMessage.blocks = slackMessage.blocks.slice(0, 49);
