@@ -166,7 +166,8 @@ export async function generate(
       
       if (testText.length > SLACK_MAX_TEXT_LENGTH) {
         // Current block is full, save it and start a new one
-        if (currentBlockText !== header) {
+        // Always push currentBlockText if it has content (including header)
+        if (currentBlockText) {
           blocks.push(currentBlockText);
         }
         currentBlockText = bullet;

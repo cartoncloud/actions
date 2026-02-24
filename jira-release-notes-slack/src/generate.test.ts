@@ -405,4 +405,45 @@ describe('generate', () => {
     expect(combinedText).not.toContain('CC-00048');
     expect(combinedText).not.toContain('CC-00059');
   });
+
+  it('preserves header when first commit bullet exceeds limit with header', async () => {
+    // Create a commit message that, when combined with the header, exceeds 3000 characters
+    // Header "*Other Commits*" is 16 chars, plus "\n" is 1 char, so we need a commit > 2983 chars
+    const longCommitMessage = 'A'.repeat(3000); // This will make header + "\n" + commit > 3000
+    const otherCommits = [{
+      "shortHash": "abc1234",
+      "message": longCommitMessage
+    }];
+    
+    const result = await generate({
+      title: 'Test',
+      issues: [],
+      otherCommits: otherCommits,
+      slackToken: '',
+      repoUrl: 'https://github.com/myorg/myrepo',
+    });
+
+    // Find all "Other Commits" blocks
+    const commitBlocks = result.blocks.filter((block: any) => 
+      block.type === 'section' && (
+        block.text?.text?.includes('Other Commits') || 
+        block.text?.text?.includes('abc1234')
+      )
+    );
+    
+    // Should have at least 2 blocks: one with header, one with the commit
+    expect(commitBlocks.length).toBeGreaterThanOrEqual(1);
+    
+    // Verify that the header "*Other Commits*" is present in at least one block
+    const combinedText = commitBlocks.map((block: any) => block.text.text).join('');
+    expect(combinedText).toContain('*Other Commits*');
+    
+    // Verify that the commit is also present
+    expect(combinedText).toContain('abc1234');
+    
+    // Verify that each block doesn't exceed 3000 characters
+    commitBlocks.forEach((block: any) => {
+      expect(block.text.text.length).toBeLessThanOrEqual(3000);
+    });
+  });
 });

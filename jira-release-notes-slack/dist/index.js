@@ -28936,11 +28936,11 @@ function splitTextIntoBlocks(text, maxLength = SLACK_MAX_TEXT_LENGTH) {
   let remaining = text;
   while (remaining.length > maxLength) {
     let splitPoint = maxLength;
-    const newlineIndex = remaining.lastIndexOf("\n", maxLength);
+    const newlineIndex = remaining.lastIndexOf("\n", maxLength - 1);
     if (newlineIndex > maxLength * 0.7) {
       splitPoint = newlineIndex + 1;
     } else {
-      const spaceIndex = remaining.lastIndexOf(" ", maxLength);
+      const spaceIndex = remaining.lastIndexOf(" ", maxLength - 1);
       if (spaceIndex > maxLength * 0.7) {
         splitPoint = spaceIndex + 1;
       }
@@ -29046,7 +29046,7 @@ async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
       const testText = `${currentBlockText}
 ${bullet}`;
       if (testText.length > SLACK_MAX_TEXT_LENGTH) {
-        if (currentBlockText !== header) {
+        if (currentBlockText) {
           blocks.push(currentBlockText);
         }
         currentBlockText = bullet;
