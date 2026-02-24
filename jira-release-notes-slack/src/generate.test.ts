@@ -279,6 +279,84 @@ describe('generate', () => {
     expect(combinedText).toContain('a0000099'); // Last commit
   });
 
+  it('handles newline at exactly maxLength boundary correctly', async () => {
+    // Create text where a newline exists at exactly position 3000
+    // This tests the edge case where lastIndexOf would find a newline at maxLength
+    const prefix = '*:book: Story*\n\n• <https://support.example.com/browse/CC-99999|CC-99999> ';
+    const filler = 'A'.repeat(3000 - prefix.length - 1); // Fill up to position 2999
+    const newlineAtMaxLength = '\n'; // This will be at position 3000
+    const suffix = '\t*Test User*\t*Test User*';
+    const longSummary = filler + newlineAtMaxLength + suffix;
+    
+    const issues = [{
+      "key": "CC-99999",
+      "fields": {
+        "assignee": { "emailAddress": "test@example.com", "displayName": "Test User" },
+        "reporter": { "emailAddress": "test@example.com", "displayName": "Test User" },
+        "issuetype": { "name": "Story", "markdownEmoji": ":book:" },
+        "summary": longSummary
+      },
+      "htmlUrl": "https://support.example.com/browse/CC-99999"
+    }];
+    
+    const result = await generate({
+      title: 'Test',
+      issues: issues,
+      otherCommits: [],
+      slackToken: '',
+      repoUrl: 'https://github.com/myorg/myrepo',
+    });
+
+    const sectionBlocks = result.blocks.filter((block: any) => 
+      block.type === 'section' && 
+      !block.text?.text?.includes('No Jira changes found')
+    );
+    
+    // Verify that each block doesn't exceed 3000 characters
+    sectionBlocks.forEach((block: any) => {
+      expect(block.text.text.length).toBeLessThanOrEqual(3000);
+    });
+  });
+
+  it('handles space at exactly maxLength boundary correctly', async () => {
+    // Create text where a space exists at exactly position 3000
+    // This tests the edge case where lastIndexOf would find a space at maxLength
+    const prefix = '*:book: Story*\n\n• <https://support.example.com/browse/CC-99999|CC-99999> ';
+    const filler = 'A'.repeat(3000 - prefix.length - 1); // Fill up to position 2999
+    const spaceAtMaxLength = ' '; // This will be at position 3000
+    const suffix = 'More text that continues after the space\t*Test User*\t*Test User*';
+    const longSummary = filler + spaceAtMaxLength + suffix;
+    
+    const issues = [{
+      "key": "CC-99999",
+      "fields": {
+        "assignee": { "emailAddress": "test@example.com", "displayName": "Test User" },
+        "reporter": { "emailAddress": "test@example.com", "displayName": "Test User" },
+        "issuetype": { "name": "Story", "markdownEmoji": ":book:" },
+        "summary": longSummary
+      },
+      "htmlUrl": "https://support.example.com/browse/CC-99999"
+    }];
+    
+    const result = await generate({
+      title: 'Test',
+      issues: issues,
+      otherCommits: [],
+      slackToken: '',
+      repoUrl: 'https://github.com/myorg/myrepo',
+    });
+
+    const sectionBlocks = result.blocks.filter((block: any) => 
+      block.type === 'section' && 
+      !block.text?.text?.includes('No Jira changes found')
+    );
+    
+    // Verify that each block doesn't exceed 3000 characters
+    sectionBlocks.forEach((block: any) => {
+      expect(block.text.text.length).toBeLessThanOrEqual(3000);
+    });
+  });
+
   it('truncates blocks when exceeding 50 block limit', async () => {
     // Create enough issues to exceed 50 blocks
     // Each issue creates at least 1 block, so 60 issues should create more than 50 blocks

@@ -21,12 +21,14 @@ function splitTextIntoBlocks(text: string, maxLength: number = SLACK_MAX_TEXT_LE
     let splitPoint = maxLength;
     
     // Look backwards for a newline first (preferred split point)
-    const newlineIndex = remaining.lastIndexOf('\n', maxLength);
+    // Search up to maxLength - 1 to ensure splitPoint + 1 doesn't exceed maxLength
+    const newlineIndex = remaining.lastIndexOf('\n', maxLength - 1);
     if (newlineIndex > maxLength * 0.7) { // Only use if it's not too early
       splitPoint = newlineIndex + 1; // Include the newline
     } else {
       // Look backwards for a space
-      const spaceIndex = remaining.lastIndexOf(' ', maxLength);
+      // Search up to maxLength - 1 to ensure splitPoint + 1 doesn't exceed maxLength
+      const spaceIndex = remaining.lastIndexOf(' ', maxLength - 1);
       if (spaceIndex > maxLength * 0.7) { // Only use if it's not too early
         splitPoint = spaceIndex + 1; // Include the space
       }
