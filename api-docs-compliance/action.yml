@@ -100,8 +100,9 @@ runs:
         PR_NUM: ${{ github.event.pull_request.number }}
       run: |
         set -e
-        BODY=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --jq 'reverse | map(select(.user.login == "github-actions[bot]")) | .[0].body // empty' 2>/dev/null || true)
-        if echo "$BODY" | grep -q 'COMPLIANT_NO_VIOLATIONS'; then
+        # Bugbot posts with PAT (e.g. cartoncloud-robot) when GITHUB_TOKEN/GH_TOKEN are overridden, so match by content not by user
+        BODY=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --jq 'reverse | map(select(.body | test("COMPLIANT_NO_VIOLATIONS"))) | .[0].body // empty' 2>/dev/null || true)
+        if [ -n "$BODY" ]; then
           echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review thread created; merge does not require resolving a conversation."
           exit 0
         fi
