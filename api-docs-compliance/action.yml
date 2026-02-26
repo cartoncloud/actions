@@ -78,9 +78,10 @@ runs:
         - Do not conclude "no spec mismatch" solely because a path is not in index.yml; definitions and schemas in features/*.yml are part of the contract. Flag renames or removals that break those schemas.
         PROMPT
 
+    # Pinned to release tag (not @main) to avoid supply chain risk: action runs with CURSOR_API_KEY and PAT
     - name: Run OpenAPI spec bugbot (Cursor)
       id: bugbot
-      uses: erans/autoagent-action@main
+      uses: erans/autoagent-action@v1.1.0
       env:
         CURSOR_API_KEY: ${{ inputs.CURSOR_API_KEY }}
         GITHUB_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
