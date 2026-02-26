@@ -19,7 +19,7 @@ runs:
   using: composite
   steps:
     - name: Checkout target repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -103,13 +103,13 @@ runs:
       run: |
         set -e
         # Bugbot posts with PAT (e.g. cartoncloud-robot) when GITHUB_TOKEN/GH_TOKEN are overridden, so match by content not by user
-        BODY=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --jq 'reverse | map(select(.body | test("COMPLIANT_NO_VIOLATIONS"))) | .[0].body // empty' 2>/dev/null || true)
+        BODY=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --paginate --jq '[.[] | select(.body | test("COMPLIANT_NO_VIOLATIONS"))] | .[-1].body // empty' 2>/dev/null || true)
         if [ -n "$BODY" ]; then
           echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review thread created; merge does not require resolving a conversation."
           exit 0
         fi
         # Only create a blocking review when the bugbot actually posted a violation comment. If it posted nothing (no API spec files in scope or autoagent failed), do not block.
-        HAS_VIOLATION_COMMENT=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --jq 'reverse | map(select((.body | test("COMPLIANT_NO_VIOLATIONS")) | not)) | map(select(.body | test("API spec bugbot|API spec review|api-spec-openapi-bugbot|API Documentation Compliance"))) | length' 2>/dev/null || echo "0")
+        HAS_VIOLATION_COMMENT=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --paginate --jq '[.[] | select((.body | test("COMPLIANT_NO_VIOLATIONS")) | not) | select(.body | test("API spec bugbot|API spec review|api-spec-openapi-bugbot|API Documentation Compliance"))] | length' 2>/dev/null || echo "0")
         if [ "${HAS_VIOLATION_COMMENT:-0}" -eq 0 ]; then
           echo "No bugbot violation comment found (no API spec files in scope or bugbot did not post). Skipping review thread; merge not blocked."
           exit 0
