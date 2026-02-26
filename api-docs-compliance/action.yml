@@ -1,0 +1,111 @@
+name: 'API Documentation Compliance'
+description: 'Checks OpenAPI spec compliance on PRs using shared api-documentation rules.'
+inputs:
+  PERSONAL_ACCESS_TOKEN:
+    description: 'GitHub token with access to the api-documentation repo (if private)'
+    required: true
+  CURSOR_API_KEY:
+    description: 'Cursor API key for bugbot analysis'
+    required: true
+  API_DOCUMENTATION_REPO:
+    description: 'Override for the api-documentation repo (e.g. org/repo)'
+    required: false
+    default: cartoncloud/api-documentation
+  API_DOCUMENTATION_BRANCH:
+    description: 'Branch to use for the api-documentation repo (default: main)'
+    required: false
+    default: main
+runs:
+  using: composite
+  steps:
+    - name: Checkout target repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Require api-documentation token for private repo access
+      shell: bash
+      run: |
+        API_DOC_REPO="${{ inputs.API_DOCUMENTATION_REPO }}"
+        CURRENT_REPO="${{ github.repository }}"
+        if [ "$API_DOC_REPO" = "$CURRENT_REPO" ]; then
+          echo "Api-documentation repo is the current repo; GITHUB_TOKEN will be used."
+        else
+          if [ -z "${{ inputs.PERSONAL_ACCESS_TOKEN }}" ]; then
+            echo "::error::Checking out the private api-documentation repo ($API_DOC_REPO) requires PERSONAL_ACCESS_TOKEN."
+            exit 1
+          fi
+        fi
+
+    - name: Checkout api-documentation
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.API_DOCUMENTATION_REPO }}
+        ref: ${{ inputs.API_DOCUMENTATION_BRANCH }}
+        path: api-documentation
+        token: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+
+    - name: Clear previous API spec bugbot comments
+      uses: aki77/delete-pr-comments-action@v3
+      with:
+        token: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        pullRequestNumber: ${{ github.event.pull_request.number }}
+        includeIssueComments: 'true'
+        includeOverallReviewComments: 'true'
+        usernames: |-
+          cartoncloud-robot
+          github-actions[bot]
+
+    - name: Prepare API spec bugbot rules
+      shell: bash
+      run: |
+        mkdir -p .github/rules
+        cp api-documentation/.cursor/rules/api-spec-rules/RULE.mdc .github/rules/api-spec-openapi-bugbot.prompt
+
+    - name: Require Cursor API key for bugbot
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.CURSOR_API_KEY }}" ]; then
+          echo "::error::OpenAPI spec bugbot requires CURSOR_API_KEY (secret)."
+          exit 1
+        fi
+
+    - name: Run OpenAPI spec bugbot (Cursor)
+      id: bugbot
+      uses: erans/autoagent-action@main
+      env:
+        CURSOR_API_KEY: ${{ inputs.CURSOR_API_KEY }}
+        GITHUB_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+      with:
+        agent: cursor
+        action: comment
+        scope: changed
+        install-agent: true
+        customFiles: |
+          - .github/rules/api-spec-openapi-bugbot.prompt
+
+    - name: Create resolvable review thread only when violations found
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        PR_NUM: ${{ github.event.pull_request.number }}
+      run: |
+        set -e
+        BODY=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --jq 'reverse | map(select(.user.login == "github-actions[bot]")) | .[0].body // empty' 2>/dev/null || true)
+        if echo "$BODY" | grep -q 'COMPLIANT_NO_VIOLATIONS'; then
+          echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review thread created; merge does not require resolving a conversation."
+          exit 0
+        fi
+        FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1 || true)
+        if [ -z "$FIRST_FILE" ]; then
+          echo "No changed files; skipping review thread."
+          exit 0
+        fi
+        COMMENT_BODY="**API spec bugbot** (.cursor/rules/api-spec-rules/RULE.mdc from api-documentation) found issues. Resolve this conversation when all findings from the bugbot comment above are addressed."
+        jq -n \
+          --arg path "$FIRST_FILE" \
+          --arg body "$COMMENT_BODY" \
+          '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: $body}]}' > /tmp/review.json
+        gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --input /tmp/review.json
+        echo "Review comment created (resolve this conversation before merge when branch protection is enabled)."
