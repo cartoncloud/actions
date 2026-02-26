@@ -59,6 +59,7 @@ runs:
           API spec review
           api-spec-openapi-bugbot
           API Documentation Compliance Review
+          COMPLIANT_NO_VIOLATIONS
         usernames: |-
           cartoncloud-robot
           github-actions[bot]
