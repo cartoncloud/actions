@@ -23,20 +23,6 @@ runs:
       with:
         fetch-depth: 0
 
-    - name: Require api-documentation token for private repo access
-      shell: bash
-      run: |
-        API_DOC_REPO="${{ inputs.API_DOCUMENTATION_REPO }}"
-        CURRENT_REPO="${{ github.repository }}"
-        if [ "$API_DOC_REPO" = "$CURRENT_REPO" ]; then
-          echo "Api-documentation repo is the current repo; GITHUB_TOKEN will be used."
-        else
-          if [ -z "${{ inputs.PERSONAL_ACCESS_TOKEN }}" ]; then
-            echo "::error::Checking out the private api-documentation repo ($API_DOC_REPO) requires PERSONAL_ACCESS_TOKEN."
-            exit 1
-          fi
-        fi
-
     - name: Checkout api-documentation (with branch fallback)
       shell: bash
       run: |
