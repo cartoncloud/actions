@@ -54,6 +54,11 @@ runs:
         pullRequestNumber: ${{ github.event.pull_request.number }}
         includeIssueComments: 'true'
         includeOverallReviewComments: 'true'
+        bodyContains: |-
+          API spec bugbot
+          API spec review
+          api-spec-openapi-bugbot
+          API Documentation Compliance Review
         usernames: |-
           cartoncloud-robot
           github-actions[bot]
