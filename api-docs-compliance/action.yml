@@ -25,11 +25,15 @@ runs:
 
     - name: Checkout api-documentation (with branch fallback)
       shell: bash
+      env:
+        API_DOCUMENTATION_REPO: ${{ inputs.API_DOCUMENTATION_REPO }}
+        API_DOCUMENTATION_BRANCH: ${{ inputs.API_DOCUMENTATION_BRANCH }}
+        PERSONAL_ACCESS_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
       run: |
         set -e
-        REPO="${{ inputs.API_DOCUMENTATION_REPO }}"
-        BRANCH="${{ inputs.API_DOCUMENTATION_BRANCH }}"
-        TOKEN="${{ inputs.PERSONAL_ACCESS_TOKEN }}"
+        REPO="$API_DOCUMENTATION_REPO"
+        BRANCH="$API_DOCUMENTATION_BRANCH"
+        TOKEN="$PERSONAL_ACCESS_TOKEN"
         TARGET_DIR="api-documentation"
         rm -rf "$TARGET_DIR"
         if [ "$BRANCH" = "main" ]; then
@@ -59,14 +63,6 @@ runs:
       run: |
         mkdir -p .github/rules
         cp api-documentation/.cursor/rules/api-spec-rules/RULE.mdc .github/rules/api-spec-openapi-bugbot.prompt
-
-    - name: Require Cursor API key for bugbot
-      shell: bash
-      run: |
-        if [ -z "${{ inputs.CURSOR_API_KEY }}" ]; then
-          echo "::error::OpenAPI spec bugbot requires CURSOR_API_KEY (secret)."
-          exit 1
-        fi
 
     - name: Run OpenAPI spec bugbot (Cursor)
       id: bugbot
