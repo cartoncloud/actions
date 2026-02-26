@@ -87,6 +87,7 @@ runs:
         CURSOR_API_KEY: ${{ inputs.CURSOR_API_KEY }}
         GITHUB_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
         GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        MODEL: grok
       with:
         agent: cursor
         action: comment
