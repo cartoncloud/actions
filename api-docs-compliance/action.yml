@@ -37,13 +37,25 @@ runs:
           fi
         fi
 
-    - name: Checkout api-documentation
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ inputs.API_DOCUMENTATION_REPO }}
-        ref: ${{ inputs.API_DOCUMENTATION_BRANCH }}
-        path: api-documentation
-        token: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+    - name: Checkout api-documentation (with branch fallback)
+      shell: bash
+      run: |
+        set -e
+        REPO="${{ inputs.API_DOCUMENTATION_REPO }}"
+        BRANCH="${{ inputs.API_DOCUMENTATION_BRANCH }}"
+        TOKEN="${{ inputs.PERSONAL_ACCESS_TOKEN }}"
+        TARGET_DIR="api-documentation"
+        rm -rf "$TARGET_DIR"
+        if [ "$BRANCH" = "main" ]; then
+          git clone --depth 1 --branch "$BRANCH" "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"
+        else
+          if git clone --depth 1 --branch "$BRANCH" "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"; then
+            echo "Checked out branch $BRANCH."
+          else
+            echo "Branch $BRANCH not found, falling back to main."
+            git clone --depth 1 --branch main "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"
+          fi
+        fi
 
     - name: Clear previous API spec bugbot comments
       uses: aki77/delete-pr-comments-action@v3
