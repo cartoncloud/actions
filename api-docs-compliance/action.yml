@@ -68,6 +68,15 @@ runs:
       run: |
         mkdir -p .github/rules
         cp api-documentation/.cursor/rules/api-spec-rules/RULE.mdc .github/rules/api-spec-openapi-bugbot.prompt
+        # Only PR-changed files are in scope; validate them against the api-documentation contract (full spec)
+        cat >> .github/rules/api-spec-openapi-bugbot.prompt << 'PROMPT'
+
+        ## Scope and contract (mandatory)
+        - Inspect only the files changed in this PR. Do not require other repo files to be in scope.
+        - Validate those changed files against the OpenAPI contract in api-documentation/openapi/. You MUST read that folder (it is in the workspace): api-documentation/openapi/index.yml and all referenced specs under api-documentation/openapi/features/ (e.g. documents.yml).
+        - Document schema (status, access, etc.) is in api-documentation/openapi/features/documents.yml. Compare any changed *-definition-schema.json (or other API-related files) against this contract.
+        - Do not conclude "no spec mismatch" solely because a path is not in index.yml; definitions and schemas in features/*.yml are part of the contract. Flag renames or removals that break those schemas.
+        PROMPT
 
     - name: Run OpenAPI spec bugbot (Cursor)
       id: bugbot
