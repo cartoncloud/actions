@@ -102,7 +102,8 @@ runs:
         ${CHANGED_FILES}
 
         Output your full review to stdout. If no violations, output exactly COMPLIANT_NO_VIOLATIONS first."
-        agent --print --output-format=text --model "$MODEL" --trust --workspace "$GITHUB_WORKSPACE" -- "$PROMPT" > /tmp/bugbot-output.txt 2>&1 || true
+        agent --print --output-format=text --model "$MODEL" --trust --workspace "$GITHUB_WORKSPACE" -- "$PROMPT" > /tmp/bugbot-output.txt 2>/tmp/bugbot-stderr.txt || true
+        [ -s /tmp/bugbot-stderr.txt ] && cat /tmp/bugbot-stderr.txt >&2 || true
 
     - name: Create resolvable review thread when violations found
       shell: bash
@@ -111,7 +112,7 @@ runs:
         PR_NUM: ${{ github.event.pull_request.number }}
       run: |
         set -e
-        if grep -q "COMPLIANT_NO_VIOLATIONS" /tmp/bugbot-output.txt 2>/dev/null; then
+        if head -n1 /tmp/bugbot-output.txt 2>/dev/null | grep -qFx "COMPLIANT_NO_VIOLATIONS"; then
           echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review thread created."
           exit 0
         fi
