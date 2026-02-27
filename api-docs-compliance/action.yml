@@ -84,12 +84,25 @@ runs:
         CURSOR_API_KEY: ${{ inputs.CURSOR_API_KEY }}
         GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
         GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUM: ${{ github.event.pull_request.number }}
         MODEL: kimi-k2.5
       run: |
         set -e
         export PATH="${CURSOR_BIN:-$HOME/.cursor/bin}:$PATH"
-        PROMPT=$(cat .github/rules/api-spec-openapi-bugbot.prompt)
-        agent -p "$PROMPT" --model "$MODEL" --output-format=text > /tmp/bugbot-output.txt 2>&1 || true
+        RULE_PROMPT=$(cat .github/rules/api-spec-openapi-bugbot.prompt)
+        CHANGED_FILES=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -100 || true)
+        OPENAPI_SPEC="openapi/index.yml"
+        [ -d api-documentation/openapi ] && OPENAPI_SPEC="api-documentation/openapi/index.yml"
+        PROMPT="${RULE_PROMPT}
+
+        ---
+        Context for this run:
+        - OpenAPI contract (canonical): ${OPENAPI_SPEC}
+        - Files changed in this PR (review only these):
+        ${CHANGED_FILES}
+
+        Output your full review to stdout. If no violations, output exactly COMPLIANT_NO_VIOLATIONS first."
+        agent --print --output-format=text --model "$MODEL" --trust --workspace "$GITHUB_WORKSPACE" -- "$PROMPT" > /tmp/bugbot-output.txt 2>&1 || true
 
     - name: Create resolvable review thread when violations found
       shell: bash
@@ -103,7 +116,14 @@ runs:
           exit 0
         fi
         if [ ! -s /tmp/bugbot-output.txt ]; then
-          echo "Bugbot produced no output; skipping review."
+          echo "Bugbot produced no output; posting review to request re-run or log check."
+          FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1 || echo "README.md")
+          BODY="**API spec review (API Documentation Compliance).** Bugbot produced no output. This may indicate agent timeout, no matching changed files, or a CLI error. Please check the workflow logs for the 'Run OpenAPI spec bugbot' step and re-run the workflow if needed."
+          jq -n \
+            --arg path "$FIRST_FILE" \
+            --arg body "$BODY" \
+            '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: $body}]}' > /tmp/review.json
+          gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
           exit 0
         fi
         FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1 || echo "README.md")
