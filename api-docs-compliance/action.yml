@@ -87,6 +87,7 @@ runs:
         MODEL: kimi-k2.5
       run: |
         set -e
-        export PATH="$CURSOR_BIN:$PATH"
+        export PATH="${CURSOR_BIN:-$HOME/.cursor/bin}:$PATH"
         PROMPT=$(cat .github/rules/api-spec-openapi-bugbot.prompt)
-        agent -p "$PROMPT" --model "$MODEL" --output-format=text
+        agent -p "$PROMPT" --model "$MODEL" --output-format=text || true
+        # Do not fail the job on agent exit code: violations are surfaced via the resolvable review thread (RULE.mdc), not job failure.
