@@ -58,7 +58,7 @@ runs:
           API spec bugbot
           API spec review
           api-spec-openapi-bugbot
-          API Documentation Compliance Review
+          API Documentation Compliance
           COMPLIANT_NO_VIOLATIONS
         usernames: |-
           cartoncloud-robot
@@ -69,15 +69,6 @@ runs:
       run: |
         mkdir -p .github/rules
         cp api-documentation/.cursor/rules/api-spec-rules/RULE.mdc .github/rules/api-spec-openapi-bugbot.prompt
-        # Only PR-changed files are in scope; validate them against the api-documentation contract (full spec)
-        cat >> .github/rules/api-spec-openapi-bugbot.prompt << 'PROMPT'
-
-        ## Scope and contract (mandatory)
-        - Inspect only the files changed in this PR. Do not require other repo files to be in scope.
-        - Validate those changed files against the OpenAPI contract in api-documentation/openapi/. You MUST read that folder (it is in the workspace): api-documentation/openapi/index.yml and all referenced specs under api-documentation/openapi/features/ (e.g. documents.yml).
-        - Document schema (status, access, etc.) is in api-documentation/openapi/features/documents.yml. Compare any changed *-definition-schema.json (or other API-related files) against this contract.
-        - Do not conclude "no spec mismatch" solely because a path is not in index.yml; definitions and schemas in features/*.yml are part of the contract. Flag renames or removals that break those schemas.
-        PROMPT
 
     # Pinned to release tag (not @main) to avoid supply chain risk: action runs with CURSOR_API_KEY and PAT
     - name: Run OpenAPI spec bugbot (Cursor)
@@ -125,5 +116,5 @@ runs:
           --arg path "$FIRST_FILE" \
           --arg body "$COMMENT_BODY" \
           '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: $body}]}' > /tmp/review.json
-        gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --input /tmp/review.json
+        gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
         echo "Review comment created (resolve this conversation before merge when branch protection is enabled)."
