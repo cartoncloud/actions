@@ -118,7 +118,8 @@ runs:
         fi
         if [ ! -s /tmp/bugbot-output.txt ]; then
           echo "Bugbot produced no output; posting review to request re-run or log check."
-          FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1 || echo "README.md")
+          FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1)
+          FIRST_FILE=${FIRST_FILE:-README.md}
           BODY="**API spec review (API Documentation Compliance).** Bugbot produced no output. This may indicate agent timeout, no matching changed files, or a CLI error. Please check the workflow logs for the 'Run OpenAPI spec bugbot' step and re-run the workflow if needed."
           jq -n \
             --arg path "$FIRST_FILE" \
@@ -127,7 +128,8 @@ runs:
           gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
           exit 0
         fi
-        FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1 || echo "README.md")
+        FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1)
+        FIRST_FILE=${FIRST_FILE:-README.md}
         PREFIX="**API spec review (API Documentation Compliance).** Resolve this conversation when all findings below are addressed.
 
         "
