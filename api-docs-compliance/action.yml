@@ -89,5 +89,31 @@ runs:
         set -e
         export PATH="${CURSOR_BIN:-$HOME/.cursor/bin}:$PATH"
         PROMPT=$(cat .github/rules/api-spec-openapi-bugbot.prompt)
-        agent -p "$PROMPT" --model "$MODEL" --output-format=text || true
-        # Do not fail the job on agent exit code: violations are surfaced via the resolvable review thread (RULE.mdc), not job failure.
+        agent -p "$PROMPT" --model "$MODEL" --output-format=text > /tmp/bugbot-output.txt 2>&1 || true
+
+    - name: Create resolvable review thread when violations found
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        PR_NUM: ${{ github.event.pull_request.number }}
+      run: |
+        set -e
+        if grep -q "COMPLIANT_NO_VIOLATIONS" /tmp/bugbot-output.txt 2>/dev/null; then
+          echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review thread created."
+          exit 0
+        fi
+        if [ ! -s /tmp/bugbot-output.txt ]; then
+          echo "Bugbot produced no output; skipping review."
+          exit 0
+        fi
+        FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1 || echo "README.md")
+        PREFIX="**API spec review (API Documentation Compliance).** Resolve this conversation when all findings below are addressed.
+
+        "
+        jq -n \
+          --arg path "$FIRST_FILE" \
+          --rawfile report /tmp/bugbot-output.txt \
+          --arg prefix "$PREFIX" \
+          '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: ($prefix + $report)}]}' > /tmp/review.json
+        gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
+        echo "Review comment created (resolve this conversation before merge when branch protection is enabled)."
