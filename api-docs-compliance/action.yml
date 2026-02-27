@@ -70,51 +70,23 @@ runs:
         mkdir -p .github/rules
         cp api-documentation/.cursor/rules/api-spec-rules/RULE.mdc .github/rules/api-spec-openapi-bugbot.prompt
 
-    # Pinned to release tag (not @main) to avoid supply chain risk: action runs with CURSOR_API_KEY and PAT
-    - name: Run OpenAPI spec bugbot (Cursor)
-      id: bugbot
-      uses: erans/autoagent-action@v1.1.0
-      env:
-        CURSOR_API_KEY: ${{ inputs.CURSOR_API_KEY }}
-        GITHUB_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
-        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
-        MODEL: kimi-k2.5
-      with:
-        agent: cursor
-        action: comment
-        scope: changed
-        install-agent: true
-        customFiles: |
-          - .github/rules/api-spec-openapi-bugbot.prompt
+    - name: Install Cursor CLI
+      shell: bash
+      run: |
+        curl https://cursor.com/install -fsS | bash
+        echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+        echo "CURSOR_BIN=$HOME/.cursor/bin" >> $GITHUB_ENV
 
-    - name: Create resolvable review thread only when violations found
+    - name: Run OpenAPI spec bugbot (Cursor CLI)
+      id: bugbot
       shell: bash
       env:
+        CURSOR_API_KEY: ${{ inputs.CURSOR_API_KEY }}
         GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
-        PR_NUM: ${{ github.event.pull_request.number }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        MODEL: kimi-k2.5
       run: |
         set -e
-        # Bugbot posts with PAT (e.g. cartoncloud-robot) when GITHUB_TOKEN/GH_TOKEN are overridden, so match by content not by user
-        BODY=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --paginate --jq '[.[] | select(.body | test("COMPLIANT_NO_VIOLATIONS"))] | .[-1].body // empty' 2>/dev/null || true)
-        if [ -n "$BODY" ]; then
-          echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review thread created; merge does not require resolving a conversation."
-          exit 0
-        fi
-        # Only create a blocking review when the bugbot actually posted a violation comment. If it posted nothing (no API spec files in scope or autoagent failed), do not block.
-        HAS_VIOLATION_COMMENT=$(gh api repos/${{ github.repository }}/issues/$PR_NUM/comments --paginate --jq '[.[] | select((.body | test("COMPLIANT_NO_VIOLATIONS")) | not) | select(.body | test("API spec bugbot|API spec review|api-spec-openapi-bugbot|API Documentation Compliance"))] | length' 2>/dev/null || echo "0")
-        if [ "${HAS_VIOLATION_COMMENT:-0}" -eq 0 ]; then
-          echo "No bugbot violation comment found (no API spec files in scope or bugbot did not post). Skipping review thread; merge not blocked."
-          exit 0
-        fi
-        FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1 || true)
-        if [ -z "$FIRST_FILE" ]; then
-          echo "No changed files; skipping review thread."
-          exit 0
-        fi
-        COMMENT_BODY="**API spec bugbot** (.cursor/rules/api-spec-rules/RULE.mdc from api-documentation) found issues. Resolve this conversation when all findings from the bugbot comment above are addressed."
-        jq -n \
-          --arg path "$FIRST_FILE" \
-          --arg body "$COMMENT_BODY" \
-          '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: $body}]}' > /tmp/review.json
-        gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
-        echo "Review comment created (resolve this conversation before merge when branch protection is enabled)."
+        export PATH="$CURSOR_BIN:$PATH"
+        PROMPT=$(cat .github/rules/api-spec-openapi-bugbot.prompt)
+        agent -p "$PROMPT" --model "$MODEL" --output-format=text
