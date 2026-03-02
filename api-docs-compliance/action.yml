@@ -55,11 +55,8 @@ runs:
         includeIssueComments: 'true'
         includeOverallReviewComments: 'true'
         bodyContains: |-
-          API spec bugbot
           API spec review
-          api-spec-openapi-bugbot
           API Documentation Compliance
-          COMPLIANT_NO_VIOLATIONS
         usernames: |-
           cartoncloud-robot
           github-actions[bot]
