@@ -70,7 +70,7 @@ runs:
     - name: Install Cursor CLI
       shell: bash
       run: |
-        curl https://cursor.com/install -fsS | bash
+        curl https://cursor.com/install -fsSL | bash
         echo "$HOME/.cursor/bin" >> $GITHUB_PATH
         echo "CURSOR_BIN=$HOME/.cursor/bin" >> $GITHUB_ENV
 
