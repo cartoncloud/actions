@@ -261,8 +261,10 @@ describe('generate', () => {
 
     // Find all "Other Commits" blocks
     const commitBlocks = result.blocks.filter((block: any) => 
-      block.type === 'section' && block.text?.text?.includes('Other Commits') || 
-      block.text?.text?.match(/• <https:\/\/github\.com\/myorg\/myrepo\/commit\/a\d{7}\|a\d{7}>/)
+      block.type === 'section' && (
+        block.text?.text?.includes('Other Commits') || 
+        block.text?.text?.match(/• <https:\/\/github\.com\/myorg\/myrepo\/commit\/a\d{7}\|a\d{7}>/)
+      )
     );
     
     // Should have multiple blocks if the content is long enough
