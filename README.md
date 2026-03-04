@@ -12,6 +12,7 @@ Re-usable GitHub Actions
 
 ### Composite Actions
 
+- api-docs-compliance
 - build-java
 - cleanup-java
 - deploy-java
