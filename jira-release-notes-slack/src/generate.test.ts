@@ -434,7 +434,7 @@ describe('generate', () => {
     );
     
     // Should have at least 2 blocks: one with header, one with the commit
-    expect(commitBlocks.length).toBeGreaterThanOrEqual(1);
+    expect(commitBlocks.length).toBeGreaterThanOrEqual(2);
     
     // Verify that the header "*Other Commits*" is present in at least one block
     const combinedText = commitBlocks.map((block: any) => block.text.text).join('');
