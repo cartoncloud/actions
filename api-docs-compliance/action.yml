@@ -1,0 +1,139 @@
+name: 'API Documentation Compliance'
+description: 'Checks OpenAPI spec compliance on PRs using shared api-documentation rules.'
+inputs:
+  PERSONAL_ACCESS_TOKEN:
+    description: 'GitHub token with access to the api-documentation repo (if private)'
+    required: true
+  CURSOR_API_KEY:
+    description: 'Cursor API key for bugbot analysis'
+    required: true
+  API_DOCUMENTATION_REPO:
+    description: 'Override for the api-documentation repo (e.g. org/repo)'
+    required: false
+    default: cartoncloud/api-documentation
+  API_DOCUMENTATION_BRANCH:
+    description: 'Branch to use for the api-documentation repo (default: main)'
+    required: false
+    default: main
+runs:
+  using: composite
+  steps:
+    - name: Checkout target repository
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Checkout api-documentation (with branch fallback)
+      shell: bash
+      env:
+        API_DOCUMENTATION_REPO: ${{ inputs.API_DOCUMENTATION_REPO }}
+        API_DOCUMENTATION_BRANCH: ${{ inputs.API_DOCUMENTATION_BRANCH }}
+        PERSONAL_ACCESS_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+      run: |
+        set -e
+        REPO="$API_DOCUMENTATION_REPO"
+        BRANCH="$API_DOCUMENTATION_BRANCH"
+        TOKEN="$PERSONAL_ACCESS_TOKEN"
+        TARGET_DIR="api-documentation"
+        rm -rf "$TARGET_DIR"
+        if [ "$BRANCH" = "main" ]; then
+          git clone --depth 1 --branch "$BRANCH" "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"
+        else
+          if git clone --depth 1 --branch "$BRANCH" "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"; then
+            echo "Checked out branch $BRANCH."
+          else
+            echo "Branch $BRANCH not found, falling back to main."
+            git clone --depth 1 --branch main "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"
+          fi
+        fi
+
+    - name: Clear previous API spec bugbot comments
+      uses: aki77/delete-pr-comments-action@v3
+      with:
+        token: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        pullRequestNumber: ${{ github.event.pull_request.number }}
+        includeIssueComments: 'true'
+        includeOverallReviewComments: 'true'
+        bodyContains: |-
+          API spec review
+          API Documentation Compliance
+        usernames: |-
+          cartoncloud-robot
+          github-actions[bot]
+
+    - name: Prepare API spec bugbot rules
+      shell: bash
+      run: |
+        mkdir -p .github/rules
+        cp api-documentation/.cursor/rules/api-spec-rules/RULE.mdc .github/rules/api-spec-openapi-bugbot.prompt
+
+    - name: Install Cursor CLI
+      shell: bash
+      run: |
+        curl https://cursor.com/install -fsSL | bash
+        echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+        echo "CURSOR_BIN=$HOME/.cursor/bin" >> $GITHUB_ENV
+
+    - name: Run OpenAPI spec bugbot (Cursor CLI)
+      id: bugbot
+      shell: bash
+      env:
+        CURSOR_API_KEY: ${{ inputs.CURSOR_API_KEY }}
+        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        PR_NUM: ${{ github.event.pull_request.number }}
+        MODEL: kimi-k2.5
+      run: |
+        set -e
+        export PATH="${CURSOR_BIN:-$HOME/.cursor/bin}:$PATH"
+        RULE_PROMPT=$(cat .github/rules/api-spec-openapi-bugbot.prompt)
+        CHANGED_FILES=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -100 || true)
+        OPENAPI_SPEC="openapi/index.yml"
+        [ -d api-documentation/openapi ] && OPENAPI_SPEC="api-documentation/openapi/index.yml"
+        PROMPT="${RULE_PROMPT}
+
+        ---
+        Context for this run:
+        - OpenAPI contract (canonical): ${OPENAPI_SPEC}
+        - Files changed in this PR (review only these):
+        ${CHANGED_FILES}
+
+        Output your full review to stdout. If no violations, output exactly COMPLIANT_NO_VIOLATIONS first."
+        agent --print --output-format=text --model "$MODEL" --trust --workspace "$GITHUB_WORKSPACE" -- "$PROMPT" > /tmp/bugbot-output.txt 2>/tmp/bugbot-stderr.txt || true
+        [ -s /tmp/bugbot-stderr.txt ] && cat /tmp/bugbot-stderr.txt >&2 || true
+
+    - name: Create resolvable review thread when violations found
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        PR_NUM: ${{ github.event.pull_request.number }}
+      run: |
+        set -e
+        if head -n1 /tmp/bugbot-output.txt 2>/dev/null | grep -qFx "COMPLIANT_NO_VIOLATIONS"; then
+          echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review thread created."
+          exit 0
+        fi
+        if [ ! -s /tmp/bugbot-output.txt ]; then
+          echo "Bugbot produced no output; posting review to request re-run or log check."
+          FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1)
+          FIRST_FILE=${FIRST_FILE:-README.md}
+          BODY="**API spec review (API Documentation Compliance).** Bugbot produced no output. This may indicate agent timeout, no matching changed files, or a CLI error. Please check the workflow logs for the 'Run OpenAPI spec bugbot' step and re-run the workflow if needed."
+          jq -n \
+            --arg path "$FIRST_FILE" \
+            --arg body "$BODY" \
+            '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: $body}]}' > /tmp/review.json
+          gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
+          exit 0
+        fi
+        FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1)
+        FIRST_FILE=${FIRST_FILE:-README.md}
+        PREFIX="**API spec review (API Documentation Compliance).** Resolve this conversation when all findings below are addressed.
+
+        "
+        jq -n \
+          --arg path "$FIRST_FILE" \
+          --rawfile report /tmp/bugbot-output.txt \
+          --arg prefix "$PREFIX" \
+          '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: ($prefix + $report)}]}' > /tmp/review.json
+        gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
+        echo "Review comment created (resolve this conversation before merge when branch protection is enabled)."
