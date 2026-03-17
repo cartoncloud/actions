@@ -64,11 +64,29 @@ runs:
     - name: Prepare API spec contract review skill and OpenAPI spec
       shell: bash
       run: |
+        set -euo pipefail
+        SKILL_SRC="api-documentation/.cursor/skills/api-spec-contract-review"
+        if [ ! -d "$SKILL_SRC" ]; then
+          echo "::error::Expected skill directory missing: $SKILL_SRC (api-documentation repo may have restructured)." >&2
+          exit 1
+        fi
         mkdir -p .cursor/skills
-        cp -r api-documentation/.cursor/skills/api-spec-contract-review .cursor/skills/
+        cp -r "$SKILL_SRC" .cursor/skills/
         # Merge canonical spec into openapi/ so it ends up at openapi/index.yml even when repo already has openapi/
         mkdir -p openapi
+        if [ ! -d api-documentation/openapi ]; then
+          echo "::error::Expected openapi/ missing under api-documentation clone." >&2
+          exit 1
+        fi
         rsync -a api-documentation/openapi/ openapi/
+        for required in \
+          ".cursor/skills/api-spec-contract-review/SKILL.md" \
+          "openapi/index.yml"; do
+          if [ ! -f "$required" ]; then
+            echo "::error::Required file missing after prepare: $required" >&2
+            exit 1
+          fi
+        done
 
     - name: Install Cursor CLI
       shell: bash
@@ -87,8 +105,16 @@ runs:
         PR_NUM: ${{ github.event.pull_request.number }}
         MODEL: kimi-k2.5
       run: |
-        set -e
+        set -euo pipefail
         export PATH="${CURSOR_BIN:-$HOME/.cursor/bin}:$PATH"
+        for required in \
+          ".cursor/skills/api-spec-contract-review/SKILL.md" \
+          "openapi/index.yml"; do
+          if [ ! -f "$required" ]; then
+            echo "::error::Missing $required — run the Prepare step successfully or fix api-documentation layout." >&2
+            exit 1
+          fi
+        done
         CHANGED_FILES=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -100 || true)
         PROMPT="/api-spec-contract-review
 
