@@ -396,7 +396,7 @@ jobs:
     environment: prod
     steps:
       - name: Slack notification
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v3.0.1
         if: vars.DEPLOY_SLACK_CHANNEL_ID != '' && needs.create-releases.outputs.slackReleaseNotes != ''
         continue-on-error: true
         env:
