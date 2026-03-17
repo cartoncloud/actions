@@ -1,5 +1,5 @@
 name: 'API Documentation Compliance'
-description: 'Checks OpenAPI spec compliance on PRs using shared api-documentation rules.'
+description: 'Checks OpenAPI spec compliance on PRs using the api-spec-contract-review skill from api-documentation.'
 inputs:
   PERSONAL_ACCESS_TOKEN:
     description: 'GitHub token with access to the api-documentation repo (if private)'
@@ -61,11 +61,12 @@ runs:
           cartoncloud-robot
           github-actions[bot]
 
-    - name: Prepare API spec bugbot rules
+    - name: Prepare API spec contract review skill and OpenAPI spec
       shell: bash
       run: |
-        mkdir -p .github/rules
-        cp api-documentation/.cursor/rules/api-spec-rules/RULE.mdc .github/rules/api-spec-openapi-bugbot.prompt
+        mkdir -p .cursor/skills
+        cp -r api-documentation/.cursor/skills/api-spec-contract-review .cursor/skills/
+        cp -r api-documentation/openapi openapi
 
     - name: Install Cursor CLI
       shell: bash
@@ -74,7 +75,7 @@ runs:
         echo "$HOME/.cursor/bin" >> $GITHUB_PATH
         echo "CURSOR_BIN=$HOME/.cursor/bin" >> $GITHUB_ENV
 
-    - name: Run OpenAPI spec bugbot (Cursor CLI)
+    - name: Run OpenAPI spec contract review (Cursor CLI)
       id: bugbot
       shell: bash
       env:
@@ -86,16 +87,10 @@ runs:
       run: |
         set -e
         export PATH="${CURSOR_BIN:-$HOME/.cursor/bin}:$PATH"
-        RULE_PROMPT=$(cat .github/rules/api-spec-openapi-bugbot.prompt)
         CHANGED_FILES=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -100 || true)
-        OPENAPI_SPEC="openapi/index.yml"
-        [ -d api-documentation/openapi ] && OPENAPI_SPEC="api-documentation/openapi/index.yml"
-        PROMPT="${RULE_PROMPT}
+        PROMPT="/api-spec-contract-review
 
-        ---
-        Context for this run:
-        - OpenAPI contract (canonical): ${OPENAPI_SPEC}
-        - Files changed in this PR (review only these):
+        Files changed in this PR (review only these):
         ${CHANGED_FILES}
 
         Output your full review to stdout. If no violations, output exactly COMPLIANT_NO_VIOLATIONS first."
@@ -117,7 +112,7 @@ runs:
           echo "Bugbot produced no output; posting review to request re-run or log check."
           FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1)
           FIRST_FILE=${FIRST_FILE:-README.md}
-          BODY="**API spec review (API Documentation Compliance).** Bugbot produced no output. This may indicate agent timeout, no matching changed files, or a CLI error. Please check the workflow logs for the 'Run OpenAPI spec bugbot' step and re-run the workflow if needed."
+          BODY="**API spec review (API Documentation Compliance).** Contract review produced no output. This may indicate agent timeout, no matching changed files, or a CLI error. Please check the workflow logs for the 'Run OpenAPI spec contract review' step and re-run the workflow if needed."
           jq -n \
             --arg path "$FIRST_FILE" \
             --arg body "$BODY" \
