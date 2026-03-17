@@ -66,7 +66,9 @@ runs:
       run: |
         mkdir -p .cursor/skills
         cp -r api-documentation/.cursor/skills/api-spec-contract-review .cursor/skills/
-        cp -r api-documentation/openapi openapi
+        # Merge canonical spec into openapi/ so it ends up at openapi/index.yml even when repo already has openapi/
+        mkdir -p openapi
+        rsync -a api-documentation/openapi/ openapi/
 
     - name: Install Cursor CLI
       shell: bash
