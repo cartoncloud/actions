@@ -140,7 +140,6 @@ runs:
         aws-region: ${{ inputs.awsRegion }}
 
     - name: Deploy to ECS
-      if: steps.deploy-check.outputs.existing == '' || steps.version-tag.outputs.restart == 'true'
       shell: bash
       env:
         CLUSTER_NAME: ${{ inputs.clusterName || format('services-{0}', inputs.environmentTag) }}
