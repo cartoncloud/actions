@@ -17,5 +17,5 @@ outputs:
     description: 'Slack formatted JSON release notes'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
