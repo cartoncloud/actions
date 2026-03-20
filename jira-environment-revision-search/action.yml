@@ -33,5 +33,5 @@ outputs:
     description: 'Array of matching environment names and urls. For this, nameField and urlField must be supplied.'
 
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
