@@ -125,7 +125,9 @@ runs:
         agent --print --output-format=text --model "$MODEL" --trust --workspace "$GITHUB_WORKSPACE" -- "$PROMPT" > /tmp/bugbot-output.txt 2>/tmp/bugbot-stderr.txt || true
         [ -s /tmp/bugbot-stderr.txt ] && cat /tmp/bugbot-stderr.txt >&2 || true
 
-    - name: Create resolvable review thread when violations found
+    # Body-only review: GitHub returns 422 "Line could not be resolved" for inline comments when
+    # `line` is not part of the PR diff (e.g. hardcoded line: 1 on unchanged context).
+    - name: Create pull request review when violations found
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
@@ -133,30 +135,22 @@ runs:
       run: |
         set -e
         if head -n1 /tmp/bugbot-output.txt 2>/dev/null | grep -qFx "COMPLIANT_NO_VIOLATIONS"; then
-          echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review thread created."
+          echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review posted."
           exit 0
         fi
         if [ ! -s /tmp/bugbot-output.txt ]; then
-          echo "Bugbot produced no output; posting review to request re-run or log check."
-          FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1)
-          FIRST_FILE=${FIRST_FILE:-README.md}
+          echo "Contract review produced no output; posting review to request re-run or log check."
           BODY="**API spec review (API Documentation Compliance).** Contract review produced no output. This may indicate agent timeout, no matching changed files, or a CLI error. Please check the workflow logs for the 'Run OpenAPI spec contract review' step and re-run the workflow if needed."
-          jq -n \
-            --arg path "$FIRST_FILE" \
-            --arg body "$BODY" \
-            '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: $body}]}' > /tmp/review.json
-          gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
+          jq -n --arg body "$BODY" '{event: "COMMENT", body: $body}' > /tmp/review.json
+          gh api "repos/${{ github.repository }}/pulls/$PR_NUM/reviews" --method POST --input /tmp/review.json
           exit 0
         fi
-        FIRST_FILE=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -n1)
-        FIRST_FILE=${FIRST_FILE:-README.md}
         PREFIX="**API spec review (API Documentation Compliance).** Resolve this conversation when all findings below are addressed.
 
         "
         jq -n \
-          --arg path "$FIRST_FILE" \
           --rawfile report /tmp/bugbot-output.txt \
           --arg prefix "$PREFIX" \
-          '{event: "COMMENT", body: "API spec review. See the review comment below.", comments: [{path: $path, line: 1, body: ($prefix + $report)}]}' > /tmp/review.json
-        gh api repos/${{ github.repository }}/pulls/$PR_NUM/reviews --method POST --input /tmp/review.json
-        echo "Review comment created (resolve this conversation before merge when branch protection is enabled)."
+          '{event: "COMMENT", body: ($prefix + $report)}' > /tmp/review.json
+        gh api "repos/${{ github.repository }}/pulls/$PR_NUM/reviews" --method POST --input /tmp/review.json
+        echo "Pull request review posted (body-only; avoids GitHub 422 on unresolved line)."
