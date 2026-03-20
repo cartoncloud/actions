@@ -121,7 +121,7 @@ runs:
         Files changed in this PR (review only these):
         ${CHANGED_FILES}
 
-        Output your full review to stdout. If no violations, output exactly COMPLIANT_NO_VIOLATIONS first."
+        Output your full review to stdout. If no violations, output a line containing only COMPLIANT_NO_VIOLATIONS (no preamble on earlier lines; CI treats any such line as compliant and will not post a PR review)."
         agent --print --output-format=text --model "$MODEL" --trust --workspace "$GITHUB_WORKSPACE" -- "$PROMPT" > /tmp/bugbot-output.txt 2>/tmp/bugbot-stderr.txt || true
         [ -s /tmp/bugbot-stderr.txt ] && cat /tmp/bugbot-stderr.txt >&2 || true
 
@@ -134,7 +134,9 @@ runs:
         PR_NUM: ${{ github.event.pull_request.number }}
       run: |
         set -e
-        if head -n1 /tmp/bugbot-output.txt 2>/dev/null | grep -qFx "COMPLIANT_NO_VIOLATIONS"; then
+        # Do not rely on line 1 only — the agent often prints a preamble; the skill still outputs
+        # COMPLIANT_NO_VIOLATIONS as its verdict line. Match any line that is only that token (trimmed).
+        if [ -f /tmp/bugbot-output.txt ] && tr -d '\r' < /tmp/bugbot-output.txt | grep -qE '^[[:space:]]*COMPLIANT_NO_VIOLATIONS[[:space:]]*$'; then
           echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review posted."
           exit 0
         fi
