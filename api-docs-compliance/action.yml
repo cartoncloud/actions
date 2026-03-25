@@ -121,7 +121,7 @@ runs:
         Files changed in this PR (review only these):
         ${CHANGED_FILES}
 
-        Output your full review to stdout. If no violations, the first non-empty line must be exactly COMPLIANT_NO_VIOLATIONS (you may add a brief confirmation on following lines). If you report violations, do not put that token on its own line anywhere — CI only treats compliance when that token is the first non-empty line."
+        Output your full review to stdout. If no violations, include a line that is exactly COMPLIANT_NO_VIOLATIONS (e.g. first line or under a Conclusion heading). If you report violations, do not put that token on its own line anywhere — CI treats compliance only when that exact line appears."
         agent --print --output-format=text --model "$MODEL" --trust --workspace "$GITHUB_WORKSPACE" -- "$PROMPT" > /tmp/bugbot-output.txt 2>/tmp/bugbot-stderr.txt || true
         [ -s /tmp/bugbot-stderr.txt ] && cat /tmp/bugbot-stderr.txt >&2 || true
 
@@ -134,14 +134,20 @@ runs:
         PR_NUM: ${{ github.event.pull_request.number }}
       run: |
         set -e
-        # Anchor to the first non-empty line only (trimmed). Matching any line would let a violation
-        # report pass if the model quoted COMPLIANT_NO_VIOLATIONS on its own line mid-output.
-        # Leading blank lines are skipped; compliant output may continue after the verdict (per skill).
-        first_nonempty=
-        if [ -f /tmp/bugbot-output.txt ]; then
-          first_nonempty=$(tr -d '\r' < /tmp/bugbot-output.txt | awk '/[^[:space:]]/ { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print; exit }')
+        # Compliant when COMPLIANT_NO_VIOLATIONS appears on its own line (trimmed). The model may
+        # put that verdict under a Conclusion heading rather than as the first line of the report.
+        # Violation reports must not put that token on its own line anywhere (per prompt/skill).
+        compliant=
+        if [ -f /tmp/bugbot-output.txt ] && tr -d '\r' < /tmp/bugbot-output.txt | awk '
+          /^[[:space:]]*$/ { next }
+          { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+            if ($0 == "COMPLIANT_NO_VIOLATIONS") { found=1; exit }
+          }
+          END { exit !found }
+        '; then
+          compliant=1
         fi
-        if [ "$first_nonempty" = "COMPLIANT_NO_VIOLATIONS" ]; then
+        if [ -n "$compliant" ]; then
           echo "API spec check passed (COMPLIANT_NO_VIOLATIONS). No review posted."
           exit 0
         fi
