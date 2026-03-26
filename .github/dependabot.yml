@@ -33,7 +33,7 @@ updates:
       - "/sync-image-between-ecrs"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 6
+    open-pull-requests-limit: 1
     assignees:
       - "@cartoncloud/code-owners-platform"
     reviewers:
@@ -62,7 +62,7 @@ updates:
       - "/launchdarkly-segments-sync"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 6
+    open-pull-requests-limit: 1
     assignees:
       - "@cartoncloud/code-owners-platform"
     reviewers:
