@@ -1,7 +1,7 @@
-const jsonPatch = require('fast-json-patch');
-const axios = require('axios');
-const axiosLogger = require('axios-logger');
-const core = require('@actions/core');
+import jsonPatch from 'fast-json-patch';
+import axios from 'axios';
+import axiosLogger from 'axios-logger';
+import * as core from '@actions/core';
 
 // Use to calculate changing flags
 let segmentsWithChanges = 0;

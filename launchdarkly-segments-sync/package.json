@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "build": "ncc build"
+    "build": "esbuild src/index.js --bundle --platform=node --format=cjs --outfile=dist/index.js"
   },
   "keywords": [
     "GitHub",
@@ -21,6 +21,6 @@
   },
   "devDependencies": {
     "@types/node": "^16.18.3",
-    "@vercel/ncc": "^0.38.4"
+    "esbuild": "^0.25.0"
   }
 }

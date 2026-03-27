@@ -1,5 +1,5 @@
-const core = require('@actions/core');
-const { syncEnvironment } = require('./sync-ld-segments');
+import * as core from '@actions/core';
+import { syncEnvironment } from './sync-ld-segments.js';
 
 async function run() {
     try {
