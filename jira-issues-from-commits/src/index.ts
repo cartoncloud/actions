@@ -2,8 +2,9 @@ import fetch from 'node-fetch';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as github from "@actions/github";
-import { SummaryTableRow } from "@actions/core/lib/summary";
 import fs from "fs-extra";
+
+type SummaryTableRow = Parameters<typeof core.summary.addTable>[0][number];
 
 const MAJOR = 3;
 const MINOR = 2;
