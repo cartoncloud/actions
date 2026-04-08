@@ -25882,7 +25882,7 @@ async function getSlackUserId({ email, token }) {
   }
   return null;
 }
-async function generate({ title, issues, otherCommits, slackToken, repoUrl }) {
+async function generate({ title, issues, otherCommits, slackToken, repoUrl, slackChannel }) {
   const emailsToUser = {};
   for (let issue2 of issues) {
     if (issue2.fields.reporter?.emailAddress) {
@@ -25969,6 +25969,7 @@ ${bullet}`;
       elements: [{ type: "mrkdwn", text: "_Release notes have been truncated as they exceed the maximum length_" }]
     });
   }
+  slackMessage.channel = slackChannel;
   info(`Release notes generated.`);
   return slackMessage;
 }
@@ -29688,6 +29689,7 @@ async function run() {
     const title = getInput("title", { required: false });
     const changelogFilePath = getInput("changelogFile", { required: true });
     const slackToken = getInput("slackToken", { required: true });
+    const slackChannel = getInput("slackChannel", { required: true });
     const changelogFile = await import_fs3.promises.readFile(changelogFilePath, { encoding: "utf-8" });
     const { issues, otherCommits } = JSON.parse(changelogFile);
     const { owner, repo } = context2.repo;
@@ -29697,7 +29699,8 @@ async function run() {
       issues,
       otherCommits,
       slackToken,
-      repoUrl
+      repoUrl,
+      slackChannel
     });
     setOutput("releaseNotes", slackJson);
   } catch (error2) {

@@ -43,7 +43,7 @@ runs:
   steps:
     - name: Slack notification (started)
       id: slack-notification-started
-      uses: slackapi/slack-github-action@v3
+      uses: slackapi/slack-github-action@v3.0.1
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
       with:
         method: chat.postMessage
@@ -59,7 +59,7 @@ runs:
 
     - name: Slack notification (started with reason)
       id: slack-notification-started-reason
-      uses: slackapi/slack-github-action@v3
+      uses: slackapi/slack-github-action@v3.0.1
       if: inputs.status == 'started' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
       with:
         method: chat.postMessage
@@ -78,7 +78,7 @@ runs:
                 text: ":hourglass_flowing_sand: Deploying ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>…"
 
     - name: Slack notification (success)
-      uses: slackapi/slack-github-action@v3
+      uses: slackapi/slack-github-action@v3.0.1
       if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
       with:
         method: chat.update
@@ -94,7 +94,7 @@ runs:
                 text: ":rocket: ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> deployed to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
 
     - name: Slack notification (success with reason)
-      uses: slackapi/slack-github-action@v3
+      uses: slackapi/slack-github-action@v3.0.1
       if: inputs.status == 'success' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
       with:
         method: chat.update
@@ -114,7 +114,7 @@ runs:
                 text: ":rocket: ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> deployed to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
 
     - name: Slack notification (failed)
-      uses: slackapi/slack-github-action@v3
+      uses: slackapi/slack-github-action@v3.0.1
       if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason == ''
       with:
         method: chat.update
@@ -130,7 +130,7 @@ runs:
                 text: ":rotating_light: Failed to deploy ${{ inputs.appName }} <${{ inputs.revisionUrl }}|${{ inputs.revision }}> to <${{ inputs.environmentUrl }}|${{ inputs.environment }}>"
 
     - name: Slack notification (failed with reason)
-      uses: slackapi/slack-github-action@v3
+      uses: slackapi/slack-github-action@v3.0.1
       if: inputs.status == 'failed' && inputs.slackChannel != '' && inputs.slackBotToken != '' && inputs.reason != ''
       with:
         method: chat.update
