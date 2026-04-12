@@ -1,5 +1,7 @@
 import { generate } from "./generate";
 
+const TEST_SLACK_CHANNEL = 'C01234567';
+
 describe('generate', () => {
   it('displays message when no issues given', async () => {
     const result = await generate({
@@ -8,8 +10,10 @@ describe('generate', () => {
       otherCommits: [],
       slackToken: '',
       repoUrl: '',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
     expect(result).toEqual({
+      channel: TEST_SLACK_CHANNEL,
       text: ':clipboard: *Release Notes* / My App v1.2.3',
       blocks: [
         {
@@ -33,8 +37,10 @@ describe('generate', () => {
       otherCommits: [],
       slackToken: '',
       repoUrl: '',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
     expect(result).toEqual({
+      channel: TEST_SLACK_CHANNEL,
       text: ':clipboard: *Release Notes*',
       blocks: [
         {
@@ -104,9 +110,11 @@ describe('generate', () => {
       otherCommits: [],
       slackToken: '',
       repoUrl: '',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
 
     expect(result).toEqual({
+      "channel": TEST_SLACK_CHANNEL,
       "text": ":clipboard: *Release Notes* / My App v1.2.3",
       "blocks": [
         {
@@ -171,9 +179,11 @@ describe('generate', () => {
       otherCommits: otherCommits,
       slackToken: '',
       repoUrl: 'https://github.com/myorg/myrepo',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
 
     expect(result).toEqual({
+      channel: TEST_SLACK_CHANNEL,
       text: ':clipboard: *Release Notes* / My App v1.2.3',
       blocks: [
         {
@@ -217,6 +227,7 @@ describe('generate', () => {
       otherCommits: [],
       slackToken: '',
       repoUrl: 'https://github.com/myorg/myrepo',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
 
     // Find all section blocks (excluding the context block and "No Jira changes" block)
@@ -257,6 +268,7 @@ describe('generate', () => {
       otherCommits: otherCommits,
       slackToken: '',
       repoUrl: 'https://github.com/myorg/myrepo',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
 
     // Find all "Other Commits" blocks
@@ -307,6 +319,7 @@ describe('generate', () => {
       otherCommits: [],
       slackToken: '',
       repoUrl: 'https://github.com/myorg/myrepo',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
 
     const sectionBlocks = result.blocks.filter((block: any) => 
@@ -346,6 +359,7 @@ describe('generate', () => {
       otherCommits: [],
       slackToken: '',
       repoUrl: 'https://github.com/myorg/myrepo',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
 
     const sectionBlocks = result.blocks.filter((block: any) => 
@@ -379,6 +393,7 @@ describe('generate', () => {
       otherCommits: [],
       slackToken: '',
       repoUrl: 'https://github.com/myorg/myrepo',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
 
     // Should have exactly 50 blocks total (1 context title + 48 issue blocks + 1 truncation message)
@@ -423,6 +438,7 @@ describe('generate', () => {
       otherCommits: otherCommits,
       slackToken: '',
       repoUrl: 'https://github.com/myorg/myrepo',
+      slackChannel: TEST_SLACK_CHANNEL,
     });
 
     // Find all "Other Commits" blocks

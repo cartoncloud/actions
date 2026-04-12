@@ -8,6 +8,7 @@ async function run() {
     const title = core.getInput('title', { required: false });
     const changelogFilePath = core.getInput('changelogFile', { required: true });
     const slackToken = core.getInput('slackToken', { required: true });
+    const slackChannel = core.getInput('slackChannel', { required: true });
 
     const changelogFile = await fs.readFile(changelogFilePath, { encoding: 'utf-8' });
     const { issues, otherCommits } = JSON.parse(changelogFile);
@@ -20,6 +21,7 @@ async function run() {
       otherCommits: otherCommits,
       slackToken: slackToken,
       repoUrl: repoUrl,
+      slackChannel,
     });
     core.setOutput('releaseNotes', slackJson);
   } catch (error: any) {

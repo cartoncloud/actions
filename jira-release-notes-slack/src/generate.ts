@@ -81,12 +81,13 @@ async function getSlackUserId({ email, token }: { email: string, token: string }
 }
 
 export async function generate(
-  { title, issues, otherCommits, slackToken, repoUrl }: {
+  { title, issues, otherCommits, slackToken, repoUrl, slackChannel }: {
     title?: string | null,
     issues: any[],
     otherCommits: { shortHash: string, message: string }[],
     slackToken: string,
     repoUrl: string,
+    slackChannel: string,
   },
 ) {
   const emailsToUser: { [email: string]: string } = {};
@@ -194,6 +195,8 @@ export async function generate(
       elements: [{ type: 'mrkdwn', text: '_Release notes have been truncated as they exceed the maximum length_' }],
     },);
   }
+
+  slackMessage.channel = slackChannel;
 
   core.info(`Release notes generated.`);
   return slackMessage;
