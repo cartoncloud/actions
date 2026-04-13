@@ -29702,7 +29702,7 @@ async function run() {
       repoUrl,
       slackChannel
     });
-    setOutput("releaseNotes", slackJson);
+    setOutput("releaseNotes", JSON.stringify(slackJson));
   } catch (error2) {
     setFailed(error2.message);
   }

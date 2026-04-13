@@ -23,7 +23,7 @@ async function run() {
       repoUrl: repoUrl,
       slackChannel,
     });
-    core.setOutput('releaseNotes', slackJson);
+    core.setOutput("releaseNotes", JSON.stringify(slackJson));
   } catch (error: any) {
     core.setFailed(error.message);
   }
