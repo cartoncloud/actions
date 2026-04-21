@@ -33,7 +33,7 @@ function run(): void {
     const inputPath = core.getInput('file_path', { required: true });
     const filePath = resolve(inputPath);
     const contents = readFileSync(filePath, 'utf8');
-    const payload = parse(contents);
+    const payload = parse(contents, { maxAliasCount: 0 });
     const routes = extractRoutes(payload);
 
     if (!Array.isArray(routes)) {
