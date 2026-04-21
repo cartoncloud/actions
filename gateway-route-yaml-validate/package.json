@@ -1,0 +1,25 @@
+{
+  "name": "gateway-route-yaml-validate",
+  "version": "1.0.0",
+  "description": "Validate gateway route YAML artifacts before publishing",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc && esbuild src/index.ts --bundle --platform=node --target=node24 --outfile=dist/index.js"
+  },
+  "keywords": [
+    "GitHub",
+    "Actions",
+    "YAML"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "esbuild": "^0.25.11",
+    "typescript": "^5.9.3"
+  }
+}
