@@ -1,0 +1,9 @@
+name: Gateway Route YAML Validate
+description: Validate gateway route YAML artifact structure before publishing.
+inputs:
+  file_path:
+    description: Path to route YAML file to validate.
+    required: true
+runs:
+  using: node24
+  main: dist/index.js

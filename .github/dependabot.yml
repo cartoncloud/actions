@@ -9,6 +9,7 @@ updates:
       - "/build-java"
       - "/cleanup-java"
       - "/deploy-java"
+      - "/gateway-route-yaml-validate"
       - "/github-branch-dispatch"
       - "/github-delete-draft-releases"
       - "/github-download-multi-run-artifacts"
@@ -42,6 +43,7 @@ updates:
   - package-ecosystem: "npm"
     directories:
       - "/aws-environment-param-sync"
+      - "/gateway-route-yaml-validate"
       - "/github-branch-dispatch"
       - "/github-delete-draft-releases"
       - "/github-download-multi-run-artifacts"
