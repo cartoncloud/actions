@@ -352,6 +352,7 @@ jobs:
         with:
           title: ${{ inputs.appName }} ${{ steps.increment-version.outputs.new_tag }}
           slackToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          slackChannel: ${{ vars.SLACK_RELEASES_CHANNEL_ID }}
 
       - name: Create release
         uses: ncipollo/release-action@v1
@@ -397,12 +398,11 @@ jobs:
     steps:
       - name: Slack notification
         uses: slackapi/slack-github-action@v3.0.1
-        if: vars.DEPLOY_SLACK_CHANNEL_ID != '' && needs.create-releases.outputs.slackReleaseNotes != ''
+        if: needs.create-releases.outputs.slackReleaseNotes != ''
         continue-on-error: true
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         with:
-          channel-id: ${{ vars.DEPLOY_SLACK_CHANNEL_ID }}
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: ${{ needs.create-releases.outputs.slackReleaseNotes }}
 
   deploy-production:

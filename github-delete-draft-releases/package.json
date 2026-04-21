@@ -4,7 +4,7 @@
   "description": "",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc && ncc build"
+    "build": "tsc && esbuild src/index.ts --bundle --platform=node --conditions=import --outdir=dist"
   },
   "keywords": [
     "GitHub",
@@ -14,12 +14,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.10.0",
-    "@actions/github": "^6.0.0"
+    "@actions/core": "^3.0.0",
+    "@actions/github": "^9.0.0"
   },
   "devDependencies": {
-    "@types/node": "^16.18.3",
-    "@vercel/ncc": "^0.38.4",
-    "typescript": "^4.8.4"
+    "@types/node": "^24.12.0",
+    "esbuild": "^0.27.4",
+    "typescript": "^6.0.2"
   }
 }
