@@ -10,10 +10,10 @@ type RouteRecord = {
 };
 
 function asNonEmptyString(value: unknown): string {
-  if (typeof value !== 'string') {
+  if (value === null || value === undefined) {
     return '';
   }
-  return value.trim();
+  return String(value).trim();
 }
 
 function extractRoutes(payload: unknown): unknown {
