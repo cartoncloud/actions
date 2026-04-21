@@ -5,39 +5,5 @@ inputs:
     description: Path to route YAML file to validate.
     required: true
 runs:
-  using: composite
-  steps:
-    - name: Validate route YAML
-      shell: bash
-      env:
-        FILE_PATH: ${{ inputs.file_path }}
-      run: |
-        ruby -r yaml -r set -e '
-          file_path = ENV.fetch("FILE_PATH")
-          raise "Route YAML file not found: #{file_path}" unless File.file?(file_path)
-
-          payload = YAML.safe_load(File.read(file_path), aliases: false)
-          routes = payload.dig("spring", "cloud", "gateway", "routes")
-          routes = payload["routes"] if routes.nil?
-
-          raise "Expected routes array in YAML at spring.cloud.gateway.routes or routes" unless routes.is_a?(Array)
-          raise "At least one route is required" if routes.empty?
-
-          ids = Set.new
-          routes.each_with_index do |route, idx|
-            raise "Route ##{idx} must be a map" unless route.is_a?(Hash)
-
-            route_id = route["id"].to_s.strip
-            raise "Route ##{idx} missing id" if route_id.empty?
-            raise "Duplicate route id: #{route_id}" if ids.include?(route_id)
-            ids << route_id
-
-            uri = route["uri"].to_s.strip
-            raise "Route #{route_id} missing uri" if uri.empty?
-
-            predicates = route["predicates"]
-            raise "Route #{route_id} requires at least one predicate" unless predicates.is_a?(Array) && !predicates.empty?
-          end
-
-          puts "Validated #{routes.length} route entries in #{file_path}"
-        '
+  using: node24
+  main: dist/index.js
