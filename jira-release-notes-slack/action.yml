@@ -11,10 +11,13 @@ inputs:
   slackToken:
     description: 'Slack Bot Token to use to find Slack users by email'
     required: true
+  slackChannel:
+    description: 'Slack channel id, channel name, or user id (output includes it as API field `channel` for `chat.postMessage`)'
+    required: true
 
 outputs:
   releaseNotes:
-    description: 'Slack formatted JSON release notes'
+    description: 'Slack API payload for `chat.postMessage` (`text`, `blocks`, `channel`)'
 
 runs:
   using: 'node24'

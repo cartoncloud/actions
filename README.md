@@ -22,6 +22,7 @@ Re-usable GitHub Actions
 
 ### Typescript Actions
 
+- gateway-route-yaml-validate
 - github-branch-dispatch
 - github-delete-draft-releases
 - github-download-multi-run-artifacts
