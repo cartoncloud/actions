@@ -33,6 +33,7 @@ jobs:
           - jira-release-notes-slack
           - launchdarkly-flags-sync
           - launchdarkly-segments-sync
+          - rbac-yaml-validate
 
     steps:
       - uses: actions/checkout@v6

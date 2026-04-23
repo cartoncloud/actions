@@ -1,0 +1,9 @@
+name: RBAC YAML Validate
+description: Validate RBAC YAML artifact structure before publishing.
+inputs:
+  file_path:
+    description: Path to the RBAC YAML file to validate.
+    required: true
+runs:
+  using: node24
+  main: dist/index.js
