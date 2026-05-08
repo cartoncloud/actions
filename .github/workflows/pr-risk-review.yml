@@ -130,48 +130,68 @@ jobs:
       - name: Parse agent JSON
         id: parse
         run: |
-          python3 <<'PY'
-          import json
-          import os
-          import sys
+          node <<'NODE'
+          const fs = require('fs');
 
-          try:
-              with open("agent-output.json", encoding="utf-8") as f:
-                  outer = json.load(f)
-          except json.JSONDecodeError as e:
-              print(f"Could not parse agent-output.json: {e}", file=sys.stderr)
-              sys.exit(1)
+          function parseFirstJsonObject(text) {
+            const start = text.indexOf('{');
+            if (start === -1) {
+              throw new Error(`No JSON object in agent result: ${text.slice(0, 500)}`);
+            }
+            let depth = 0;
+            let inStr = false;
+            let esc = false;
+            for (let j = start; j < text.length; j++) {
+              const c = text[j];
+              if (inStr) {
+                if (esc) esc = false;
+                else if (c === '\\') esc = true;
+                else if (c === '"') inStr = false;
+              } else {
+                if (c === '"') inStr = true;
+                else if (c === '{') depth++;
+                else if (c === '}') {
+                  depth--;
+                  if (depth === 0) {
+                    return JSON.parse(text.slice(start, j + 1));
+                  }
+                }
+              }
+            }
+            throw new Error(`Invalid JSON payload near: ${text.slice(start, start + 800)}`);
+          }
 
-          text = (outer.get("result") or "").strip()
-          if not text:
-              print("Empty agent result", file=sys.stderr)
-              sys.exit(1)
+          let outer;
+          try {
+            outer = JSON.parse(fs.readFileSync('agent-output.json', 'utf8'));
+          } catch (e) {
+            console.error(`Could not parse agent-output.json: ${e.message}`);
+            process.exit(1);
+          }
 
-          if "{" not in text:
-              print(f"No JSON object in agent result: {text[:500]}", file=sys.stderr)
-              sys.exit(1)
+          const text = String(outer.result || '').trim();
+          if (!text) {
+            console.error('Empty agent result');
+            process.exit(1);
+          }
 
-          decoder = json.JSONDecoder()
-          start = text.index("{")
-          try:
-              data, _end = decoder.raw_decode(text, start)
-          except json.JSONDecodeError as e:
-              print(f"Invalid JSON payload: {e}\n{text[start:start + 800]}", file=sys.stderr)
-              sys.exit(1)
+          let data;
+          try {
+            data = parseFirstJsonObject(text);
+          } catch (e) {
+            console.error(e.message);
+            process.exit(1);
+          }
 
-          risk = str(data.get("risk_level", "")).strip().lower()
-          if risk not in {"low", "medium", "high"}:
-              print(f"Invalid risk_level: {risk!r}", file=sys.stderr)
-              sys.exit(1)
+          const risk = String(data.risk_level || '').trim().toLowerCase();
+          if (!['low', 'medium', 'high'].includes(risk)) {
+            console.error(`Invalid risk_level: ${JSON.stringify(data.risk_level)}`);
+            process.exit(1);
+          }
 
-          with open("risk.json", "w", encoding="utf-8") as f:
-              json.dump(data, f, ensure_ascii=False, indent=2)
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as gh:
-              gh.write(f"risk_level={risk}\n")
-          PY
-        env:
-          PYTHONUTF8: "1"
+          fs.writeFileSync('risk.json', `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `risk_level=${risk}\n`, 'utf8');
+          NODE
 
       - name: Ensure risk labels exist
         env:
@@ -210,42 +230,34 @@ jobs:
 
       - name: Write sticky risk review comment
         run: |
-          python3 <<'PY'
-          import json
+          node <<'NODE'
+          const fs = require('fs');
 
-          with open("risk.json", encoding="utf-8") as f:
-              data = json.load(f)
+          const data = JSON.parse(fs.readFileSync('risk.json', 'utf8'));
+          const risk = data.risk_level || '';
+          const rationale = String(data.rationale || '').trim();
+          const signals = Array.isArray(data.signals) ? data.signals : [];
 
-          risk = data.get("risk_level", "")
-          rationale = str(data.get("rationale", "")).strip()
-          signals = data.get("signals") or []
-
-          lines = [
-              "### Automated risk review (Composer 2)",
-              "",
-              f"**Level:** `risk: {risk}`",
-              "",
-              f"**Rationale:** {rationale}",
-              "",
-              "**Signals**",
-          ]
-          if signals:
-              for item in signals:
-                  lines.append(f"- {item}")
-          else:
-              lines.append("_None listed_")
-
-          lines.extend(
-              [
-                  "",
-                  "_This is advisory automation; humans remain responsible for merge decisions._",
-              ]
-          )
-
-          with open("risk-comment.md", "w", encoding="utf-8") as out:
-              out.write("\n".join(lines))
-              out.write("\n")
-          PY
+          const lines = [
+            '### Automated risk review (Composer 2)',
+            '',
+            `**Level:** \`risk: ${risk}\``,
+            '',
+            `**Rationale:** ${rationale}`,
+            '',
+            '**Signals**',
+          ];
+          if (signals.length) {
+            for (const item of signals) lines.push(`- ${item}`);
+          } else {
+            lines.push('_None listed_');
+          }
+          lines.push(
+            '',
+            '_This is advisory automation; humans remain responsible for merge decisions._',
+          );
+          fs.writeFileSync('risk-comment.md', `${lines.join('\n')}\n`, 'utf8');
+          NODE
 
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
@@ -255,54 +267,134 @@ jobs:
       - name: Revoke automated approval when risk is not low
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO_FULL: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RISK_LEVEL: ${{ steps.parse.outputs.risk_level }}
+          HEAD_REPO_FULL: ${{ github.event.pull_request.head.repo.full_name }}
         run: |
-          set -uo pipefail
-          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
-            echo "Skipping approval revocation on fork PRs."
-            exit 0
-          fi
-          RISK="${{ steps.parse.outputs.risk_level }}"
-          PR="${{ github.event.pull_request.number }}"
-          REPO="${{ github.repository }}"
+          node --input-type=module <<'NODE'
+          const token = process.env.GH_TOKEN;
+          const repoFull = process.env.REPO_FULL;
+          const prNumber = process.env.PR_NUMBER;
+          const risk = process.env.RISK_LEVEL;
+          const headRepoFull = process.env.HEAD_REPO_FULL;
 
-          if [ "$RISK" = "low" ]; then
-            exit 0
-          fi
+          if (headRepoFull !== repoFull) {
+            console.log('Skipping approval revocation on fork PRs.');
+            process.exit(0);
+          }
+          if (risk === 'low') process.exit(0);
 
-          count_bot_approved() {
-            gh api --paginate "repos/${REPO}/pulls/${PR}/reviews" --jq '[.[] | select(.state == "APPROVED" and .user.login == "github-actions[bot]")] | length'
+          const [owner, repo] = repoFull.split('/');
+          const baseHeaders = {
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+            Authorization: `Bearer ${token}`,
+          };
+
+          async function github(method, path, body) {
+            const headers = { ...baseHeaders };
+            if (body !== undefined) headers['Content-Type'] = 'application/json';
+            const res = await fetch(`https://api.github.com${path}`, {
+              method,
+              headers,
+              body: body === undefined ? undefined : JSON.stringify(body),
+            });
+            return res;
           }
 
-          BEFORE=$(count_bot_approved)
-          if [ "${BEFORE:-0}" -eq 0 ]; then
-            echo "No automated approvals to revoke."
-            exit 0
-          fi
+          async function listReviews() {
+            const out = [];
+            for (let page = 1; ; page++) {
+              const res = await github(
+                'GET',
+                `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100&page=${page}`,
+              );
+              if (!res.ok) {
+                throw new Error(`Failed to list reviews: ${res.status} ${await res.text()}`);
+              }
+              const batch = await res.json();
+              if (!batch.length) break;
+              out.push(...batch);
+              if (batch.length < 100) break;
+            }
+            return out;
+          }
 
-          while read -r rid; do
-            [ -z "${rid:-}" ] && continue
-            if gh api \
-              --method PUT \
-              "repos/${REPO}/pulls/${PR}/reviews/${rid}/dismissals" \
-              -f message="Risk level reassessed as ${RISK} (not low); dismissing automated low-risk approval." \
-              -f event=DISMISS 2>/dev/null; then
-              echo "Dismissed review ${rid}"
-            else
-              echo "::warning title=Dismiss review failed::Could not PUT dismissals for review ${rid}; will try supersede via request-changes if needed."
-            fi
-          done < <(gh api --paginate "repos/${REPO}/pulls/${PR}/reviews" --jq '[.[] | select(.state == "APPROVED" and .user.login == "github-actions[bot]") | .id] | sort | reverse | .[]')
+          function botApprovedIds(reviews) {
+            return reviews
+              .filter((r) => r.state === 'APPROVED' && r.user?.login === 'github-actions[bot]')
+              .map((r) => r.id)
+              .sort((a, b) => b - a);
+          }
 
-          AFTER=$(count_bot_approved)
-          if [ "${AFTER:-0}" -eq 0 ]; then
-            echo "Automated approvals cleared."
-            exit 0
-          fi
+          function countBotApproved(reviews) {
+            return reviews.filter(
+              (r) => r.state === 'APPROVED' && r.user?.login === 'github-actions[bot]',
+            ).length;
+          }
 
-          echo "Superseding remaining bot approval via request-changes (dismiss unavailable or insufficient permission)."
-          body_file="$(mktemp)"
-          printf '%s\n\n%s\n' "Automated reassessment marked this PR as **${RISK}** risk (not low). An earlier approve from github-actions bot is superseded by this review." "(Used when dismissal of the automated approval fails for your repo or rules.)" > "${body_file}"
-          gh pr review "${PR}" --request-changes --body-file "${body_file}" || true
-          rm -f "${body_file}"
+          let reviews = await listReviews();
+          const before = countBotApproved(reviews);
+          if (before === 0) {
+            console.log('No automated approvals to revoke.');
+            process.exit(0);
+          }
+
+          const dismissMessage = `Risk level reassessed as ${risk} (not low); dismissing automated low-risk approval.`;
+
+          for (const rid of botApprovedIds(reviews)) {
+            const res = await github(
+              'PUT',
+              `/repos/${owner}/${repo}/pulls/${prNumber}/reviews/${rid}/dismissals`,
+              { message: dismissMessage, event: 'DISMISS' },
+            );
+            if (res.ok) console.log(`Dismissed review ${rid}`);
+            else {
+              console.log(
+                `::warning title=Dismiss review failed::Could not PUT dismissals for review ${rid}; will try supersede via request-changes if needed.`,
+              );
+            }
+          }
+
+          reviews = await listReviews();
+          const after = countBotApproved(reviews);
+          if (after === 0) {
+            console.log('Automated approvals cleared.');
+            process.exit(0);
+          }
+
+          console.log(
+            'Superseding remaining bot approval via request-changes (dismiss unavailable or insufficient permission).',
+          );
+          const prRes = await github(
+            'GET',
+            `/repos/${owner}/${repo}/pulls/${prNumber}`,
+          );
+          if (!prRes.ok) {
+            console.error(`Failed to load PR: ${prRes.status}`);
+            process.exit(0);
+          }
+          const pr = await prRes.json();
+          const commitId = pr.head?.sha;
+          if (!commitId) {
+            console.error('Could not read PR head SHA for request-changes review.');
+            process.exit(0);
+          }
+
+          const body =
+            `Automated reassessment marked this PR as **${risk}** risk (not low). An earlier approve from github-actions bot is superseded by this review.\n\n` +
+            '(Used when dismissal of the automated approval fails for your repo or rules.)';
+
+          const rcRes = await github(
+            'POST',
+            `/repos/${owner}/${repo}/pulls/${prNumber}/reviews`,
+            { commit_id: commitId, body, event: 'REQUEST_CHANGES' },
+          );
+          if (!rcRes.ok) {
+            console.error(`request-changes review failed: ${rcRes.status} ${await rcRes.text()}`);
+          }
+          NODE
 
       - name: Auto-approve low-risk PRs
         env:
