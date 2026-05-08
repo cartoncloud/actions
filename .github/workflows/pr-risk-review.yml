@@ -89,7 +89,7 @@ jobs:
         run: |
           set +e
           agent -p -f --output-format json --model composer-2 "$(cat <<'EOF'
-          You classify pull-request risk for a production web application (PHP and related stack).
+          You classify pull-request risk for a production web application.
 
           Read these workspace files:
           - changed-files.txt (one path per line)
