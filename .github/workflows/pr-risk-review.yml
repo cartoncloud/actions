@@ -1,0 +1,324 @@
+# Cursor CLI risk classifier for pull requests (reusable workflow).
+#
+# Call from application repos, for example:
+#
+#   name: PR Risk Review
+#   on:
+#     pull_request:
+#       types: [opened, synchronize, reopened]
+#   jobs:
+#     risk-review:
+#       permissions:
+#         contents: read
+#         pull-requests: write
+#       uses: cartoncloud/actions/.github/workflows/pr-risk-review.yml@main
+#       secrets:
+#         CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+#
+# Prerequisites on the caller repository:
+# - Actions secret: CURSOR_API_KEY (https://cursor.com/docs/cli/reference/authentication)
+#
+# Classifier model: Cursor Composer 2 (`composer-2`).
+#
+# Branch protection: GitHub cannot set "1 reviewer for low / 2 for high" per PR in native rules.
+# Typical setup: require one approval; github-actions approves low-risk same-repo PRs so one human may suffice.
+
+name: PR Risk Review
+
+on:
+  workflow_call:
+    secrets:
+      CURSOR_API_KEY:
+        required: true
+
+concurrency:
+  group: risk-review-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  risk-review:
+    if: >
+      github.event.pull_request.draft == false
+      && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Require Cursor API key
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          if [ -z "$CURSOR_API_KEY" ]; then
+            echo 'Add repository secret CURSOR_API_KEY (Cursor dashboard API keys).' >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> "$GITHUB_PATH"
+
+      - name: Export PR diff artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff "${{ github.event.pull_request.number }}" > pr-diff.patch
+          gh pr diff "${{ github.event.pull_request.number }}" --name-only > changed-files.txt
+
+      - name: Truncate very large diffs
+        run: |
+          limit=400000
+          size=$(wc -c < pr-diff.patch | tr -d ' ')
+          if [ "$size" -gt "$limit" ]; then
+            head -c "$limit" pr-diff.patch > pr-diff.truncated.patch
+            mv pr-diff.truncated.patch pr-diff.patch
+            {
+              echo ""
+              echo "[diff truncated at ${limit} bytes for agent context; missing lines may hide risk — classifier should not assume low risk solely from visible content]"
+            } >> pr-diff.patch
+          fi
+
+      - name: Run risk review agent
+        id: agent
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          set +e
+          agent -p -f --output-format json --model composer-2 "$(cat <<'EOF'
+          You classify pull-request risk for a production web application.
+
+          Read these workspace files:
+          - changed-files.txt (one path per line)
+          - pr-diff.patch (unified diff; may end with a note if truncated)
+
+          Assign exactly one risk level for the change set as a whole: low, medium, or high.
+
+          Guidelines:
+          - low: user-visible copy only, UI labels/help text, translations, comments, static docs,
+            history/audit log messages that do not affect permissions, billing, or security behavior,
+            or purely cosmetic presentation with no logic or data changes.
+          - high: billing/payments/invoicing/subscriptions/pricing/refunds/credits; authentication,
+            authorization, sessions, passwords, tokens, OAuth, roles/permissions; secrets or production
+            credentials; changes to how PII or money moves; security-sensitive crypto; external
+            integrations or webhooks that affect charging, identity, or regulated data; migrations
+            or config that alter financial or auth enforcement.
+          - medium: all other code or behavior changes (bug fixes, refactors, APIs, data paths,
+            non-financial integrations, performance, tests, build, etc.).
+
+          If you are torn between two levels, choose the higher one. Truncated diffs may omit
+          material context; do not output low if uncertainty remains.
+
+          Output format (strict):
+          - Respond with a single JSON object only. No markdown, no code fences, no prose before or after.
+          - Keys: risk_level (string: "low" | "medium" | "high"), rationale (short string),
+            signals (array of short strings naming concrete reasons).
+
+          Example (structure only): {"risk_level":"medium","rationale":"…","signals":["…","…"]}
+          EOF
+          )" > agent-output.json
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "Cursor agent exited with $status"
+            exit "$status"
+          fi
+
+      - name: Parse agent JSON
+        id: parse
+        run: |
+          python3 <<'PY'
+          import json
+          import os
+          import sys
+
+          try:
+              with open("agent-output.json", encoding="utf-8") as f:
+                  outer = json.load(f)
+          except json.JSONDecodeError as e:
+              print(f"Could not parse agent-output.json: {e}", file=sys.stderr)
+              sys.exit(1)
+
+          text = (outer.get("result") or "").strip()
+          if not text:
+              print("Empty agent result", file=sys.stderr)
+              sys.exit(1)
+
+          if "{" not in text:
+              print(f"No JSON object in agent result: {text[:500]}", file=sys.stderr)
+              sys.exit(1)
+
+          decoder = json.JSONDecoder()
+          start = text.index("{")
+          try:
+              data, _end = decoder.raw_decode(text, start)
+          except json.JSONDecodeError as e:
+              print(f"Invalid JSON payload: {e}\n{text[start:start + 800]}", file=sys.stderr)
+              sys.exit(1)
+
+          risk = str(data.get("risk_level", "")).strip().lower()
+          if risk not in {"low", "medium", "high"}:
+              print(f"Invalid risk_level: {risk!r}", file=sys.stderr)
+              sys.exit(1)
+
+          with open("risk.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, ensure_ascii=False, indent=2)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as gh:
+              gh.write(f"risk_level={risk}\n")
+          PY
+        env:
+          PYTHONUTF8: "1"
+
+      - name: Ensure risk labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          repo="${{ github.repository }}"
+          gh label create "risk: low" --color "2ECC71" --description "PR risk — low" --repo "$repo" 2>/dev/null || true
+          gh label create "risk: medium" --color "F1C40F" --description "PR risk — medium" --repo "$repo" 2>/dev/null || true
+          gh label create "risk: high" --color "E74C3C" --description "PR risk — high" --repo "$repo" 2>/dev/null || true
+
+      - name: Apply risk labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PR="${{ github.event.pull_request.number }}"
+          RISK=$(jq -r '.risk_level' risk.json)
+          DESIRED="risk: ${RISK}"
+
+          action=$(gh pr view "$PR" --json labels | jq -r --arg desired "$DESIRED" '
+            [.labels[].name
+              | select(. == "risk: low" or . == "risk: medium" or . == "risk: high")]
+            | unique
+            | if length == 1 and .[0] == $desired then "skip" else "apply" end
+          ')
+
+          if [ "$action" = "skip" ]; then
+            echo "Risk label already ${DESIRED}; leaving labels unchanged."
+            exit 0
+          fi
+
+          for L in "risk: low" "risk: medium" "risk: high"; do
+            gh pr edit "$PR" --remove-label "$L" 2>/dev/null || true
+          done
+          gh pr edit "$PR" --add-label "$DESIRED"
+
+      - name: Write sticky risk review comment
+        run: |
+          python3 <<'PY'
+          import json
+
+          with open("risk.json", encoding="utf-8") as f:
+              data = json.load(f)
+
+          risk = data.get("risk_level", "")
+          rationale = str(data.get("rationale", "")).strip()
+          signals = data.get("signals") or []
+
+          lines = [
+              "### Automated risk review (Composer 2)",
+              "",
+              f"**Level:** `risk: {risk}`",
+              "",
+              f"**Rationale:** {rationale}",
+              "",
+              "**Signals**",
+          ]
+          if signals:
+              for item in signals:
+                  lines.append(f"- {item}")
+          else:
+              lines.append("_None listed_")
+
+          lines.extend(
+              [
+                  "",
+                  "_This is advisory automation; humans remain responsible for merge decisions._",
+              ]
+          )
+
+          with open("risk-comment.md", "w", encoding="utf-8") as out:
+              out.write("\n".join(lines))
+              out.write("\n")
+          PY
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-risk-review
+          path: risk-comment.md
+
+      - name: Revoke automated approval when risk is not low
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            echo "Skipping approval revocation on fork PRs."
+            exit 0
+          fi
+          RISK="${{ steps.parse.outputs.risk_level }}"
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          if [ "$RISK" = "low" ]; then
+            exit 0
+          fi
+
+          count_bot_approved() {
+            gh api --paginate "repos/${REPO}/pulls/${PR}/reviews" --jq '[.[] | select(.state == "APPROVED" and .user.login == "github-actions[bot]")] | length'
+          }
+
+          BEFORE=$(count_bot_approved)
+          if [ "${BEFORE:-0}" -eq 0 ]; then
+            echo "No automated approvals to revoke."
+            exit 0
+          fi
+
+          while read -r rid; do
+            [ -z "${rid:-}" ] && continue
+            if gh api \
+              --method PUT \
+              "repos/${REPO}/pulls/${PR}/reviews/${rid}/dismissals" \
+              -f message="Risk level reassessed as ${RISK} (not low); dismissing automated low-risk approval." \
+              -f event=DISMISS 2>/dev/null; then
+              echo "Dismissed review ${rid}"
+            else
+              echo "::warning title=Dismiss review failed::Could not PUT dismissals for review ${rid}; will try supersede via request-changes if needed."
+            fi
+          done < <(gh api --paginate "repos/${REPO}/pulls/${PR}/reviews" --jq '[.[] | select(.state == "APPROVED" and .user.login == "github-actions[bot]") | .id] | sort | reverse | .[]')
+
+          AFTER=$(count_bot_approved)
+          if [ "${AFTER:-0}" -eq 0 ]; then
+            echo "Automated approvals cleared."
+            exit 0
+          fi
+
+          echo "Superseding remaining bot approval via request-changes (dismiss unavailable or insufficient permission)."
+          body_file="$(mktemp)"
+          printf '%s\n\n%s\n' "Automated reassessment marked this PR as **${RISK}** risk (not low). An earlier approve from github-actions bot is superseded by this review." "(Used when dismissal of the automated approval fails for your repo or rules.)" > "${body_file}"
+          gh pr review "${PR}" --request-changes --body-file "${body_file}" || true
+          rm -f "${body_file}"
+
+      - name: Auto-approve low-risk PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            echo "Skipping auto-approve for fork PRs."
+            exit 0
+          fi
+          RISK="${{ steps.parse.outputs.risk_level }}"
+          PR="${{ github.event.pull_request.number }}"
+          if [ "$RISK" != "low" ]; then
+            exit 0
+          fi
+          if gh pr view "$PR" --json reviewDecision --jq '.reviewDecision == "APPROVED"' | grep -q true; then
+            exit 0
+          fi
+          gh pr review "$PR" --approve --body "Automated low-risk classification (Composer 2 risk review). One human reviewer may still be required by branch protection."
