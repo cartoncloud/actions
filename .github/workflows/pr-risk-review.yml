@@ -101,8 +101,13 @@ jobs:
           - low: user-visible copy only, UI labels/help text, translations, comments, static docs,
             history/audit log messages that do not affect permissions, billing, or security behavior,
             or purely cosmetic presentation with no logic or data changes.
+            Permission changes are low risk only when adding **new** permissions (new capability keys,
+            new role-action pairs, new feature flags scoped to authorization) **without** changing how
+            any **existing** permission is interpreted, enforced, or assigned.
           - high: billing/payments/invoicing/subscriptions/pricing/refunds/credits; authentication,
-            authorization, sessions, passwords, tokens, OAuth, roles/permissions; secrets or production
+            authorization, sessions, passwords, tokens, OAuth, roles/permissions; modifying **existing**
+            permissions is high risk (changed semantics, enforcement, conditions, mappings, defaults,
+            or what existing roles/users can do—even if wording or structure looks small); secrets or production
             credentials; changes to how PII or money moves; security-sensitive crypto; external
             integrations or webhooks that affect charging, identity, or regulated data; migrations
             or config that alter financial or auth enforcement.
