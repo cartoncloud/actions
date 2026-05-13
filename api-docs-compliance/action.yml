@@ -121,7 +121,8 @@ runs:
         Files changed in this PR (review only these):
         ${CHANGED_FILES}
 
-        Output your full review to stdout. If no violations, include a line that is exactly COMPLIANT_NO_VIOLATIONS (e.g. first line or under a Conclusion heading). If you report violations, do not put that token on its own line anywhere — CI treats compliance only when that exact line appears."
+        If no violations are found, output only a single line containing COMPLIANT_NO_VIOLATIONS with no Markdown formatting or explanation.
+        If violations are found, output the full review to stdout and do not put COMPLIANT_NO_VIOLATIONS anywhere in the output."
         agent --print --output-format=text --model "$MODEL" --trust --workspace "$GITHUB_WORKSPACE" -- "$PROMPT" > /tmp/bugbot-output.txt 2>/tmp/bugbot-stderr.txt || true
         [ -s /tmp/bugbot-stderr.txt ] && cat /tmp/bugbot-stderr.txt >&2 || true
 
@@ -134,13 +135,13 @@ runs:
         PR_NUM: ${{ github.event.pull_request.number }}
       run: |
         set -e
-        # Compliant when COMPLIANT_NO_VIOLATIONS appears on its own line (trimmed). The model may
-        # put that verdict under a Conclusion heading rather than as the first line of the report.
-        # Violation reports must not put that token on its own line anywhere (per prompt/skill).
+        # Compliant when COMPLIANT_NO_VIOLATIONS appears on its own line, allowing harmless
+        # Markdown wrapping in case the model formats the sentinel despite the prompt.
         compliant=
         if [ -f /tmp/bugbot-output.txt ] && tr -d '\r' < /tmp/bugbot-output.txt | awk '
           /^[[:space:]]*$/ { next }
           { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+            gsub(/^[`*_]+|[`*_]+$/, "", $0)
             if ($0 == "COMPLIANT_NO_VIOLATIONS") { found=1; exit }
           }
           END { exit !found }
