@@ -100,7 +100,8 @@ jobs:
           Guidelines:
           - low: user-visible copy only, UI labels/help text, translations, comments, static docs,
             history/audit log messages that do not affect permissions, billing, or security behavior,
-            or purely cosmetic presentation with no logic or data changes.
+            or purely cosmetic presentation with no logic or data changes, or analytics instrumentation
+            only.
             Permission changes are low risk only when adding **new** permissions (new capability keys,
             new role-action pairs, new feature flags scoped to authorization) **without** changing how
             any **existing** permission is interpreted, enforced, or assigned.
