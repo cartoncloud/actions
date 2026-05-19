@@ -18,7 +18,7 @@
 # Prerequisites on the caller repository:
 # - Actions secret: CURSOR_API_KEY (https://cursor.com/docs/cli/reference/authentication)
 #
-# Classifier model: Cursor Composer 2 (`composer-2`).
+# Classifier model: Cursor Composer 2.5 (`composer-2.5`).
 #
 # Branch protection: GitHub cannot set "1 reviewer for low / 2 for high" per PR in native rules.
 # Typical setup: require one approval; github-actions approves low-risk same-repo PRs so one human may suffice.
@@ -88,7 +88,7 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
           set +e
-          agent -p -f --output-format json --model composer-2 "$(cat <<'EOF'
+          agent -p -f --output-format json --model composer-2.5 "$(cat <<'EOF'
           You classify pull-request risk for a production web application.
 
           Read these workspace files:
@@ -227,7 +227,7 @@ jobs:
           signals = data.get("signals") or []
 
           lines = [
-              "### Automated risk review (Composer 2)",
+              "### Automated risk review",
               "",
               f"**Level:** `risk: {risk}`",
               "",
@@ -327,4 +327,4 @@ jobs:
           if gh pr view "$PR" --json reviewDecision --jq '.reviewDecision == "APPROVED"' | grep -q true; then
             exit 0
           fi
-          gh pr review "$PR" --approve --body "Automated low-risk classification (Composer 2 risk review). One human reviewer may still be required by branch protection."
+          gh pr review "$PR" --approve --body "Automated low-risk classification. One human reviewer may still be required by branch protection."
