@@ -1,0 +1,179 @@
+name: AI Feedback — Spec Merged
+
+# Reusable workflow — call this from api-documentation on PR merge.
+#
+# Caller snippet (add to api-documentation/.github/workflows/ai-feedback-on-merge.yml):
+#
+#   on:
+#     pull_request:
+#       types: [closed]
+#       branches: [main]
+#   jobs:
+#     spec-feedback:
+#       if: github.event.pull_request.merged == true
+#       uses: cartoncloud/actions/.github/workflows/shared-ai-feedback-spec-merged.yml@main
+#       with:
+#         pr_title:         ${{ github.event.pull_request.title }}
+#         pr_url:           ${{ github.event.pull_request.html_url }}
+#         pr_branch:        ${{ github.event.pull_request.head.ref }}
+#         pr_number:        ${{ github.event.pull_request.number }}
+#         merged_by:        ${{ github.event.pull_request.merged_by.login }}
+#         github_slack_map: ${{ vars.GITHUB_SLACK_MAP }}
+#         slack_channel_id: ${{ vars.SLACK_AI_FEEDBACK_CHANNEL_ID }}
+#       secrets:
+#         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+#
+# Required secret (set at org level or in api-documentation):
+#   SLACK_BOT_TOKEN    Slack bot token with chat:write scope
+#
+# Required variable (set at org level or in api-documentation):
+#   SLACK_AI_FEEDBACK_CHANNEL_ID    Channel ID for #ai-reinforcement-tweaks (or test channel)
+#
+# Optional variable (org-level or repo-level):
+#   GITHUB_SLACK_MAP    JSON string {"githubUsername": "USLACKID"} — enables real @mentions.
+#                       See scripts/github-slack-map.json in local-environment for the source of truth.
+
+on:
+  workflow_call:
+    inputs:
+      pr_title:
+        description: PR title
+        type: string
+        required: true
+      pr_url:
+        description: PR HTML URL
+        type: string
+        required: true
+      pr_branch:
+        description: Head branch ref (e.g. story/CC-1234)
+        type: string
+        required: true
+      pr_number:
+        description: PR number — used to fetch review round count
+        type: string
+        required: true
+      merged_by:
+        description: GitHub username of the person who merged
+        type: string
+        required: true
+      github_slack_map:
+        description: JSON string mapping GitHub usernames to Slack member IDs
+        type: string
+        required: false
+        default: "{}"
+      slack_channel_id:
+        description: Slack channel ID to post to (from vars.SLACK_AI_FEEDBACK_CHANNEL_ID)
+        type: string
+        required: true
+    secrets:
+      SLACK_BOT_TOKEN:
+        required: true
+
+jobs:
+  notify:
+    name: Post spec feedback prompt to Slack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Send Slack feedback prompt
+        env:
+          FEEDBACK_TYPE: spec
+          PR_TITLE: ${{ inputs.pr_title }}
+          PR_URL: ${{ inputs.pr_url }}
+          PR_BRANCH: ${{ inputs.pr_branch }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          MERGED_BY: ${{ inputs.merged_by }}
+          GITHUB_SLACK_MAP: ${{ inputs.github_slack_map }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_AI_FEEDBACK_CHANNEL_ID: ${{ inputs.slack_channel_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node << 'NODEEOF'
+          const TICKET_RE = /\b(CC[-_ ]?\d+)\b/i;
+
+          function getEnv(k, required = true) {
+            const v = (process.env[k] || "").trim();
+            if (required && !v) { console.error("Missing required env var: " + k); process.exit(1); }
+            return v;
+          }
+
+          async function fetchJson(url, opts = {}) {
+            const res = await fetch(url, opts);
+            if (!res.ok) { const b = await res.text(); throw new Error("HTTP " + res.status + ": " + b.slice(0, 300)); }
+            return res.json();
+          }
+
+          function extractTicketKey(title, branch) {
+            const m = (title + " " + branch).match(TICKET_RE);
+            if (!m) return null;
+            return m[1].toUpperCase().replace(/^(CC)[-_ ]?(\d+)$/, "CC-$2");
+          }
+
+          function slackMention(githubUser, mapStr) {
+            try { const map = JSON.parse(mapStr || "{}"); if (map[githubUser]) return "<@" + map[githubUser] + ">"; } catch {}
+            return "@" + githubUser;
+          }
+
+          async function countReviewRounds(owner, repo, prNumber, token) {
+            const reviews = await fetchJson(
+              "https://api.github.com/repos/" + owner + "/" + repo + "/pulls/" + prNumber + "/reviews?per_page=100",
+              { headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" } }
+            );
+            return Array.isArray(reviews) ? reviews.filter(r => r.state === "CHANGES_REQUESTED").length : 0;
+          }
+
+          async function postSlack(token, channelId, text) {
+            const res = await fetch("https://slack.com/api/chat.postMessage", {
+              method: "POST",
+              headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+              body: JSON.stringify({ channel: channelId, text, mrkdwn: true }),
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error("Slack API error: " + data.error);
+          }
+
+          async function main() {
+            const prTitle     = getEnv("PR_TITLE", false);
+            const prBranch    = getEnv("PR_BRANCH", false);
+            const prUrl       = getEnv("PR_URL");
+            const mergedBy    = getEnv("MERGED_BY");
+            const prNumber    = getEnv("PR_NUMBER", false);
+            const slackToken  = getEnv("SLACK_BOT_TOKEN");
+            const channelId   = getEnv("SLACK_AI_FEEDBACK_CHANNEL_ID");
+            const ghToken     = getEnv("GITHUB_TOKEN");
+            const slackMapStr = getEnv("GITHUB_SLACK_MAP", false);
+
+            const ticketKey = extractTicketKey(prTitle, prBranch);
+            if (!ticketKey) { console.log("No CC-XXXX ticket key found — skipping."); return; }
+
+            const mention    = slackMention(mergedBy, slackMapStr);
+            const ticketLink = "<" + prUrl + "|" + ticketKey + ">";
+
+            let roundsLine = "";
+            if (prNumber) {
+              const [owner, repo] = (getEnv("GITHUB_REPOSITORY", false) || "cartoncloud/api-documentation").split("/");
+              try {
+                const rounds = await countReviewRounds(owner, repo, prNumber, ghToken);
+                roundsLine = rounds === 0
+                  ? "\n*Review rounds: 0 \u2014 approved first pass :tada:*"
+                  : "\n*Review rounds: " + rounds + "*";
+              } catch (e) { console.warn("Could not fetch review rounds: " + e.message); }
+            }
+
+            const text = [
+              mention + " :clipboard: Spec merged: " + ticketLink + ". Drop a reply in :thread:" + roundsLine,
+              "\u2022 What kept coming up across those rounds?",
+              "\u2022 What's one thing that worked well in the process?",
+              "\u2022 Anything that should change in `/start-spec` or any other part of the process off the back of this?",
+            ].join("\n");
+
+            await postSlack(slackToken, channelId, text);
+            console.log("Slack notification sent for " + ticketKey + " (spec)");
+          }
+
+          main().catch(e => { console.error(e.message || String(e)); process.exit(2); });
+          NODEEOF
