@@ -80,6 +80,19 @@ jobs:
             return null;
           }
 
+          async function slackMentionForEmail(email, slackToken, githubUser) {
+            if (!email) return null;
+            try {
+              const url = new URL("https://slack.com/api/users.lookupByEmail");
+              url.searchParams.set("email", email);
+              const data = await fetchJson(url, { headers: { Authorization: "Bearer " + slackToken } });
+              if (data.ok && data.user?.id) return "<@" + data.user.id + ">";
+            } catch (e) {
+              console.warn("Slack lookupByEmail failed for " + githubUser + ": " + e.message);
+            }
+            return null;
+          }
+
           async function resolveSlackMention(githubUser, slackToken, ghToken, jiraEmail, jiraToken) {
             if (!githubUser) return "@";
 
@@ -95,22 +108,17 @@ jobs:
             } catch (e) {
               console.warn("Could not resolve email for " + githubUser + ": " + e.message);
             }
-            if (!email) {
-              try {
-                email = await jiraEmailForName(jiraName, jiraEmail, jiraToken);
-              } catch (e) {
-                console.warn("Jira lookup failed for " + githubUser + ": " + e.message);
+            let mention = await slackMentionForEmail(email, slackToken, githubUser);
+            if (mention) return mention;
+
+            try {
+              const jiraLookupEmail = await jiraEmailForName(jiraName, jiraEmail, jiraToken);
+              if (jiraLookupEmail && jiraLookupEmail !== email) {
+                mention = await slackMentionForEmail(jiraLookupEmail, slackToken, githubUser);
+                if (mention) return mention;
               }
-            }
-            if (email) {
-              try {
-                const url = new URL("https://slack.com/api/users.lookupByEmail");
-                url.searchParams.set("email", email);
-                const data = await fetchJson(url, { headers: { Authorization: "Bearer " + slackToken } });
-                if (data.ok && data.user?.id) return "<@" + data.user.id + ">";
-              } catch (e) {
-                console.warn("Slack lookupByEmail failed for " + githubUser + ": " + e.message);
-              }
+            } catch (e) {
+              console.warn("Jira lookup failed for " + githubUser + ": " + e.message);
             }
             return "@" + githubUser;
           }
