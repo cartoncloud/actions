@@ -69,20 +69,8 @@ on:
         required: false
 
 jobs:
-  resolve-mention:
-    name: Resolve Slack mention
-    uses: ./.github/workflows/shared-ai-feedback-resolve-mention.yml
-    with:
-      github_user: ${{ inputs.merged_by }}
-    secrets:
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      GH_TOKEN: ${{ github.token }}
-      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-
   notify:
     name: Post spec feedback prompt to Slack
-    needs: resolve-mention
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
@@ -97,10 +85,12 @@ jobs:
           PR_URL: ${{ inputs.pr_url }}
           PR_BRANCH: ${{ inputs.pr_branch }}
           PR_NUMBER: ${{ inputs.pr_number }}
-          SLACK_MENTION: ${{ needs.resolve-mention.outputs.mention }}
+          MERGED_BY: ${{ inputs.merged_by }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_AI_FEEDBACK_CHANNEL_ID: ${{ inputs.slack_channel_id }}
           GITHUB_TOKEN: ${{ github.token }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           node << 'NODEEOF'
           const TICKET_RE = /\b(CC[-_ ]?\d+)\b/i;
@@ -121,6 +111,73 @@ jobs:
             const m = (title + " " + branch).match(TICKET_RE);
             if (!m) return null;
             return m[1].toUpperCase().replace(/^(CC)[-_ ]?(\d+)$/, "CC-$2");
+          }
+
+          function normalizeName(value) {
+            return (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+          }
+
+          function isGithubNoreplyEmail(email) {
+            return /@users\.noreply\.github\.com$/i.test(email);
+          }
+
+          async function jiraEmailForName(name, jiraEmail, jiraToken) {
+            if (!name || !jiraEmail || !jiraToken) return null;
+            const auth = Buffer.from(jiraEmail + ":" + jiraToken).toString("base64");
+            const url = "https://cartoncloud.atlassian.net/rest/api/3/user/search?query=" + encodeURIComponent(name);
+            const users = await fetchJson(url, {
+              headers: { Authorization: "Basic " + auth, Accept: "application/json" },
+            });
+            if (!Array.isArray(users)) return null;
+            const key = normalizeName(name);
+            for (const u of users) {
+              if (normalizeName(u.displayName) === key && u.emailAddress) return u.emailAddress.toLowerCase();
+            }
+            return null;
+          }
+
+          async function slackMentionForEmail(email, slackToken, githubUser) {
+            if (!email) return null;
+            try {
+              const url = new URL("https://slack.com/api/users.lookupByEmail");
+              url.searchParams.set("email", email);
+              const data = await fetchJson(url, { headers: { Authorization: "Bearer " + slackToken } });
+              if (data.ok && data.user?.id) return "<@" + data.user.id + ">";
+            } catch (e) {
+              console.warn("Slack lookupByEmail failed for " + githubUser + ": " + e.message);
+            }
+            return null;
+          }
+
+          async function resolveSlackMention(githubUser, slackToken, ghToken, jiraEmail, jiraToken) {
+            if (!githubUser) return "@";
+
+            let email = null;
+            let jiraName = githubUser;
+            try {
+              const profile = await fetchJson("https://api.github.com/users/" + githubUser, {
+                headers: { Authorization: "Bearer " + ghToken, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+              });
+              const githubEmail = (profile.email || "").trim().toLowerCase();
+              email = githubEmail && !isGithubNoreplyEmail(githubEmail) ? githubEmail : null;
+              jiraName = profile.name || githubUser;
+            } catch (e) {
+              console.warn("Could not resolve email for " + githubUser + ": " + e.message);
+            }
+
+            let mention = await slackMentionForEmail(email, slackToken, githubUser);
+            if (mention) return mention;
+
+            try {
+              const jiraLookupEmail = await jiraEmailForName(jiraName, jiraEmail, jiraToken);
+              if (jiraLookupEmail && jiraLookupEmail !== email) {
+                mention = await slackMentionForEmail(jiraLookupEmail, slackToken, githubUser);
+                if (mention) return mention;
+              }
+            } catch (e) {
+              console.warn("Jira lookup failed for " + githubUser + ": " + e.message);
+            }
+            return "@" + githubUser;
           }
 
           async function countReviewRounds(owner, repo, prNumber, token) {
@@ -145,15 +202,18 @@ jobs:
             const prTitle     = getEnv("PR_TITLE", false);
             const prBranch    = getEnv("PR_BRANCH", false);
             const prUrl       = getEnv("PR_URL");
+            const mergedBy    = getEnv("MERGED_BY");
             const prNumber    = getEnv("PR_NUMBER", false);
-            const mention     = getEnv("SLACK_MENTION");
             const slackToken  = getEnv("SLACK_BOT_TOKEN");
             const channelId   = getEnv("SLACK_AI_FEEDBACK_CHANNEL_ID");
             const ghToken     = getEnv("GITHUB_TOKEN");
+            const jiraEmail   = getEnv("JIRA_EMAIL", false);
+            const jiraToken   = getEnv("JIRA_API_TOKEN", false);
 
             const ticketKey = extractTicketKey(prTitle, prBranch);
             if (!ticketKey) { console.log("No CC-XXXX ticket key found — skipping."); return; }
 
+            const mention    = await resolveSlackMention(mergedBy, slackToken, ghToken, jiraEmail, jiraToken);
             const ticketLink = "<" + prUrl + "|" + ticketKey + ">";
 
             let roundsLine = "";
