@@ -18,22 +18,22 @@ name: AI Feedback — Ticket Merged
 #         pr_url:           ${{ github.event.pull_request.html_url }}
 #         pr_branch:        ${{ github.event.pull_request.head.ref }}
 #         merged_by:        ${{ github.event.pull_request.merged_by.login }}
-#         github_slack_map: ${{ vars.GITHUB_SLACK_MAP }}
 #         slack_channel_id: ${{ vars.SLACK_AI_FEEDBACK_CHANNEL_ID }}
 #       secrets:
 #         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 #         GH_READ_TOKEN:   ${{ secrets.GH_READ_TOKEN }}
+#         JIRA_EMAIL:      ${{ secrets.JIRA_EMAIL }}
+#         JIRA_API_TOKEN:  ${{ secrets.JIRA_API_TOKEN }}
 #
 # Required secrets (set at org level or in each calling repo):
-#   SLACK_BOT_TOKEN    Slack bot token with chat:write scope
+#   SLACK_BOT_TOKEN    Slack bot token with chat:write, users:read, users:read.email
 #   GH_READ_TOKEN      PAT with repo:read access to cartoncloud/api-documentation
 #
 # Required variable (set at org level or in each calling repo):
 #   SLACK_AI_FEEDBACK_CHANNEL_ID    Channel ID for #ai-reinforcement-tweaks (or test channel)
 #
-# Optional variable (org-level or repo-level):
-#   GITHUB_SLACK_MAP    JSON string {"githubUsername": "USLACKID"} — enables real @mentions.
-#                       See scripts/github-slack-map.json in local-environment for the source of truth.
+# Optional secrets (improve @mention resolution when GitHub email is private):
+#   JIRA_EMAIL, JIRA_API_TOKEN
 
 on:
   workflow_call:
@@ -54,11 +54,6 @@ on:
         description: GitHub username of the person who merged
         type: string
         required: true
-      github_slack_map:
-        description: JSON string mapping GitHub usernames to Slack member IDs
-        type: string
-        required: false
-        default: "{}"
       slack_channel_id:
         description: Slack channel ID to post to (from vars.SLACK_AI_FEEDBACK_CHANNEL_ID)
         type: string
@@ -68,10 +63,26 @@ on:
         required: true
       GH_READ_TOKEN:
         required: true
+      JIRA_EMAIL:
+        required: false
+      JIRA_API_TOKEN:
+        required: false
 
 jobs:
+  resolve-mention:
+    name: Resolve Slack mention
+    uses: ./.github/workflows/shared-ai-feedback-resolve-mention.yml
+    with:
+      github_user: ${{ inputs.merged_by }}
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_READ_TOKEN }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
   notify:
     name: Post ticket feedback prompt to Slack
+    needs: resolve-mention
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
@@ -85,8 +96,7 @@ jobs:
           PR_TITLE: ${{ inputs.pr_title }}
           PR_URL: ${{ inputs.pr_url }}
           PR_BRANCH: ${{ inputs.pr_branch }}
-          MERGED_BY: ${{ inputs.merged_by }}
-          GITHUB_SLACK_MAP: ${{ inputs.github_slack_map }}
+          SLACK_MENTION: ${{ needs.resolve-mention.outputs.mention }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_AI_FEEDBACK_CHANNEL_ID: ${{ inputs.slack_channel_id }}
           GITHUB_TOKEN: ${{ secrets.GH_READ_TOKEN }}
@@ -112,11 +122,6 @@ jobs:
             return m[1].toUpperCase().replace(/^(CC)[-_ ]?(\d+)$/, "CC-$2");
           }
 
-          function slackMention(githubUser, mapStr) {
-            try { const map = JSON.parse(mapStr || "{}"); if (map[githubUser]) return "<@" + map[githubUser] + ">"; } catch {}
-            return "@" + githubUser;
-          }
-
           async function hasSpecPr(ticketKey, token) {
             const q = encodeURIComponent(ticketKey + " repo:cartoncloud/api-documentation is:pr is:merged");
             const data = await fetchJson(
@@ -140,11 +145,10 @@ jobs:
             const prTitle     = getEnv("PR_TITLE", false);
             const prBranch    = getEnv("PR_BRANCH", false);
             const prUrl       = getEnv("PR_URL");
-            const mergedBy    = getEnv("MERGED_BY");
+            const mention     = getEnv("SLACK_MENTION");
             const slackToken  = getEnv("SLACK_BOT_TOKEN");
             const channelId   = getEnv("SLACK_AI_FEEDBACK_CHANNEL_ID");
             const ghToken     = getEnv("GITHUB_TOKEN");
-            const slackMapStr = getEnv("GITHUB_SLACK_MAP", false);
 
             const ticketKey = extractTicketKey(prTitle, prBranch);
             if (!ticketKey) { console.log("No CC-XXXX ticket key found — skipping."); return; }
@@ -152,7 +156,6 @@ jobs:
             const found = await hasSpecPr(ticketKey, ghToken);
             if (!found) { console.log("No merged spec found for " + ticketKey + " in api-documentation — skipping."); return; }
 
-            const mention    = slackMention(mergedBy, slackMapStr);
             const ticketLink = "<" + prUrl + "|" + ticketKey + ">";
 
             const text = [
