@@ -1,0 +1,60 @@
+name: Build GitHub Slack Map
+
+# Manual workflow to generate GITHUB_SLACK_MAP for AI feedback @mentions.
+# Run from Actions tab on v3 after merge; copy JSON from job summary into repo/org vars.
+#
+# Required secrets (cartoncloud/actions repo):
+#   SLACK_BOT_TOKEN         chat:write, users:read, users:read.email
+#   PERSONAL_ACCESS_TOKEN   read:org (list cartoncloud org members)
+#
+# Optional secrets (improves email resolution):
+#   JIRA_EMAIL
+#   JIRA_API_TOKEN
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build map
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GITHUB_ORG: cartoncloud
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          node .github/scripts/build-github-slack-map.mjs \
+            > github-slack-map.json \
+            2> github-slack-map-review.txt
+
+      - name: Write summary
+        run: |
+          echo '### Review table' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat github-slack-map-review.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo '### GITHUB_SLACK_MAP JSON' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Copy this into vars.GITHUB_SLACK_MAP (single-line JSON) on target repos or org.' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat github-slack-map.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-slack-map
+          path: |
+            github-slack-map.json
+            github-slack-map-review.txt

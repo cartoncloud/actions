@@ -31,7 +31,7 @@ name: AI Feedback — Spec Merged
 #
 # Optional variable (org-level or repo-level):
 #   GITHUB_SLACK_MAP    JSON string {"githubUsername": "USLACKID"} — enables real @mentions.
-#                       See scripts/github-slack-map.json in local-environment for the source of truth.
+#                       Generate via Actions → Build GitHub Slack Map in cartoncloud/actions.
 
 on:
   workflow_call:
