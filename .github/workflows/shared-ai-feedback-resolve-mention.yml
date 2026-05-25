@@ -84,15 +84,23 @@ jobs:
             if (!githubUser) return "@";
 
             let email = null;
+            let jiraName = githubUser;
             try {
               const profile = await fetchJson("https://api.github.com/users/" + githubUser, {
                 headers: { Authorization: "Bearer " + ghToken, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
               });
               const githubEmail = (profile.email || "").trim().toLowerCase();
               email = githubEmail && !isGithubNoreplyEmail(githubEmail) ? githubEmail : null;
-              if (!email) email = await jiraEmailForName(profile.name || githubUser, jiraEmail, jiraToken);
+              jiraName = profile.name || githubUser;
             } catch (e) {
               console.warn("Could not resolve email for " + githubUser + ": " + e.message);
+            }
+            if (!email) {
+              try {
+                email = await jiraEmailForName(jiraName, jiraEmail, jiraToken);
+              } catch (e) {
+                console.warn("Jira lookup failed for " + githubUser + ": " + e.message);
+              }
             }
             if (email) {
               try {
