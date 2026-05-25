@@ -1,0 +1,120 @@
+name: AI Feedback — Resolve Slack Mention
+
+on:
+  workflow_call:
+    inputs:
+      github_user:
+        description: GitHub username to resolve
+        type: string
+        required: true
+    secrets:
+      SLACK_BOT_TOKEN:
+        required: true
+      GH_TOKEN:
+        required: true
+      JIRA_EMAIL:
+        required: false
+      JIRA_API_TOKEN:
+        required: false
+    outputs:
+      mention:
+        description: Slack mention or GitHub username fallback
+        value: ${{ jobs.resolve.outputs.mention }}
+
+jobs:
+  resolve:
+    name: Resolve Slack mention
+    runs-on: ubuntu-latest
+    outputs:
+      mention: ${{ steps.resolve.outputs.mention }}
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve Slack mention
+        id: resolve
+        env:
+          GITHUB_USER: ${{ inputs.github_user }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          node << 'NODEEOF'
+          const fs = require("fs");
+
+          function getEnv(k, required = true) {
+            const v = (process.env[k] || "").trim();
+            if (required && !v) { console.error("Missing required env var: " + k); process.exit(1); }
+            return v;
+          }
+
+          async function fetchJson(url, opts = {}) {
+            const res = await fetch(url, opts);
+            if (!res.ok) { const b = await res.text(); throw new Error("HTTP " + res.status + ": " + b.slice(0, 300)); }
+            return res.json();
+          }
+
+          function normalizeName(value) {
+            return (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+          }
+
+          function isGithubNoreplyEmail(email) {
+            return /@users\.noreply\.github\.com$/i.test(email);
+          }
+
+          async function jiraEmailForName(name, jiraEmail, jiraToken) {
+            if (!name || !jiraEmail || !jiraToken) return null;
+            const auth = Buffer.from(jiraEmail + ":" + jiraToken).toString("base64");
+            const url = "https://cartoncloud.atlassian.net/rest/api/3/user/search?query=" + encodeURIComponent(name);
+            const users = await fetchJson(url, {
+              headers: { Authorization: "Basic " + auth, Accept: "application/json" },
+            });
+            if (!Array.isArray(users)) return null;
+            const key = normalizeName(name);
+            for (const u of users) {
+              if (normalizeName(u.displayName) === key && u.emailAddress) return u.emailAddress.toLowerCase();
+            }
+            return null;
+          }
+
+          async function resolveSlackMention(githubUser, slackToken, ghToken, jiraEmail, jiraToken) {
+            let email = null;
+            try {
+              const profile = await fetchJson("https://api.github.com/users/" + githubUser, {
+                headers: { Authorization: "Bearer " + ghToken, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+              });
+              const githubEmail = (profile.email || "").trim().toLowerCase();
+              email = githubEmail && !isGithubNoreplyEmail(githubEmail) ? githubEmail : null;
+              if (!email && profile.name) email = await jiraEmailForName(profile.name, jiraEmail, jiraToken);
+            } catch (e) {
+              console.warn("Could not resolve email for " + githubUser + ": " + e.message);
+            }
+            if (email) {
+              try {
+                const url = new URL("https://slack.com/api/users.lookupByEmail");
+                url.searchParams.set("email", email);
+                const data = await fetchJson(url, { headers: { Authorization: "Bearer " + slackToken } });
+                if (data.ok && data.user?.id) return "<@" + data.user.id + ">";
+              } catch (e) {
+                console.warn("Slack lookupByEmail failed for " + githubUser + ": " + e.message);
+              }
+            }
+            return "@" + githubUser;
+          }
+
+          async function main() {
+            const githubUser  = getEnv("GITHUB_USER");
+            const slackToken  = getEnv("SLACK_BOT_TOKEN");
+            const ghToken     = getEnv("GITHUB_TOKEN");
+            const jiraEmail   = getEnv("JIRA_EMAIL", false);
+            const jiraToken   = getEnv("JIRA_API_TOKEN", false);
+
+            const mention = await resolveSlackMention(githubUser, slackToken, ghToken, jiraEmail, jiraToken);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "mention=" + mention + "\n");
+          }
+
+          main().catch(e => { console.error(e.message || String(e)); process.exit(2); });
+          NODEEOF
