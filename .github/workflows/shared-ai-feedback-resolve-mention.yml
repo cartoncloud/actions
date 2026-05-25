@@ -81,6 +81,8 @@ jobs:
           }
 
           async function resolveSlackMention(githubUser, slackToken, ghToken, jiraEmail, jiraToken) {
+            if (!githubUser) return "@";
+
             let email = null;
             try {
               const profile = await fetchJson("https://api.github.com/users/" + githubUser, {
@@ -88,7 +90,7 @@ jobs:
               });
               const githubEmail = (profile.email || "").trim().toLowerCase();
               email = githubEmail && !isGithubNoreplyEmail(githubEmail) ? githubEmail : null;
-              if (!email && profile.name) email = await jiraEmailForName(profile.name, jiraEmail, jiraToken);
+              if (!email) email = await jiraEmailForName(profile.name || githubUser, jiraEmail, jiraToken);
             } catch (e) {
               console.warn("Could not resolve email for " + githubUser + ": " + e.message);
             }
@@ -106,7 +108,7 @@ jobs:
           }
 
           async function main() {
-            const githubUser  = getEnv("GITHUB_USER");
+            const githubUser  = getEnv("GITHUB_USER", false);
             const slackToken  = getEnv("SLACK_BOT_TOKEN");
             const ghToken     = getEnv("GITHUB_TOKEN");
             const jiraEmail   = getEnv("JIRA_EMAIL", false);
