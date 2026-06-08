@@ -12,9 +12,25 @@ inputs:
     required: false
     default: cartoncloud/api-documentation
   API_DOCUMENTATION_BRANCH:
-    description: 'Branch to use for the api-documentation repo (default: main)'
+    description: 'Optional override branch for api-documentation (skips Jira parent resolution when set)'
     required: false
-    default: main
+    default: ''
+  HEAD_REF:
+    description: 'PR head branch (e.g. story/CC-47092) used to resolve Jira ticket and api-documentation branches'
+    required: false
+    default: ''
+  JIRA_SERVER:
+    description: 'Jira server hostname (e.g. cartoncloud.atlassian.net) for parent ticket lookup'
+    required: false
+    default: ''
+  JIRA_USERNAME:
+    description: 'Jira username for parent ticket lookup'
+    required: false
+    default: ''
+  JIRA_PASSWORD:
+    description: 'Jira password or API token for parent ticket lookup'
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -23,29 +39,17 @@ runs:
       with:
         fetch-depth: 0
 
-    - name: Checkout api-documentation (with branch fallback)
+    - name: Checkout api-documentation (Jira parent chain + branch fallback)
       shell: bash
       env:
         API_DOCUMENTATION_REPO: ${{ inputs.API_DOCUMENTATION_REPO }}
         API_DOCUMENTATION_BRANCH: ${{ inputs.API_DOCUMENTATION_BRANCH }}
+        HEAD_REF: ${{ inputs.HEAD_REF }}
+        JIRA_SERVER: ${{ inputs.JIRA_SERVER }}
+        JIRA_USERNAME: ${{ inputs.JIRA_USERNAME }}
+        JIRA_PASSWORD: ${{ inputs.JIRA_PASSWORD }}
         PERSONAL_ACCESS_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
-      run: |
-        set -e
-        REPO="$API_DOCUMENTATION_REPO"
-        BRANCH="$API_DOCUMENTATION_BRANCH"
-        TOKEN="$PERSONAL_ACCESS_TOKEN"
-        TARGET_DIR="api-documentation"
-        rm -rf "$TARGET_DIR"
-        if [ "$BRANCH" = "main" ]; then
-          git clone --depth 1 --branch "$BRANCH" "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"
-        else
-          if git clone --depth 1 --branch "$BRANCH" "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"; then
-            echo "Checked out branch $BRANCH."
-          else
-            echo "Branch $BRANCH not found, falling back to main."
-            git clone --depth 1 --branch main "https://x-access-token:$TOKEN@github.com/$REPO.git" "$TARGET_DIR"
-          fi
-        fi
+      run: bash "${{ github.action_path }}/checkout-api-documentation.sh"
 
     - name: Clear previous API spec bugbot comments
       uses: aki77/delete-pr-comments-action@v3
