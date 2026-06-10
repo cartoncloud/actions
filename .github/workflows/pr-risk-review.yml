@@ -40,6 +40,7 @@ jobs:
     if: >
       github.event.pull_request.draft == false
       && github.actor != 'dependabot[bot]'
+      && !startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
