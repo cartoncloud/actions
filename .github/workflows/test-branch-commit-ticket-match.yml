@@ -21,6 +21,8 @@ jobs:
     permissions:
       pull-requests: write
     steps:
+      - uses: actions/checkout@v6
+
       - name: Check commit tickets against branch
         uses: ./branch-commit-ticket-match
         with:
