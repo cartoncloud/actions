@@ -1,0 +1,41 @@
+# Reusable workflow: verifies commit messages that start with a ticket key match
+# the CC number in the branch name (e.g. hotfix/CC-47680).
+#
+# Call from any repository, e.g.:
+#
+#   name: Branch Commit Ticket Match
+#   on:
+#     pull_request:
+#       types: [opened, synchronize, reopened, edited]
+#   jobs:
+#     branch-commit-ticket-match:
+#       permissions:
+#         pull-requests: write
+#       uses: cartoncloud/actions/.github/workflows/branch-commit-ticket-match.yml@v3
+#       secrets:
+#         PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+name: Branch Commit Ticket Match
+
+on:
+  workflow_call:
+    secrets:
+      PERSONAL_ACCESS_TOKEN:
+        required: false
+
+concurrency:
+  group: branch-commit-ticket-match-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  branch-commit-ticket-match:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Check commit tickets against branch
+        uses: cartoncloud/actions/branch-commit-ticket-match@v3
+        with:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}

@@ -1,0 +1,106 @@
+name: 'Branch Commit Ticket Match'
+description: 'Checks that commit messages starting with a ticket key match the CC number in the branch name (type/CC-XXXXX).'
+inputs:
+  PERSONAL_ACCESS_TOKEN:
+    description: 'GitHub token with pull-requests:write on the target repo'
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Check commit tickets against branch
+      id: check
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        PR_NUM: ${{ github.event.pull_request.number }}
+        BRANCH: ${{ github.head_ref || github.event.pull_request.head.ref }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+
+        if [ -z "${PR_NUM:-}" ]; then
+          echo "::error::This action must run in a pull_request workflow." >&2
+          exit 1
+        fi
+
+        branch_ticket=
+        if [[ "$BRANCH" =~ ^[a-z]+/([Cc][Cc]-[0-9]+)$ ]]; then
+          branch_ticket=$(echo "${BASH_REMATCH[1]}" | tr '[:lower:]' '[:upper:]')
+        else
+          echo "Branch '$BRANCH' does not match type/CC-XXXXX; skipping."
+          echo "should_check=0" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "Checking commits on branch $BRANCH (expected ticket prefix: $branch_ticket)"
+
+        mismatches=()
+        while IFS= read -r line; do
+          [ -z "$line" ] && continue
+          sha="${line%% *}"
+          subject="${line#* }"
+          short_sha="${sha:0:7}"
+
+          if [[ ! "$subject" =~ ^[Cc][Cc]-[0-9]+ ]]; then
+            continue
+          fi
+
+          commit_ticket=$(echo "$subject" | sed -E 's/^([Cc][Cc]-[0-9]+).*/\1/' | tr '[:lower:]' '[:upper:]')
+          if [ "$commit_ticket" != "$branch_ticket" ]; then
+            mismatches+=("$short_sha|$commit_ticket|$subject")
+          fi
+        done < <(
+          gh api "repos/$REPO/pulls/$PR_NUM/commits" --paginate \
+            | jq -r '.[] | "\(.sha) \(.commit.message | split("\n")[0])"'
+        )
+
+        echo "should_check=1" >> "$GITHUB_OUTPUT"
+
+        if [ "${#mismatches[@]}" -eq 0 ]; then
+          echo "All ticket-prefixed commits match $branch_ticket."
+          echo "has_mismatches=0" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "Found ${#mismatches[@]} commit(s) with a mismatched ticket prefix."
+        echo "has_mismatches=1" >> "$GITHUB_OUTPUT"
+
+        {
+          echo "### Commit message / branch ticket mismatch"
+          echo ""
+          echo "Branch \`$BRANCH\` expects commit messages that start with a ticket key to use **$branch_ticket**."
+          echo ""
+          echo "| Commit | Ticket in message | Message |"
+          echo "| --- | --- | --- |"
+          for entry in "${mismatches[@]}"; do
+            IFS='|' read -r short_sha commit_ticket subject <<< "$entry"
+            subject="${subject//|/\\|}"
+            echo "| [\`$short_sha\`](https://github.com/$REPO/pull/$PR_NUM/commits/$short_sha) | \`$commit_ticket\` | $subject |"
+          done
+          echo ""
+          echo "Commits without a ticket prefix at the start are ignored. Update the commit message or branch name so they align."
+        } > /tmp/branch-commit-ticket-match-comment.md
+
+    - name: Remove previous comment
+      if: steps.check.outputs.should_check == '1' && steps.check.outputs.has_mismatches == '1'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: branch-commit-ticket-match
+        delete: true
+        GITHUB_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+
+    - name: Post mismatch comment
+      if: steps.check.outputs.should_check == '1' && steps.check.outputs.has_mismatches == '1'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: branch-commit-ticket-match
+        path: /tmp/branch-commit-ticket-match-comment.md
+        GITHUB_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+
+    - name: Remove comment when checks pass
+      if: steps.check.outputs.should_check == '1' && steps.check.outputs.has_mismatches != '1'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: branch-commit-ticket-match
+        delete: true
+        GITHUB_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}

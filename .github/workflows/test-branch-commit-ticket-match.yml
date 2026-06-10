@@ -1,0 +1,27 @@
+# Runs branch-commit-ticket-match locally on PRs that touch test scenario files.
+# Used to validate the action before publishing @v3 consumers can call.
+name: Test Branch Commit Ticket Match
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths:
+      - 'branch-commit-ticket-match/**'
+      - '.github/workflows/test-branch-commit-ticket-match.yml'
+
+concurrency:
+  group: test-branch-commit-ticket-match-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  branch-commit-ticket-match:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Check commit tickets against branch
+        uses: ./branch-commit-ticket-match
+        with:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
