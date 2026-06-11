@@ -18,6 +18,16 @@ on:
         default: 11
 
 jobs:
+  branch-commit-ticket-match:
+    name: Branch Commit Ticket Match
+    permissions:
+      pull-requests: write
+    uses: ./.github/workflows/branch-commit-ticket-match.yml
+    with:
+      branch: ${{ github.ref_name }}
+    secrets:
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
   build:
     if: ${{ inputs.postgres == false }}
     name: Build
