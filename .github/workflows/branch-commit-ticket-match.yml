@@ -9,7 +9,11 @@
 #       uses: cartoncloud/actions/.github/workflows/branch-commit-ticket-match.yml@v3
 #
 # On push-based CI (no pull_request event), pass the branch name; the workflow resolves
-# the open PR via gh. Or use shared-branch-push-checks.yml / shared-pull-request-checks.yml.
+# the open PR via gh:
+#
+#   uses: cartoncloud/actions/.github/workflows/branch-commit-ticket-match.yml@v3
+#   with:
+#     branch: ${{ github.ref_name }}
 
 name: Branch Commit Ticket Match
 
