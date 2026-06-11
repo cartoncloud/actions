@@ -1,0 +1,28 @@
+# Shared branch push checks for application repos (e.g. webapp-js).
+# Resolves the open PR for the pushed branch and runs ticket/commit alignment checks.
+#
+#   jobs:
+#     branch-push-checks:
+#       permissions:
+#         pull-requests: write
+#       uses: cartoncloud/actions/.github/workflows/shared-branch-push-checks.yml@v3
+#       secrets: inherit
+
+name: Branch Push Checks
+
+on:
+  workflow_call:
+    secrets:
+      PERSONAL_ACCESS_TOKEN:
+        required: false
+
+jobs:
+  branch-commit-ticket-match:
+    name: Branch Commit Ticket Match
+    permissions:
+      pull-requests: write
+    uses: ./.github/workflows/branch-commit-ticket-match.yml
+    with:
+      branch: ${{ github.ref_name }}
+    secrets:
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
