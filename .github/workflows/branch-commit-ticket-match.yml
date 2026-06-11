@@ -119,6 +119,7 @@ jobs:
           )
 
           echo "should_check=1" >> "$GITHUB_OUTPUT"
+          echo "pr_number=$PR_NUM" >> "$GITHUB_OUTPUT"
 
           if [ "${#mismatches[@]}" -eq 0 ]; then
             echo "All ticket-prefixed commits match $branch_ticket."
@@ -150,6 +151,7 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: branch-commit-ticket-match
+          number: ${{ steps.check.outputs.pr_number }}
           delete: true
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
 
@@ -158,6 +160,7 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: branch-commit-ticket-match
+          number: ${{ steps.check.outputs.pr_number }}
           path: /tmp/branch-commit-ticket-match-comment.md
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
 
@@ -166,5 +169,6 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: branch-commit-ticket-match
+          number: ${{ steps.check.outputs.pr_number }}
           delete: true
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
