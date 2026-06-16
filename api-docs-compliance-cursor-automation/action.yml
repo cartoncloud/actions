@@ -16,6 +16,9 @@ secrets:
   WEBHOOK_TOKEN:
     description: 'Cursor automation webhook bearer token (no Bearer prefix)'
     required: true
+  API_DOCS_COMPLIANCE_WEBHOOK_URL:
+    description: 'Full Cursor automation webhook URL (e.g. https://api2.cursor.sh/automations/webhook/<id>)'
+    required: true
 runs:
   using: composite
   steps:
@@ -26,6 +29,16 @@ runs:
       run: |
         if [ -z "$WEBHOOK_TOKEN" ]; then
           echo 'Pass secrets.WEBHOOK_TOKEN (e.g. organisation secret API_DOCS_COMPLIANCE_WEBHOOK_TOKEN) to this action.' >&2
+          exit 1
+        fi
+
+    - name: Require Cursor automation webhook URL
+      shell: bash
+      env:
+        API_DOCS_COMPLIANCE_WEBHOOK_URL: ${{ secrets.API_DOCS_COMPLIANCE_WEBHOOK_URL }}
+      run: |
+        if [ -z "$API_DOCS_COMPLIANCE_WEBHOOK_URL" ]; then
+          echo 'Pass secrets.API_DOCS_COMPLIANCE_WEBHOOK_URL (organisation secret with the full Cursor automation webhook URL) to this action.' >&2
           exit 1
         fi
 
@@ -91,8 +104,7 @@ runs:
     - name: Trigger Cursor API docs compliance automation
       shell: bash
       env:
-        # Replace PLACEHOLDER with the real webhook id when the Cursor automation is created.
-        API_DOCS_COMPLIANCE_WEBHOOK_URL: https://api2.cursor.sh/automations/webhook/PLACEHOLDER
+        API_DOCS_COMPLIANCE_WEBHOOK_URL: ${{ secrets.API_DOCS_COMPLIANCE_WEBHOOK_URL }}
         WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
       run: |
         set -euo pipefail
