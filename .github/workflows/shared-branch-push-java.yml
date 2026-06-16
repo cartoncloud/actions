@@ -129,7 +129,22 @@ jobs:
       url: ${{ matrix.environment.url }}
 
     steps:
+      - name: Verify environment still tracks this revision
+        id: verify-revision
+        uses: cartoncloud/actions/jira-environment-revision-still-tracked@v3
+        with:
+          jiraServer: ${{ vars.JIRA_SERVER }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          projectKey: ${{ vars.JIRA_ENVIRONMENT_PROJECT_KEY }}
+          appName: ${{ inputs.appName }}
+          revision: ${{ github.ref_name }}
+          environmentName: ${{ matrix.environment.name }}
+          nameField: ${{ vars.JIRA_ENVIRONMENT_KEY_FIELD }}
+          urlField: ${{ vars.JIRA_ENVIRONMENT_URL_FIELD }}
+
       - name: Deploy
+        if: steps.verify-revision.outputs.still-tracked == 'true'
         uses: cartoncloud/actions/deploy-java@v3
         with:
           appName: ${{ inputs.appName }}

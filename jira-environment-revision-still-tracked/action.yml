@@ -1,0 +1,64 @@
+name: 'Jira Environment Revision Still Tracked'
+description: 'Checks whether a Jira environment still tracks the given git revision before deploying'
+inputs:
+  jiraServer:
+    description: 'Jira server address i.e. acme.atlassian.net'
+    required: true
+  jiraUsername:
+    description: 'Jira username to use to call the API'
+    required: true
+  jiraPassword:
+    description: 'Jira password to use to call the API'
+    required: true
+  projectKey:
+    description: 'Jira project key i.e. ENV'
+    required: true
+  appName:
+    description: 'App/project name i.e. php'
+    required: true
+  revision:
+    description: 'Git branch or tag the deploy expects the environment to track'
+    required: true
+  environmentName:
+    description: 'GitHub environment name to verify'
+    required: true
+  nameField:
+    description: 'JSON field for the environment name'
+    required: true
+  urlField:
+    description: 'JSON field for the environment URL'
+    required: true
+
+outputs:
+  still-tracked:
+    description: 'Whether the environment still tracks the given revision'
+    value: ${{ steps.check.outputs.still-tracked }}
+
+runs:
+  using: composite
+  steps:
+    - uses: ./jira-environment-revision-search
+      id: search
+      with:
+        jiraServer: ${{ inputs.jiraServer }}
+        jiraUsername: ${{ inputs.jiraUsername }}
+        jiraPassword: ${{ inputs.jiraPassword }}
+        projectKey: ${{ inputs.projectKey }}
+        appName: ${{ inputs.appName }}
+        revision: ${{ inputs.revision }}
+        nameField: ${{ inputs.nameField }}
+        urlField: ${{ inputs.urlField }}
+
+    - id: check
+      shell: bash
+      env:
+        ENVIRONMENTS: ${{ steps.search.outputs.environments }}
+        ENVIRONMENT_NAME: ${{ inputs.environmentName }}
+        REVISION: ${{ inputs.revision }}
+      run: |
+        if echo "$ENVIRONMENTS" | jq -e --arg name "$ENVIRONMENT_NAME" '.[] | select(.name == $name)' > /dev/null; then
+          echo "still-tracked=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Environment $ENVIRONMENT_NAME no longer tracks $REVISION, skipping stale deploy"
+          echo "still-tracked=false" >> "$GITHUB_OUTPUT"
+        fi
