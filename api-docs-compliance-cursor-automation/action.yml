@@ -12,23 +12,16 @@ inputs:
     description: 'Branch of api-documentation to use (callers typically pass head_ref)'
     required: false
     default: main
-secrets:
-  WEBHOOK_TOKEN:
-    description: 'Cursor automation webhook bearer token (no Bearer prefix)'
-    required: true
-  API_DOCS_COMPLIANCE_WEBHOOK_URL:
-    description: 'Full Cursor automation webhook URL (e.g. https://api2.cursor.sh/automations/webhook/<id>)'
-    required: true
 runs:
   using: composite
   steps:
     - name: Require Cursor automation webhook token
       shell: bash
       env:
-        WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
+        API_DOCS_COMPLIANCE_WEBHOOK_TOKEN: ${{ secrets.API_DOCS_COMPLIANCE_WEBHOOK_TOKEN }}
       run: |
-        if [ -z "$WEBHOOK_TOKEN" ]; then
-          echo 'Pass secrets.WEBHOOK_TOKEN (e.g. organisation secret API_DOCS_COMPLIANCE_WEBHOOK_TOKEN) to this action.' >&2
+        if [ -z "$API_DOCS_COMPLIANCE_WEBHOOK_TOKEN" ]; then
+          echo 'Set organisation or repository secret API_DOCS_COMPLIANCE_WEBHOOK_TOKEN (Cursor automation webhook bearer token).' >&2
           exit 1
         fi
 
@@ -38,7 +31,7 @@ runs:
         API_DOCS_COMPLIANCE_WEBHOOK_URL: ${{ secrets.API_DOCS_COMPLIANCE_WEBHOOK_URL }}
       run: |
         if [ -z "$API_DOCS_COMPLIANCE_WEBHOOK_URL" ]; then
-          echo 'Pass secrets.API_DOCS_COMPLIANCE_WEBHOOK_URL (organisation secret with the full Cursor automation webhook URL) to this action.' >&2
+          echo 'Set organisation or repository secret API_DOCS_COMPLIANCE_WEBHOOK_URL (full Cursor automation webhook URL).' >&2
           exit 1
         fi
 
@@ -105,11 +98,11 @@ runs:
       shell: bash
       env:
         API_DOCS_COMPLIANCE_WEBHOOK_URL: ${{ secrets.API_DOCS_COMPLIANCE_WEBHOOK_URL }}
-        WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
+        API_DOCS_COMPLIANCE_WEBHOOK_TOKEN: ${{ secrets.API_DOCS_COMPLIANCE_WEBHOOK_TOKEN }}
       run: |
         set -euo pipefail
         http_code="$(curl -sS -o /tmp/webhook-response.txt -w "%{http_code}" -X POST "$API_DOCS_COMPLIANCE_WEBHOOK_URL" \
-          -H "Authorization: Bearer $WEBHOOK_TOKEN" \
+          -H "Authorization: Bearer $API_DOCS_COMPLIANCE_WEBHOOK_TOKEN" \
           -H "Content-Type: application/json" \
           --data-binary @webhook-payload.json)"
         if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
