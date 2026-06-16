@@ -56,6 +56,11 @@ runs:
         ENVIRONMENT_NAME: ${{ inputs.environmentName }}
         REVISION: ${{ inputs.revision }}
       run: |
+        if [ -z "$ENVIRONMENTS" ] || ! echo "$ENVIRONMENTS" | jq -e 'type == "array"' > /dev/null; then
+          echo "Jira environment search failed or did not return environments"
+          exit 1
+        fi
+
         if echo "$ENVIRONMENTS" | jq -e --arg name "$ENVIRONMENT_NAME" '.[] | select(.name == $name)' > /dev/null; then
           echo "still-tracked=true" >> "$GITHUB_OUTPUT"
         else
