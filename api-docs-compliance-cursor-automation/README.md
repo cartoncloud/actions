@@ -23,7 +23,6 @@ Automation prompt: [AUTOMATION_PROMPT.md](./AUTOMATION_PROMPT.md).
 
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
-| `PERSONAL_ACCESS_TOKEN` | GitHub token for `gh pr diff` and posting reviews | Yes | |
 | `API_DOCUMENTATION_REPO` | api-documentation repo for the automation | No | `cartoncloud/api-documentation` |
 | `API_DOCUMENTATION_BRANCH` | Branch for spec/skill (callers often pass PR `head_ref`) | No | `main` |
 
@@ -47,7 +46,6 @@ jobs:
     steps:
       - uses: cartoncloud/actions/api-docs-compliance-cursor-automation@v3
         with:
-          PERSONAL_ACCESS_TOKEN: ${{ github.token }}
           API_DOCUMENTATION_BRANCH: ${{ github.event.pull_request.head.ref }}
 ```
 

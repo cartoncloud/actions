@@ -1,9 +1,6 @@
 name: 'API Documentation Compliance (Cursor Automation)'
 description: 'Checks OpenAPI spec compliance on PRs via Cursor cloud automation webhook; posts human-facing PR reviews from parsed marker output.'
 inputs:
-  PERSONAL_ACCESS_TOKEN:
-    description: 'GitHub token for gh pr diff and posting PR reviews (typically github.token from the caller)'
-    required: true
   API_DOCUMENTATION_REPO:
     description: 'api-documentation repo the automation should use (e.g. org/repo)'
     required: false
@@ -38,7 +35,7 @@ runs:
     - name: Export PR diff artifacts
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         PR: ${{ github.event.pull_request.number }}
       run: |
@@ -116,7 +113,7 @@ runs:
       id: parse
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         PR: ${{ github.event.pull_request.number }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -175,7 +172,7 @@ runs:
     - name: Clear previous API spec compliance comments
       uses: aki77/delete-pr-comments-action@v3
       with:
-        token: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        token: ${{ github.token }}
         pullRequestNumber: ${{ github.event.pull_request.number }}
         includeIssueComments: 'true'
         includeOverallReviewComments: 'true'
@@ -189,7 +186,7 @@ runs:
     - name: Create pull request review when violations found
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        GH_TOKEN: ${{ github.token }}
         PR_NUM: ${{ github.event.pull_request.number }}
       run: |
         set -euo pipefail
@@ -221,7 +218,7 @@ runs:
     - name: Remove bot marker reviews and comments
       shell: bash
       env:
-        GH_TOKEN: ${{ inputs.PERSONAL_ACCESS_TOKEN }}
+        GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         PR: ${{ github.event.pull_request.number }}
       run: |
