@@ -14,7 +14,7 @@ Automation prompt: [AUTOMATION_PROMPT.md](./AUTOMATION_PROMPT.md).
 
 ## Prerequisites (organisation, set once)
 
-- Organisation or repository secrets (available to the workflow job; do not pass into the action):
+- Organisation or repository secrets (read at workflow level and passed into the action via `with:`):
   - `API_DOCS_COMPLIANCE_WEBHOOK_TOKEN` (Cursor automation webhook bearer token; no `Bearer` prefix)
   - `API_DOCS_COMPLIANCE_WEBHOOK_URL` (full webhook URL from the Cursor automation)
 - Cursor automation created in `cartoncloud/api-documentation` with the prompt above
@@ -25,6 +25,8 @@ Automation prompt: [AUTOMATION_PROMPT.md](./AUTOMATION_PROMPT.md).
 |------|-------------|----------|---------|
 | `API_DOCUMENTATION_REPO` | api-documentation repo for the automation | No | `cartoncloud/api-documentation` |
 | `API_DOCUMENTATION_BRANCH` | Branch for spec/skill (callers often pass PR `head_ref`) | No | `main` |
+| `API_DOCS_COMPLIANCE_WEBHOOK_URL` | Full Cursor automation webhook URL | Yes | — |
+| `API_DOCS_COMPLIANCE_WEBHOOK_TOKEN` | Webhook bearer token (no `Bearer` prefix) | Yes | — |
 
 
 ## Usage
@@ -46,7 +48,10 @@ jobs:
     steps:
       - uses: cartoncloud/actions/api-docs-compliance-cursor-automation@v3
         with:
+          API_DOCUMENTATION_REPO: cartoncloud/api-documentation
           API_DOCUMENTATION_BRANCH: ${{ github.event.pull_request.head.ref }}
+          API_DOCS_COMPLIANCE_WEBHOOK_URL: ${{ secrets.API_DOCS_COMPLIANCE_WEBHOOK_URL }}
+          API_DOCS_COMPLIANCE_WEBHOOK_TOKEN: ${{ secrets.API_DOCS_COMPLIANCE_WEBHOOK_TOKEN }}
 ```
 
 During migration, keep `api-docs-compliance@` on callers until the webhook automation is live and org secrets are configured.
