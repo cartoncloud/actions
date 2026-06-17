@@ -222,11 +222,14 @@ runs:
         echo "Pull request review posted (body-only; avoids GitHub 422 on unresolved line)."
 
     - name: Remove bot marker reviews and comments
+      if: always()
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         PR: ${{ github.event.pull_request.number }}
+        MARKER_REVIEW_ID: ${{ steps.parse.outputs.marker_review_id }}
+        MARKER_REVIEW_NODE_ID: ${{ steps.parse.outputs.marker_review_node_id }}
       run: |
         set +euo pipefail
         python3 <<'PY'
@@ -235,6 +238,8 @@ runs:
         repo, pr = os.environ["REPO"], os.environ["PR"]
         marker = re.compile(r"<!-- api-docs-compliance:")
         cursor_users = {"cursor[bot]", "cursor"}
+        parsed_review_id = (os.environ.get("MARKER_REVIEW_ID") or "").strip()
+        parsed_node_id = (os.environ.get("MARKER_REVIEW_NODE_ID") or "").strip()
 
         def gh_json(args):
             out = subprocess.check_output(["gh", "api", *args], text=True)
@@ -256,15 +261,7 @@ runs:
             print(proc.stderr.strip() or proc.stdout.strip(), file=sys.stderr)
             return False
 
-        reviews = gh_json([f"repos/{repo}/pulls/{pr}/reviews", "--paginate"])
-        for review in reviews:
-            user = (review.get("user") or {}).get("login", "")
-            body = review.get("body") or ""
-            is_cursor_marker = user in cursor_users and marker.search(body)
-            if not is_cursor_marker:
-                continue
-            review_id = review.get("id")
-            node_id = review.get("node_id") or ""
+        def remove_review(review_id: str, node_id: str, label: str) -> bool:
             if review_id:
                 proc = subprocess.run(
                     ["gh", "api", "--method", "DELETE", f"repos/{repo}/pulls/{pr}/reviews/{review_id}"],
@@ -272,11 +269,29 @@ runs:
                     text=True,
                 )
                 if proc.returncode == 0:
-                    print(f"Deleted pending cursor review {review_id}")
-                    continue
-            if node_id and minimize_review(node_id, "review"):
+                    print(f"Deleted {label} review {review_id}")
+                    return True
+            if node_id and minimize_review(node_id, label):
+                return True
+            return False
+
+        if parsed_review_id or parsed_node_id:
+            if not remove_review(parsed_review_id, parsed_node_id, "parsed cursor marker"):
+                print(f"::warning::Could not remove parsed marker review {parsed_review_id}", file=sys.stderr)
+
+        reviews = gh_json([f"repos/{repo}/pulls/{pr}/reviews", "--paginate"])
+        for review in reviews:
+            user = (review.get("user") or {}).get("login", "")
+            body = review.get("body") or ""
+            is_cursor_marker = user in cursor_users and marker.search(body)
+            if not is_cursor_marker:
                 continue
-            print(f"::warning::Could not remove review {review_id} from {user}", file=sys.stderr)
+            review_id = str(review.get("id") or "")
+            node_id = review.get("node_id") or ""
+            if review_id and review_id == parsed_review_id:
+                continue
+            if not remove_review(review_id, node_id, "cursor marker"):
+                print(f"::warning::Could not remove review {review_id} from {user}", file=sys.stderr)
 
         comments = gh_json([f"repos/{repo}/issues/{pr}/comments", "--paginate"])
         for comment in comments:
