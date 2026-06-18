@@ -18,6 +18,8 @@
 # Prerequisites on the caller repository:
 # - Actions secret: CURSOR_API_KEY (https://cursor.com/docs/cli/reference/authentication)
 #
+# Successor (webhook, no per-repo API key): pr-risk-review-cursor-automation.yml
+#
 # Classifier model: Cursor Composer 2.5 (`composer-2.5`).
 #
 # Branch protection: GitHub cannot set "1 reviewer for low / 2 for high" per PR in native rules.
