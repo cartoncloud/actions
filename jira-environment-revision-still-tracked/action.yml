@@ -37,7 +37,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: ./jira-environment-revision-search
+    - uses: cartoncloud/actions/jira-environment-revision-search@v3
       id: search
       with:
         jiraServer: ${{ inputs.jiraServer }}
