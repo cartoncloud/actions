@@ -38,7 +38,113 @@ runs:
           exit 1
         fi
 
+    - name: Decide whether to run
+      id: scope
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR: ${{ github.event.pull_request.number }}
+        EVENT_NAME: ${{ github.event_name }}
+        BEFORE: ${{ github.event.before }}
+        AFTER: ${{ github.event.after }}
+      run: |
+        set -euo pipefail
+        python3 <<'PY'
+        import fnmatch, json, os, subprocess
+
+        PATTERNS = [
+            "openapi/**",
+            "**/controller/**",
+            "**/Api*Controller.php",
+            "config/routes.php",
+            "**/*-definition-schema.json",
+        ]
+        ZERO_SHA = "0" * 40
+
+        def path_matches(path: str, pattern: str) -> bool:
+            path = path.replace("\\", "/").lstrip("./")
+            pattern = pattern.replace("\\", "/")
+            if "**" not in pattern:
+                return fnmatch.fnmatchcase(path, pattern)
+            if pattern.startswith("**/") and pattern.endswith("/**"):
+                middle = pattern[3:-3]
+                if middle:
+                    return f"/{middle}/" in f"/{path}/" or path == middle or path.startswith(middle + "/")
+                return True
+            if "/**/" in pattern:
+                left, right = pattern.split("/**/", 1)
+                if path == left:
+                    return fnmatch.fnmatchcase("", right) if right else True
+                if not (path == left or path.startswith(left + "/")):
+                    return False
+                rest = path[len(left):].lstrip("/")
+                parts = rest.split("/")
+                for i in range(len(parts)):
+                    if fnmatch.fnmatchcase("/".join(parts[i:]), right):
+                        return True
+                return False
+            if pattern.endswith("/**"):
+                prefix = pattern[:-3]
+                return path == prefix or path.startswith(prefix + "/")
+            if pattern.startswith("**/"):
+                suffix = pattern[3:]
+                if fnmatch.fnmatchcase(path, suffix):
+                    return True
+                parts = path.split("/")
+                for i in range(len(parts)):
+                    if fnmatch.fnmatchcase("/".join(parts[i:]), suffix):
+                        return True
+                return False
+            return fnmatch.fnmatchcase(path, pattern)
+
+        def matched_files(paths):
+            matched = []
+            for path in paths:
+                path = path.strip()
+                if not path:
+                    continue
+                for pattern in PATTERNS:
+                    if path_matches(path, pattern):
+                        matched.append(path)
+                        break
+            return matched
+
+        repo = os.environ["REPO"]
+        pr = os.environ["PR"]
+        event = os.environ["EVENT_NAME"]
+        before = os.environ.get("BEFORE", "")
+        use_full_pr_diff = event in ("opened", "reopened", "workflow_dispatch") or (event == "synchronize" and before in ("", ZERO_SHA))
+
+        if use_full_pr_diff:
+            out = subprocess.check_output(["gh", "pr", "diff", pr, "--repo", repo, "--name-only"], text=True)
+            files = [line.strip() for line in out.splitlines() if line.strip()]
+        elif event == "synchronize":
+            after = os.environ["AFTER"]
+            out = subprocess.check_output(["gh", "api", f"repos/{repo}/compare/{before}...{after}", "--jq", ".files[].filename"], text=True)
+            files = [line.strip() for line in out.splitlines() if line.strip()]
+        else:
+            print(f"Unknown event {event!r}; using full PR diff for scope.")
+            out = subprocess.check_output(["gh", "pr", "diff", pr, "--repo", repo, "--name-only"], text=True)
+            files = [line.strip() for line in out.splitlines() if line.strip()]
+
+        matched = matched_files(files)
+        should_run = bool(matched)
+        print(f"Event: {event}")
+        print(f"Files considered: {len(files)}")
+        print(f"matched_files={json.dumps(matched)}")
+        if should_run:
+            print("API-relevant changes detected; running compliance check.")
+        else:
+            print("No API-relevant changes; skipping compliance check.")
+
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as gh:
+            gh.write(f"should_run={'true' if should_run else 'false'}\n")
+            gh.write(f"matched_files={json.dumps(matched)}\n")
+        PY
+
     - name: Export PR diff artifacts
+      if: steps.scope.outputs.should_run == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
@@ -50,6 +156,7 @@ runs:
         gh pr diff "$PR" --repo "$REPO" --name-only > changed-files.txt
 
     - name: Truncate very large diffs
+      if: steps.scope.outputs.should_run == 'true'
       shell: bash
       run: |
         set -euo pipefail
@@ -65,6 +172,7 @@ runs:
         fi
 
     - name: Build webhook payload
+      if: steps.scope.outputs.should_run == 'true'
       shell: bash
       env:
         REPOSITORY: ${{ github.repository }}
@@ -98,6 +206,7 @@ runs:
         PY
 
     - name: Trigger Cursor API docs compliance automation
+      if: steps.scope.outputs.should_run == 'true'
       shell: bash
       env:
         API_DOCS_COMPLIANCE_WEBHOOK_URL: ${{ inputs.API_DOCS_COMPLIANCE_WEBHOOK_URL }}
@@ -116,6 +225,7 @@ runs:
         cat /tmp/webhook-response.txt
 
     - name: Wait for automation review and parse compliance
+      if: steps.scope.outputs.should_run == 'true'
       id: parse
       shell: bash
       env:
@@ -176,6 +286,7 @@ runs:
         PY
 
     - name: Clear previous API spec compliance comments
+      if: steps.scope.outputs.should_run == 'true'
       uses: aki77/delete-pr-comments-action@v3
       with:
         token: ${{ github.token }}
@@ -190,6 +301,7 @@ runs:
           github-actions[bot]
 
     - name: Create pull request review when violations found
+      if: steps.scope.outputs.should_run == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
@@ -222,7 +334,7 @@ runs:
         echo "Pull request review posted (body-only; avoids GitHub 422 on unresolved line)."
 
     - name: Remove bot marker reviews and comments
-      if: always()
+      if: always() && steps.scope.outputs.should_run == 'true'
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
