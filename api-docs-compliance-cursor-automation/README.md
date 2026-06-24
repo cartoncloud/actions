@@ -10,8 +10,6 @@ OpenAPI spec compliance checks on pull requests via a **Cursor cloud automation*
 4. `cursor[bot]` posts a **marker-only** PR review: `<!-- api-docs-compliance:{json} -->`.
 5. GHA parses the marker, deletes prior compliance comments, posts a human-facing PR review when not compliant, then removes the marker.
 
-Automation prompt: [AUTOMATION_PROMPT.md](./AUTOMATION_PROMPT.md).
-
 ## Cursor automation setup (once, in api-documentation)
 
 Create **one** automation in `cartoncloud/api-documentation` — not per application repo.
@@ -30,7 +28,7 @@ Do **not** add GitHub pull-request triggers scoped to all org repos. That forces
 - Organisation or repository secrets (read at workflow level and passed into the action via `with:`):
   - `API_DOCS_COMPLIANCE_WEBHOOK_TOKEN` (Cursor automation webhook bearer token; no `Bearer` prefix)
   - `API_DOCS_COMPLIANCE_WEBHOOK_URL` (full webhook URL from the Cursor automation)
-- Cursor automation in `cartoncloud/api-documentation` configured as above with [AUTOMATION_PROMPT.md](./AUTOMATION_PROMPT.md)
+- Cursor automation in `cartoncloud/api-documentation` configured as above (webhook trigger, api-documentation checkout only)
 
 ## Inputs
 
