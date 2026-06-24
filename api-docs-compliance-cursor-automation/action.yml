@@ -241,7 +241,7 @@ runs:
 
         repo, pr = os.environ["REPO"], os.environ["PR"]
         head_sha = os.environ["HEAD_SHA"]
-        deadline = time.time() + 3 * 60
+        deadline = time.time() + 10 * 60
         pattern = re.compile(r"<!-- api-docs-compliance:(.*?) -->", re.DOTALL)
         trigger_after = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
@@ -264,7 +264,7 @@ runs:
                 submitted = review.get("submitted_at") or ""
                 if submitted < trigger_after:
                     continue
-                data = json.loads(match.group(1))
+                data = json.loads(match.group(1), strict=False)
                 if data.get("head_sha") not in (None, head_sha):
                     continue
                 compliant = data.get("compliant")
@@ -281,7 +281,7 @@ runs:
                 sys.exit(0)
             time.sleep(10)
 
-        print("Timed out after 3 minutes waiting for cursor[bot] api-docs-compliance marker", file=sys.stderr)
+        print("Timed out after 10 minutes waiting for cursor[bot] api-docs-compliance marker", file=sys.stderr)
         sys.exit(1)
         PY
 
