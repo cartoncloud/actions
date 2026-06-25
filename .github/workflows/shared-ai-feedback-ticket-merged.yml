@@ -1,0 +1,234 @@
+name: AI Feedback — Ticket Merged
+
+# Reusable workflow — call this from any repo (php, js, flutter, android, ios, services)
+# on PR merge. It silently exits if the ticket has no matching spec in api-documentation.
+#
+# Caller snippet (add to each repo at .github/workflows/ai-feedback-on-merge.yml):
+#
+#   on:
+#     pull_request:
+#       types: [closed]
+#       branches: [main]
+#   jobs:
+#     ticket-feedback:
+#       if: github.event.pull_request.merged == true
+#       uses: cartoncloud/actions/.github/workflows/shared-ai-feedback-ticket-merged.yml@main
+#       with:
+#         pr_title:         ${{ github.event.pull_request.title }}
+#         pr_url:           ${{ github.event.pull_request.html_url }}
+#         pr_branch:        ${{ github.event.pull_request.head.ref }}
+#         merged_by:        ${{ github.event.pull_request.merged_by.login }}
+#         slack_channel_id: ${{ vars.SLACK_AI_FEEDBACK_CHANNEL_ID }}
+#       secrets:
+#         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+#         GH_READ_TOKEN:   ${{ secrets.GH_READ_TOKEN }}
+#         JIRA_EMAIL:      ${{ secrets.JIRA_EMAIL }}
+#         JIRA_API_TOKEN:  ${{ secrets.JIRA_API_TOKEN }}
+#
+# Required secrets (set at org level or in each calling repo):
+#   SLACK_BOT_TOKEN    Slack bot token with chat:write, users:read, users:read.email
+#   GH_READ_TOKEN      PAT with repo:read access to cartoncloud/api-documentation
+#
+# Required variable (set at org level or in each calling repo):
+#   SLACK_AI_FEEDBACK_CHANNEL_ID    Channel ID for #ai-reinforcement-tweaks (or test channel)
+#
+# Optional secrets (improve @mention resolution when GitHub email is private):
+#   JIRA_EMAIL, JIRA_API_TOKEN
+
+on:
+  workflow_call:
+    inputs:
+      pr_title:
+        description: PR title
+        type: string
+        required: true
+      pr_url:
+        description: PR HTML URL
+        type: string
+        required: true
+      pr_branch:
+        description: Head branch ref (e.g. story/CC-1234)
+        type: string
+        required: true
+      merged_by:
+        description: GitHub username of the person who merged
+        type: string
+        required: true
+      slack_channel_id:
+        description: Slack channel ID to post to (from vars.SLACK_AI_FEEDBACK_CHANNEL_ID)
+        type: string
+        required: true
+    secrets:
+      SLACK_BOT_TOKEN:
+        required: true
+      GH_READ_TOKEN:
+        required: true
+      JIRA_EMAIL:
+        required: false
+      JIRA_API_TOKEN:
+        required: false
+
+jobs:
+  notify:
+    name: Post ticket feedback prompt to Slack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Send Slack feedback prompt
+        env:
+          FEEDBACK_TYPE: ticket
+          PR_TITLE: ${{ inputs.pr_title }}
+          PR_URL: ${{ inputs.pr_url }}
+          PR_BRANCH: ${{ inputs.pr_branch }}
+          MERGED_BY: ${{ inputs.merged_by }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_AI_FEEDBACK_CHANNEL_ID: ${{ inputs.slack_channel_id }}
+          GITHUB_TOKEN: ${{ secrets.GH_READ_TOKEN }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          node << 'NODEEOF'
+          const TICKET_RE = /\b(CC[-_ ]?\d+)\b/i;
+
+          function getEnv(k, required = true) {
+            const v = (process.env[k] || "").trim();
+            if (required && !v) { console.error("Missing required env var: " + k); process.exit(1); }
+            return v;
+          }
+
+          async function fetchJson(url, opts = {}) {
+            const res = await fetch(url, opts);
+            if (!res.ok) { const b = await res.text(); throw new Error("HTTP " + res.status + ": " + b.slice(0, 300)); }
+            return res.json();
+          }
+
+          function extractTicketKey(title, branch) {
+            const m = (title + " " + branch).match(TICKET_RE);
+            if (!m) return null;
+            return m[1].toUpperCase().replace(/^(CC)[-_ ]?(\d+)$/, "CC-$2");
+          }
+
+          function normalizeName(value) {
+            return (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+          }
+
+          function isGithubNoreplyEmail(email) {
+            return /@users\.noreply\.github\.com$/i.test(email);
+          }
+
+          async function jiraEmailForName(name, jiraEmail, jiraToken) {
+            if (!name || !jiraEmail || !jiraToken) return null;
+            const auth = Buffer.from(jiraEmail + ":" + jiraToken).toString("base64");
+            const url = "https://cartoncloud.atlassian.net/rest/api/3/user/search?query=" + encodeURIComponent(name);
+            const users = await fetchJson(url, {
+              headers: { Authorization: "Basic " + auth, Accept: "application/json" },
+            });
+            if (!Array.isArray(users)) return null;
+            const key = normalizeName(name);
+            for (const u of users) {
+              if (normalizeName(u.displayName) === key && u.emailAddress) return u.emailAddress.toLowerCase();
+            }
+            return null;
+          }
+
+          async function slackMentionForEmail(email, slackToken, githubUser) {
+            if (!email) return null;
+            try {
+              const url = new URL("https://slack.com/api/users.lookupByEmail");
+              url.searchParams.set("email", email);
+              const data = await fetchJson(url, { headers: { Authorization: "Bearer " + slackToken } });
+              if (data.ok && data.user?.id) return "<@" + data.user.id + ">";
+            } catch (e) {
+              console.warn("Slack lookupByEmail failed for " + githubUser + ": " + e.message);
+            }
+            return null;
+          }
+
+          async function resolveSlackMention(githubUser, slackToken, ghToken, jiraEmail, jiraToken) {
+            if (!githubUser) return "@";
+
+            let email = null;
+            let jiraName = githubUser;
+            try {
+              const profile = await fetchJson("https://api.github.com/users/" + githubUser, {
+                headers: { Authorization: "Bearer " + ghToken, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+              });
+              const githubEmail = (profile.email || "").trim().toLowerCase();
+              email = githubEmail && !isGithubNoreplyEmail(githubEmail) ? githubEmail : null;
+              jiraName = profile.name || githubUser;
+            } catch (e) {
+              console.warn("Could not resolve email for " + githubUser + ": " + e.message);
+            }
+
+            let mention = await slackMentionForEmail(email, slackToken, githubUser);
+            if (mention) return mention;
+
+            try {
+              const jiraLookupEmail = await jiraEmailForName(jiraName, jiraEmail, jiraToken);
+              if (jiraLookupEmail && jiraLookupEmail !== email) {
+                mention = await slackMentionForEmail(jiraLookupEmail, slackToken, githubUser);
+                if (mention) return mention;
+              }
+            } catch (e) {
+              console.warn("Jira lookup failed for " + githubUser + ": " + e.message);
+            }
+            return "@" + githubUser;
+          }
+
+          async function hasSpecPr(ticketKey, token) {
+            const q = encodeURIComponent(ticketKey + " repo:cartoncloud/api-documentation is:pr is:merged");
+            const data = await fetchJson(
+              "https://api.github.com/search/issues?q=" + q + "&per_page=1",
+              { headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" } }
+            );
+            return (data?.total_count ?? 0) > 0;
+          }
+
+          async function postSlack(token, channelId, text) {
+            const res = await fetch("https://slack.com/api/chat.postMessage", {
+              method: "POST",
+              headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+              body: JSON.stringify({ channel: channelId, text, mrkdwn: true }),
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error("Slack API error: " + data.error);
+          }
+
+          async function main() {
+            const prTitle     = getEnv("PR_TITLE", false);
+            const prBranch    = getEnv("PR_BRANCH", false);
+            const prUrl       = getEnv("PR_URL");
+            const mergedBy    = getEnv("MERGED_BY");
+            const slackToken  = getEnv("SLACK_BOT_TOKEN");
+            const channelId   = getEnv("SLACK_AI_FEEDBACK_CHANNEL_ID");
+            const ghToken     = getEnv("GITHUB_TOKEN");
+            const jiraEmail   = getEnv("JIRA_EMAIL", false);
+            const jiraToken   = getEnv("JIRA_API_TOKEN", false);
+
+            const ticketKey = extractTicketKey(prTitle, prBranch);
+            if (!ticketKey) { console.log("No CC-XXXX ticket key found — skipping."); return; }
+
+            const found = await hasSpecPr(ticketKey, ghToken);
+            if (!found) { console.log("No merged spec found for " + ticketKey + " in api-documentation — skipping."); return; }
+
+            const mention    = await resolveSlackMention(mergedBy, slackToken, ghToken, jiraEmail, jiraToken);
+            const ticketLink = "<" + prUrl + "|" + ticketKey + ">";
+
+            const text = [
+              mention + " :rocket: " + ticketLink + " merged for release. Drop a reply in :thread:",
+              "\u2022 Did the spec hold up when you ran the bot, or did you have to patch it mid-build?",
+              "\u2022 End to end \u2014 spec through to shipped PR \u2014 faster than how you worked before?",
+              "\u2022 Any cursor rules added or updated as a result?",
+              "\u2022 What's one thing that went well you'd want others to know?",
+            ].join("\n");
+
+            await postSlack(slackToken, channelId, text);
+            console.log("Slack notification sent for " + ticketKey + " (ticket)");
+          }
+
+          main().catch(e => { console.error(e.message || String(e)); process.exit(2); });
+          NODEEOF

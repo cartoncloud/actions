@@ -18,6 +18,16 @@ on:
         default: 11
 
 jobs:
+  branch-commit-ticket-match:
+    name: Branch Commit Ticket Match
+    permissions:
+      pull-requests: write
+    uses: ./.github/workflows/branch-commit-ticket-match.yml
+    with:
+      branch: ${{ github.ref_name }}
+    secrets:
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
   build:
     if: ${{ inputs.postgres == false }}
     name: Build
@@ -119,7 +129,22 @@ jobs:
       url: ${{ matrix.environment.url }}
 
     steps:
+      - name: Verify environment still tracks this revision
+        id: verify-revision
+        uses: cartoncloud/actions/jira-environment-revision-still-tracked@v3
+        with:
+          jiraServer: ${{ vars.JIRA_SERVER }}
+          jiraUsername: ${{ secrets.JIRA_USERNAME }}
+          jiraPassword: ${{ secrets.JIRA_PASSWORD }}
+          projectKey: ${{ vars.JIRA_ENVIRONMENT_PROJECT_KEY }}
+          appName: ${{ inputs.appName }}
+          revision: ${{ github.ref_name }}
+          environmentName: ${{ matrix.environment.name }}
+          nameField: ${{ vars.JIRA_ENVIRONMENT_KEY_FIELD }}
+          urlField: ${{ vars.JIRA_ENVIRONMENT_URL_FIELD }}
+
       - name: Deploy
+        if: steps.verify-revision.outputs.still-tracked == 'true'
         uses: cartoncloud/actions/deploy-java@v3
         with:
           appName: ${{ inputs.appName }}
