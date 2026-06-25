@@ -1,0 +1,428 @@
+name: 'API Documentation Compliance (Cursor Automation)'
+description: 'Checks OpenAPI spec compliance on PRs via Cursor cloud automation webhook; posts human-facing PR reviews from parsed marker output.'
+inputs:
+  API_DOCUMENTATION_REPO:
+    description: 'api-documentation repo the automation should use (e.g. org/repo)'
+    required: false
+    default: cartoncloud/api-documentation
+  API_DOCUMENTATION_BRANCH:
+    description: 'Branch of api-documentation to use (callers typically pass head_ref)'
+    required: false
+    default: main
+  API_DOCS_COMPLIANCE_WEBHOOK_URL:
+    description: 'Full Cursor automation webhook URL (caller passes from secrets via with:)'
+    required: true
+  API_DOCS_COMPLIANCE_WEBHOOK_TOKEN:
+    description: 'Cursor automation webhook bearer token (caller passes from secrets via with:)'
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Require Cursor automation webhook token
+      shell: bash
+      env:
+        API_DOCS_COMPLIANCE_WEBHOOK_TOKEN: ${{ inputs.API_DOCS_COMPLIANCE_WEBHOOK_TOKEN }}
+      run: |
+        if [ -z "$API_DOCS_COMPLIANCE_WEBHOOK_TOKEN" ]; then
+          echo 'Pass API_DOCS_COMPLIANCE_WEBHOOK_TOKEN via action with: (e.g. from organisation or repository secrets at workflow level).' >&2
+          exit 1
+        fi
+
+    - name: Require Cursor automation webhook URL
+      shell: bash
+      env:
+        API_DOCS_COMPLIANCE_WEBHOOK_URL: ${{ inputs.API_DOCS_COMPLIANCE_WEBHOOK_URL }}
+      run: |
+        if [ -z "$API_DOCS_COMPLIANCE_WEBHOOK_URL" ]; then
+          echo 'Pass API_DOCS_COMPLIANCE_WEBHOOK_URL via action with: (e.g. from organisation or repository secrets at workflow level).' >&2
+          exit 1
+        fi
+
+    - name: Decide whether to run
+      id: scope
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR: ${{ github.event.pull_request.number }}
+        EVENT_NAME: ${{ github.event_name }}
+        BEFORE: ${{ github.event.before }}
+        AFTER: ${{ github.event.after }}
+      run: |
+        set -euo pipefail
+        python3 <<'PY'
+        import fnmatch, json, os, subprocess
+
+        PATTERNS = [
+            "openapi/**",
+            "**/controller/**",
+            "**/Api*Controller.php",
+            "config/routes.php",
+            "**/*-definition-schema.json",
+        ]
+        ZERO_SHA = "0" * 40
+
+        def path_matches(path: str, pattern: str) -> bool:
+            path = path.replace("\\", "/").lstrip("./")
+            pattern = pattern.replace("\\", "/")
+            if "**" not in pattern:
+                return fnmatch.fnmatchcase(path, pattern)
+            if pattern.startswith("**/") and pattern.endswith("/**"):
+                middle = pattern[3:-3]
+                if middle:
+                    return f"/{middle}/" in f"/{path}/" or path == middle or path.startswith(middle + "/")
+                return True
+            if "/**/" in pattern:
+                left, right = pattern.split("/**/", 1)
+                if path == left:
+                    return fnmatch.fnmatchcase("", right) if right else True
+                if not (path == left or path.startswith(left + "/")):
+                    return False
+                rest = path[len(left):].lstrip("/")
+                parts = rest.split("/")
+                for i in range(len(parts)):
+                    if fnmatch.fnmatchcase("/".join(parts[i:]), right):
+                        return True
+                return False
+            if pattern.endswith("/**"):
+                prefix = pattern[:-3]
+                return path == prefix or path.startswith(prefix + "/")
+            if pattern.startswith("**/"):
+                suffix = pattern[3:]
+                if fnmatch.fnmatchcase(path, suffix):
+                    return True
+                parts = path.split("/")
+                for i in range(len(parts)):
+                    if fnmatch.fnmatchcase("/".join(parts[i:]), suffix):
+                        return True
+                return False
+            return fnmatch.fnmatchcase(path, pattern)
+
+        def matched_files(paths):
+            matched = []
+            for path in paths:
+                path = path.strip()
+                if not path:
+                    continue
+                for pattern in PATTERNS:
+                    if path_matches(path, pattern):
+                        matched.append(path)
+                        break
+            return matched
+
+        repo = os.environ["REPO"]
+        pr = os.environ["PR"]
+        event = os.environ["EVENT_NAME"]
+        before = os.environ.get("BEFORE", "")
+        use_full_pr_diff = event in ("opened", "reopened", "workflow_dispatch") or (event == "synchronize" and before in ("", ZERO_SHA))
+
+        if use_full_pr_diff:
+            out = subprocess.check_output(["gh", "pr", "diff", pr, "--repo", repo, "--name-only"], text=True)
+            files = [line.strip() for line in out.splitlines() if line.strip()]
+        elif event == "synchronize":
+            after = os.environ["AFTER"]
+            out = subprocess.check_output(["gh", "api", f"repos/{repo}/compare/{before}...{after}", "--jq", ".files[].filename"], text=True)
+            files = [line.strip() for line in out.splitlines() if line.strip()]
+        else:
+            print(f"Unknown event {event!r}; using full PR diff for scope.")
+            out = subprocess.check_output(["gh", "pr", "diff", pr, "--repo", repo, "--name-only"], text=True)
+            files = [line.strip() for line in out.splitlines() if line.strip()]
+
+        matched = matched_files(files)
+        should_run = bool(matched)
+        print(f"Event: {event}")
+        print(f"Files considered: {len(files)}")
+        print(f"matched_files={json.dumps(matched)}")
+        if should_run:
+            print("API-relevant changes detected; running compliance check.")
+        else:
+            print("No API-relevant changes; skipping compliance check.")
+
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as gh:
+            gh.write(f"should_run={'true' if should_run else 'false'}\n")
+            gh.write(f"matched_files={json.dumps(matched)}\n")
+        PY
+
+    - name: Export PR diff artifacts
+      if: steps.scope.outputs.should_run == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR: ${{ github.event.pull_request.number }}
+      run: |
+        set -euo pipefail
+        gh pr diff "$PR" --repo "$REPO" > pr-diff.patch
+        gh pr diff "$PR" --repo "$REPO" --name-only > changed-files.txt
+
+    - name: Truncate very large diffs
+      if: steps.scope.outputs.should_run == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        limit=400000
+        size=$(wc -c < pr-diff.patch | tr -d ' ')
+        if [ "$size" -gt "$limit" ]; then
+          head -c "$limit" pr-diff.patch > pr-diff.truncated.patch
+          mv pr-diff.truncated.patch pr-diff.patch
+          {
+            echo ""
+            echo "[diff truncated at ${limit} bytes for agent context; missing lines may hide violations — do not assume compliance solely from visible content]"
+          } >> pr-diff.patch
+        fi
+
+    - name: Build webhook payload
+      if: steps.scope.outputs.should_run == 'true'
+      shell: bash
+      env:
+        REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
+        API_DOCUMENTATION_REPO: ${{ inputs.API_DOCUMENTATION_REPO }}
+        API_DOCUMENTATION_BRANCH: ${{ inputs.API_DOCUMENTATION_BRANCH }}
+      run: |
+        set -euo pipefail
+        python3 <<'PY'
+        import json, os, pathlib
+        diff = pathlib.Path("pr-diff.patch").read_text(encoding="utf-8", errors="replace")
+        files = [line.strip() for line in pathlib.Path("changed-files.txt").read_text(encoding="utf-8").splitlines() if line.strip()]
+        payload = {
+            "workflow": "api-docs-compliance-cursor-automation",
+            "repository": os.environ["REPOSITORY"],
+            "pr_number": int(os.environ["PR_NUMBER"]),
+            "pr_url": os.environ["PR_URL"],
+            "head_ref": os.environ["HEAD_REF"],
+            "head_sha": os.environ["HEAD_SHA"],
+            "base_ref": os.environ["BASE_REF"],
+            "changed_files": files,
+            "diff": diff,
+            "api_documentation_repo": os.environ["API_DOCUMENTATION_REPO"],
+            "api_documentation_branch": os.environ["API_DOCUMENTATION_BRANCH"],
+        }
+        pathlib.Path("webhook-payload.json").write_text(json.dumps(payload), encoding="utf-8")
+        PY
+
+    - name: Trigger Cursor API docs compliance automation
+      if: steps.scope.outputs.should_run == 'true'
+      shell: bash
+      env:
+        API_DOCS_COMPLIANCE_WEBHOOK_URL: ${{ inputs.API_DOCS_COMPLIANCE_WEBHOOK_URL }}
+        API_DOCS_COMPLIANCE_WEBHOOK_TOKEN: ${{ inputs.API_DOCS_COMPLIANCE_WEBHOOK_TOKEN }}
+      run: |
+        set -euo pipefail
+        http_code="$(curl -sS -o /tmp/webhook-response.txt -w "%{http_code}" -X POST "$API_DOCS_COMPLIANCE_WEBHOOK_URL" \
+          -H "Authorization: Bearer $API_DOCS_COMPLIANCE_WEBHOOK_TOKEN" \
+          -H "Content-Type: application/json" \
+          --data-binary @webhook-payload.json)"
+        if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+          echo "Webhook returned HTTP ${http_code}:" >&2
+          cat /tmp/webhook-response.txt >&2 || true
+          exit 1
+        fi
+        cat /tmp/webhook-response.txt
+
+    - name: Wait for automation review and parse compliance
+      if: steps.scope.outputs.should_run == 'true'
+      id: parse
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR: ${{ github.event.pull_request.number }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        PYTHONUTF8: "1"
+      run: |
+        set -euo pipefail
+        python3 <<'PY'
+        import json, os, re, subprocess, sys, time
+
+        repo, pr = os.environ["REPO"], os.environ["PR"]
+        head_sha = os.environ["HEAD_SHA"]
+        deadline = time.time() + 10 * 60
+        pattern = re.compile(r"<!-- api-docs-compliance:(.*?) -->", re.DOTALL)
+        trigger_after = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+        def fetch_reviews():
+            out = subprocess.check_output(
+                ["gh", "api", f"repos/{repo}/pulls/{pr}/reviews", "--paginate"],
+                text=True,
+            )
+            return json.loads(out)
+
+        while time.time() < deadline:
+            for review in reversed(fetch_reviews()):
+                user = (review.get("user") or {}).get("login", "")
+                if user not in ("cursor[bot]", "cursor"):
+                    continue
+                body = review.get("body") or ""
+                match = pattern.search(body)
+                if not match:
+                    continue
+                submitted = review.get("submitted_at") or ""
+                if submitted < trigger_after:
+                    continue
+                data = json.loads(match.group(1), strict=False)
+                if data.get("head_sha") not in (None, head_sha):
+                    continue
+                compliant = data.get("compliant")
+                if not isinstance(compliant, bool):
+                    print(f"Invalid compliant flag: {compliant!r}", file=sys.stderr)
+                    sys.exit(1)
+                with open("compliance.json", "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as gh:
+                    gh.write(f"compliant={'true' if compliant else 'false'}\n")
+                    gh.write(f"marker_review_id={review.get('id', '')}\n")
+                    gh.write(f"marker_review_node_id={review.get('node_id', '')}\n")
+                print(f"Parsed compliance review submitted_at={submitted} compliant={compliant}")
+                sys.exit(0)
+            time.sleep(10)
+
+        print("Timed out after 10 minutes waiting for cursor[bot] api-docs-compliance marker", file=sys.stderr)
+        sys.exit(1)
+        PY
+
+    - name: Clear previous API spec compliance comments
+      if: steps.scope.outputs.should_run == 'true'
+      uses: aki77/delete-pr-comments-action@v3
+      with:
+        token: ${{ github.token }}
+        pullRequestNumber: ${{ github.event.pull_request.number }}
+        includeIssueComments: 'true'
+        includeOverallReviewComments: 'true'
+        bodyContains: |-
+          API spec review
+          API Documentation Compliance
+        usernames: |-
+          cartoncloud-robot
+          github-actions[bot]
+
+    - name: Create pull request review when violations found
+      if: steps.scope.outputs.should_run == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR_NUM: ${{ github.event.pull_request.number }}
+      run: |
+        set -euo pipefail
+        COMPLIANT="${{ steps.parse.outputs.compliant }}"
+        if [ "$COMPLIANT" = "true" ]; then
+          echo "API spec check passed (compliant). No review posted."
+          exit 0
+        fi
+        python3 <<'PY'
+        import json, pathlib, subprocess, sys
+
+        with open("compliance.json", encoding="utf-8") as f:
+            data = json.load(f)
+
+        report = str(data.get("report") or "").strip()
+        prefix = "**API spec review (API Documentation Compliance).** Resolve this conversation when all findings below are addressed.\n\n"
+        if not report:
+            body = "**API spec review (API Documentation Compliance).** Contract review reported non-compliance but produced no report text. This may indicate agent timeout, no matching changed files, or an automation error. Please check the workflow logs and re-run if needed."
+        else:
+            body = prefix + report
+
+        pathlib.Path("/tmp/review-body.txt").write_text(body, encoding="utf-8")
+        review = {"event": "COMMENT", "body": body}
+        pathlib.Path("/tmp/review.json").write_text(json.dumps(review), encoding="utf-8")
+        PY
+        gh api "repos/${{ github.repository }}/pulls/$PR_NUM/reviews" --method POST --input /tmp/review.json
+        echo "Pull request review posted (body-only; avoids GitHub 422 on unresolved line)."
+
+    - name: Remove bot marker reviews and comments
+      if: always() && steps.scope.outputs.should_run == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR: ${{ github.event.pull_request.number }}
+        MARKER_REVIEW_ID: ${{ steps.parse.outputs.marker_review_id }}
+        MARKER_REVIEW_NODE_ID: ${{ steps.parse.outputs.marker_review_node_id }}
+      run: |
+        set +euo pipefail
+        python3 <<'PY'
+        import json, os, re, subprocess, sys
+
+        repo, pr = os.environ["REPO"], os.environ["PR"]
+        marker = re.compile(r"<!-- api-docs-compliance:")
+        cursor_users = {"cursor[bot]", "cursor"}
+        parsed_review_id = (os.environ.get("MARKER_REVIEW_ID") or "").strip()
+        parsed_node_id = (os.environ.get("MARKER_REVIEW_NODE_ID") or "").strip()
+
+        def gh_json(args):
+            out = subprocess.check_output(["gh", "api", *args], text=True)
+            return json.loads(out)
+
+        def minimize_review(node_id: str, label: str) -> bool:
+            proc = subprocess.run(
+                [
+                    "gh", "api", "graphql", "-f",
+                    f"query=mutation($subjectId: ID!) {{ minimizeComment(input: {{subjectId: $subjectId, classifier: OUTDATED}}) {{ minimizedComment {{ isMinimized }} }} }}",
+                    f"subjectId={node_id}",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            if proc.returncode == 0:
+                print(f"Minimized {label} {node_id}")
+                return True
+            print(proc.stderr.strip() or proc.stdout.strip(), file=sys.stderr)
+            return False
+
+        def remove_review(review_id: str, node_id: str, label: str) -> bool:
+            if review_id:
+                proc = subprocess.run(
+                    ["gh", "api", "--method", "DELETE", f"repos/{repo}/pulls/{pr}/reviews/{review_id}"],
+                    capture_output=True,
+                    text=True,
+                )
+                if proc.returncode == 0:
+                    print(f"Deleted {label} review {review_id}")
+                    return True
+            if node_id and minimize_review(node_id, label):
+                return True
+            return False
+
+        if parsed_review_id or parsed_node_id:
+            if not remove_review(parsed_review_id, parsed_node_id, "parsed cursor marker"):
+                print(f"::warning::Could not remove parsed marker review {parsed_review_id}", file=sys.stderr)
+
+        reviews = gh_json([f"repos/{repo}/pulls/{pr}/reviews", "--paginate"])
+        for review in reviews:
+            user = (review.get("user") or {}).get("login", "")
+            body = review.get("body") or ""
+            is_cursor_marker = user in cursor_users and marker.search(body)
+            if not is_cursor_marker:
+                continue
+            review_id = str(review.get("id") or "")
+            node_id = review.get("node_id") or ""
+            if review_id and review_id == parsed_review_id:
+                continue
+            if not remove_review(review_id, node_id, "cursor marker"):
+                print(f"::warning::Could not remove review {review_id} from {user}", file=sys.stderr)
+
+        comments = gh_json([f"repos/{repo}/issues/{pr}/comments", "--paginate"])
+        for comment in comments:
+            user = (comment.get("user") or {}).get("login", "")
+            if user not in cursor_users:
+                continue
+            body = comment.get("body") or ""
+            if not marker.search(body):
+                continue
+            comment_id = comment.get("id")
+            if not comment_id:
+                continue
+            proc = subprocess.run(
+                ["gh", "api", "--method", "DELETE", f"repos/{repo}/issues/comments/{comment_id}"],
+                capture_output=True,
+                text=True,
+            )
+            if proc.returncode == 0:
+                print(f"Deleted cursor issue comment {comment_id}")
+            else:
+                print(f"::warning::Could not delete cursor issue comment {comment_id}", file=sys.stderr)
+        PY
