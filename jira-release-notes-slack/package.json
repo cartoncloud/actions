@@ -21,7 +21,7 @@
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.0",
+    "@babel/core": "^7.29.6",
     "@babel/plugin-transform-nullish-coalescing-operator": "^7.28.6",
     "@babel/plugin-transform-optional-chaining": "^7.28.6",
     "@babel/preset-env": "^7.29.2",
