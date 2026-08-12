@@ -110,6 +110,35 @@ runs:
                         break
             return matched
 
+        def list_pr_filenames(repo, pr):
+            # Prefer List pull request files: paginates and works for PRs with 300+ files.
+            # `gh pr diff --name-only` uses the PR diff media type and fails with HTTP 406
+            # (PullRequest.diff too_large) once GitHub's 300-file diff limit is exceeded.
+            out = subprocess.check_output(
+                [
+                    "gh",
+                    "api",
+                    f"repos/{repo}/pulls/{pr}/files",
+                    "--paginate",
+                    "--jq",
+                    ".[].filename",
+                ],
+                text=True,
+            )
+            return [line.strip() for line in out.splitlines() if line.strip()]
+
+        def list_compare_filenames(repo, before, after):
+            # Compare API returns at most 300 files and sets truncated=true beyond that.
+            raw = subprocess.check_output(
+                ["gh", "api", f"repos/{repo}/compare/{before}...{after}"],
+                text=True,
+            )
+            data = json.loads(raw)
+            if data.get("truncated"):
+                return None
+            files = data.get("files") or []
+            return [f.get("filename", "").strip() for f in files if f.get("filename")]
+
         repo = os.environ["REPO"]
         pr = os.environ["PR"]
         event = os.environ["EVENT_NAME"]
@@ -117,16 +146,16 @@ runs:
         use_full_pr_diff = event in ("opened", "reopened", "workflow_dispatch") or (event == "synchronize" and before in ("", ZERO_SHA))
 
         if use_full_pr_diff:
-            out = subprocess.check_output(["gh", "pr", "diff", pr, "--repo", repo, "--name-only"], text=True)
-            files = [line.strip() for line in out.splitlines() if line.strip()]
+            files = list_pr_filenames(repo, pr)
         elif event == "synchronize":
             after = os.environ["AFTER"]
-            out = subprocess.check_output(["gh", "api", f"repos/{repo}/compare/{before}...{after}", "--jq", ".files[].filename"], text=True)
-            files = [line.strip() for line in out.splitlines() if line.strip()]
+            files = list_compare_filenames(repo, before, after)
+            if files is None:
+                print("Compare result truncated (>300 files); falling back to full PR file list for scope.")
+                files = list_pr_filenames(repo, pr)
         else:
-            print(f"Unknown event {event!r}; using full PR diff for scope.")
-            out = subprocess.check_output(["gh", "pr", "diff", pr, "--repo", repo, "--name-only"], text=True)
-            files = [line.strip() for line in out.splitlines() if line.strip()]
+            print(f"Unknown event {event!r}; using full PR file list for scope.")
+            files = list_pr_filenames(repo, pr)
 
         matched = matched_files(files)
         should_run = bool(matched)
@@ -150,10 +179,85 @@ runs:
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         PR: ${{ github.event.pull_request.number }}
+        MATCHED_FILES: ${{ steps.scope.outputs.matched_files }}
       run: |
         set -euo pipefail
-        gh pr diff "$PR" --repo "$REPO" > pr-diff.patch
-        gh pr diff "$PR" --repo "$REPO" --name-only > changed-files.txt
+        # Always list files via the paginated Files API (works for 300+ file PRs).
+        gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' > changed-files.txt
+        # Full unified diff still preferred when GitHub can serve it.
+        if gh pr diff "$PR" --repo "$REPO" > pr-diff.patch 2>pr-diff.err; then
+          rm -f pr-diff.err
+          exit 0
+        fi
+        if ! grep -Eqi 'too_large|maximum number of files|HTTP 406' pr-diff.err; then
+          cat pr-diff.err >&2
+          exit 1
+        fi
+        echo "Full PR diff unavailable (too large); building patch from List pull request files for API-relevant paths only."
+        MATCHED_FILES="$MATCHED_FILES" REPO="$REPO" PR="$PR" python3 <<'PY'
+        import json, os, subprocess, sys
+
+        repo, pr = os.environ["REPO"], os.environ["PR"]
+        matched = set(json.loads(os.environ.get("MATCHED_FILES") or "[]"))
+        if not matched:
+            print("No matched files to export after too_large diff.", file=sys.stderr)
+            sys.exit(1)
+
+        files = []
+        page = 1
+        while True:
+            out = subprocess.check_output(
+                ["gh", "api", f"repos/{repo}/pulls/{pr}/files?per_page=100&page={page}"],
+                text=True,
+            )
+            chunk = json.loads(out)
+            if not chunk:
+                break
+            files.extend(chunk)
+            if len(chunk) < 100:
+                break
+            page += 1
+
+        parts = [
+            "[diff reconstructed from pull request files API because the full PR diff exceeded GitHub's 300-file limit; only API-relevant paths are included]",
+            "",
+        ]
+        included = 0
+        for entry in files:
+            name = entry.get("filename") or ""
+            if name not in matched:
+                continue
+            patch = entry.get("patch")
+            status = entry.get("status") or "modified"
+            prev = entry.get("previous_filename") or name
+            if patch is None:
+                parts.append(f"diff --git a/{prev} b/{name}")
+                parts.append(f"# no patch available (status={status}; binary or too large)")
+                parts.append("")
+                included += 1
+                continue
+            parts.append(f"diff --git a/{prev} b/{name}")
+            if status == "added":
+                parts.append("--- /dev/null")
+                parts.append(f"+++ b/{name}")
+            elif status == "removed":
+                parts.append(f"--- a/{prev}")
+                parts.append("+++ /dev/null")
+            else:
+                parts.append(f"--- a/{prev}")
+                parts.append(f"+++ b/{name}")
+            parts.append(patch)
+            parts.append("")
+            included += 1
+
+        if included == 0:
+            print("Matched files had no entries in pull request files API response.", file=sys.stderr)
+            sys.exit(1)
+
+        with open("pr-diff.patch", "w", encoding="utf-8") as f:
+            f.write("\n".join(parts))
+        print(f"Wrote reconstructed patch for {included} API-relevant file(s).")
+        PY
 
     - name: Truncate very large diffs
       if: steps.scope.outputs.should_run == 'true'

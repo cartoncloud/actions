@@ -4,7 +4,7 @@ OpenAPI spec compliance checks on pull requests via a **Cursor cloud automation*
 
 ## Flow
 
-1. GHA exports PR diff and changed files (`gh pr diff`, no checkout of the target repo).
+1. GHA lists changed files via paginated `GET .../pulls/{n}/files` (works for 300+ file PRs; `gh pr diff` fails with HTTP 406 beyond that limit), decides whether any API-relevant paths changed, and exports the PR diff when needed.
 2. GHA POSTs a webhook payload to the Cursor automation (hosted in `api-documentation`).
 3. The automation reviews changed files against the canonical OpenAPI spec and `api-spec-contract-review` skill.
 4. `cursor[bot]` posts a **marker-only** PR review: `<!-- api-docs-compliance:{json} -->`.

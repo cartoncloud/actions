@@ -90,6 +90,35 @@ runs:
                         break
             return matched
 
+        def list_pr_filenames(repo, pr):
+            # Prefer List pull request files: paginates and works for PRs with 300+ files.
+            # `gh pr diff --name-only` uses the PR diff media type and fails with HTTP 406
+            # (PullRequest.diff too_large) once GitHub's 300-file diff limit is exceeded.
+            out = subprocess.check_output(
+                [
+                    "gh",
+                    "api",
+                    f"repos/{repo}/pulls/{pr}/files",
+                    "--paginate",
+                    "--jq",
+                    ".[].filename",
+                ],
+                text=True,
+            )
+            return [line.strip() for line in out.splitlines() if line.strip()]
+
+        def list_compare_filenames(repo, before, after):
+            # Compare API returns at most 300 files and sets truncated=true beyond that.
+            raw = subprocess.check_output(
+                ["gh", "api", f"repos/{repo}/compare/{before}...{after}"],
+                text=True,
+            )
+            data = json.loads(raw)
+            if data.get("truncated"):
+                return None
+            files = data.get("files") or []
+            return [f.get("filename", "").strip() for f in files if f.get("filename")]
+
         repo = os.environ["REPO"]
         pr = os.environ["PR"]
         event = os.environ["EVENT_NAME"]
@@ -97,16 +126,16 @@ runs:
         use_full_pr_diff = event in ("opened", "reopened", "workflow_dispatch") or (event == "synchronize" and before in ("", ZERO_SHA))
 
         if use_full_pr_diff:
-            out = subprocess.check_output(["gh", "pr", "diff", pr, "--repo", repo, "--name-only"], text=True)
-            files = [line.strip() for line in out.splitlines() if line.strip()]
+            files = list_pr_filenames(repo, pr)
         elif event == "synchronize":
             after = os.environ["AFTER"]
-            out = subprocess.check_output(["gh", "api", f"repos/{repo}/compare/{before}...{after}", "--jq", ".files[].filename"], text=True)
-            files = [line.strip() for line in out.splitlines() if line.strip()]
+            files = list_compare_filenames(repo, before, after)
+            if files is None:
+                print("Compare result truncated (>300 files); falling back to full PR file list for scope.")
+                files = list_pr_filenames(repo, pr)
         else:
-            print(f"Unknown event {event!r}; using full PR diff for scope.")
-            out = subprocess.check_output(["gh", "pr", "diff", pr, "--repo", repo, "--name-only"], text=True)
-            files = [line.strip() for line in out.splitlines() if line.strip()]
+            print(f"Unknown event {event!r}; using full PR file list for scope.")
+            files = list_pr_filenames(repo, pr)
 
         matched = matched_files(files)
         should_run = bool(matched)
@@ -226,7 +255,7 @@ runs:
             exit 1
           fi
         done
-        CHANGED_FILES=$(gh pr diff "$PR_NUM" --name-only 2>/dev/null | head -100 || true)
+        CHANGED_FILES=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUM}/files" --paginate --jq '.[].filename' 2>/dev/null | head -100 || true)
         PROMPT="/api-spec-contract-review
 
         Files changed in this PR (review only these):
