@@ -244,6 +244,7 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         PR_NUM: ${{ github.event.pull_request.number }}
         MODEL: kimi-k2.5
+        MATCHED_FILES: ${{ steps.scope.outputs.matched_files }}
       run: |
         set -euo pipefail
         export PATH="${CURSOR_BIN:-$HOME/.cursor/bin}:$PATH"
@@ -255,7 +256,9 @@ runs:
             exit 1
           fi
         done
-        CHANGED_FILES=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUM}/files" --paginate --jq '.[].filename' 2>/dev/null | head -100 || true)
+        # Use scope's full matched set (not head -100 of all PR files) so API-relevant
+        # paths that triggered the run are never truncated out of the prompt.
+        CHANGED_FILES=$(printf '%s' "$MATCHED_FILES" | jq -r '.[]')
         PROMPT="/api-spec-contract-review
 
         Files changed in this PR (review only these):
