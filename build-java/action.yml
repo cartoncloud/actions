@@ -89,18 +89,21 @@ runs:
         BRANCH: ${{ github.head_ref || github.ref_name }}
       run: |
         set -euo pipefail
-        REMOTE="https://x-access-token:${JASPER_TOKEN}@github.com/cartoncloud/jasper-report.git"
         REF="refs/heads/main"
         if [ -n "${BRANCH}" ]; then
-          status=0
-          git ls-remote --exit-code "${REMOTE}" "refs/heads/${BRANCH}" >/dev/null || status=$?
-          if [ "${status}" -eq 0 ]; then
+          encoded_branch=$(printf '%s' "${BRANCH}" | python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read(), safe=""))')
+          http_code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${JASPER_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/cartoncloud/jasper-report/branches/${encoded_branch}")
+          if [ "${http_code}" = "200" ]; then
             REF="refs/heads/${BRANCH}"
-          elif [ "${status}" -eq 2 ]; then
+          elif [ "${http_code}" = "404" ]; then
             echo "Branch ${BRANCH} not found, falling back to main."
           else
-            echo "git ls-remote failed with exit code ${status}"
-            exit "${status}"
+            echo "GitHub API failed with HTTP ${http_code}"
+            exit 1
           fi
         fi
         echo "Using jasper-report ${REF}"
