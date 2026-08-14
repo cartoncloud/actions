@@ -180,7 +180,7 @@ jobs:
         run: sudo echo "127.0.0.1 postgres.localhost.com" | sudo tee -a /etc/hosts
 
       - name: Build
-        uses: cartoncloud/actions/build-java@story/CC-49694
+        uses: cartoncloud/actions/build-java@v3
         with:
           appName: ${{ inputs.appName }}
           pomVersion: ${{ needs.determine-version.outputs.pomVersion }}
