@@ -80,11 +80,37 @@ runs:
       shell: bash
       run: mvn -s settings.xml versions:set -DnewVersion="${{ inputs.pomVersion }}"
 
+    - name: Resolve jasper-report ref
+      if: ${{ inputs.jasperBuild == 'true' }}
+      id: jasper-ref
+      shell: bash
+      env:
+        JASPER_TOKEN: ${{ inputs.token }}
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+      run: |
+        set -euo pipefail
+        REMOTE="https://x-access-token:${JASPER_TOKEN}@github.com/cartoncloud/jasper-report.git"
+        REF="refs/heads/main"
+        if [ -n "${BRANCH}" ]; then
+          status=0
+          git ls-remote --exit-code "${REMOTE}" "refs/heads/${BRANCH}" >/dev/null || status=$?
+          if [ "${status}" -eq 0 ]; then
+            REF="refs/heads/${BRANCH}"
+          elif [ "${status}" -eq 2 ]; then
+            echo "Branch ${BRANCH} not found, falling back to main."
+          else
+            echo "git ls-remote failed with exit code ${status}"
+            exit "${status}"
+          fi
+        fi
+        echo "Using jasper-report ${REF}"
+        echo "ref=${REF}" >> "${GITHUB_OUTPUT}"
+
     - uses: actions/checkout@v6
       if: ${{ inputs.jasperBuild == 'true' }}
       with:
         repository: cartoncloud/jasper-report
-        ref: refs/heads/main
+        ref: ${{ steps.jasper-ref.outputs.ref }}
         path: jasper-report
         token: ${{ inputs.token }}
 
