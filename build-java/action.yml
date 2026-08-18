@@ -82,6 +82,16 @@ runs:
 
     - uses: actions/checkout@v6
       if: ${{ inputs.jasperBuild == 'true' }}
+      id: jasper-branch
+      continue-on-error: true
+      with:
+        repository: cartoncloud/jasper-report
+        ref: ${{ github.head_ref || github.ref_name }}
+        path: jasper-report
+        token: ${{ inputs.token }}
+
+    - uses: actions/checkout@v6
+      if: ${{ inputs.jasperBuild == 'true' && steps.jasper-branch.outcome == 'failure' }}
       with:
         repository: cartoncloud/jasper-report
         ref: refs/heads/main
