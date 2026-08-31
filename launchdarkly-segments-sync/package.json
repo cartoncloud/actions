@@ -20,7 +20,7 @@
     "axios-logger": "^2.8.1"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "esbuild": "^0.28.1"
   }
 }
