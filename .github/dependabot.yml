@@ -65,6 +65,11 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 1
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+        group-by: dependency-name
     assignees:
       - "@cartoncloud/code-owners-platform"
     reviewers:
